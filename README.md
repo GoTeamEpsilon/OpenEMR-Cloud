@@ -18,6 +18,8 @@ Services include Elastic Beanstalk, RDS, Route53, IAM, TurnKey CouchDB, Cloudwat
 
 This second release (codename "Koala") will focus on using generic services so users may choose any cloud provider they want. Ideally, users can stand up a "local cloud" should they choose to benefit from cloud technologies but want to run their own data centers.
 
+_Note that this will most likely end up being spawned off as another repo._
+
 ## License & Credits
 
 MIT
