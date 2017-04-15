@@ -8,11 +8,11 @@ Our team will provide a turnkey solution for small facilities and hospitals to r
 
 Many OpenEMR users host their server instances on premise and have not yet realized the benefits of cloud technologies. While users can hire a professional vendor for cloud deployment services or simply learn AWS and do it themselves, our team has identified a need for a more cost effective option.
 
-## 🕊️ Version 1
+## 🕊️ Version 1 and 1.5
 
 This first release (codename "Dove") will use AWS services in a way that can be described as a "PaaS-buffet". This is to say that the choosen technologies will "lock" the user to many opinionated AWS services.
 
-Services include Elastic Beanstalk, RDS, Route53, IAM, TurnKey CouchDB, Cloudwatch, CloudFormation, and SES.
+Services include Elastic Beanstalk, RDS, Route53, IAM, CouchDB, and Cloudwatch. This version will involve a series of numbered steps to get every step up. Automation will be done in CloudFormation in Version 1.5 to truly allow a user to "turn the key".
 
 ## 🐨 Version 2
 
