@@ -25,3 +25,6 @@
 10. Add SSL Cert
 11. Other random security services AWS offers
 
+## Resources:
+- Great series: https://aws.amazon.com/blogs/security/how-to-automate-hipaa-compliance-part-1-use-the-cloud-to-protect-the-cloud/
+- Good intro: http://cloudacademy.com/blog/how-to-build-hipaa-compliant-applications-on-aws/
