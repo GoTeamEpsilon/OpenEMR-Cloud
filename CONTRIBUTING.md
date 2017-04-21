@@ -18,3 +18,11 @@
 - Get Help For Project
 - Help Beginners Who Are Learning To Code
 - Timeline: start this within 12 weeks as project/group develops more
+
+## Sites:
+
+- https://devchat.devolio.net/hellocode/
+- http://up-for-grabs.net/
+- https://www.codetriage.com/
+
+Look at this link from just a month ago. So. much. help. https://www.reddit.com/r/learnprogramming/comments/5wgefy/many_devs_here_on_reddit_and_on_slack_were_asking/
