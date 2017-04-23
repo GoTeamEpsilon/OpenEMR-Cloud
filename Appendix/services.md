@@ -9,6 +9,7 @@
 ## Storage
 - S3 (strong yes)
 - EFS (strong yes)
+- Glacier (not sure yet, but it seems likely some data would have to be archived??)
 
 ## Networking & Content Delivery
 - VPC (strong yes)
