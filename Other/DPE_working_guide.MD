@@ -12,18 +12,17 @@
 - For your Elastic Beanstalk app, you will use the Amazon Linux AMI. This Linux AMI auto-updates, so a lot of security patching is taken care of for you. There will still need to be things you should do to "harden" the instance and this will be covered in this guide. Some examples will be optional.
 
 ## Proto-Guide:
-0. Set up users???
-1. Upload Code.
-2. Set up networks and the necessary security
-3. Launch DB separetely from Elastic Beanstalk??
-4. Launch Elastic Beanstalk app
-5. Encrypt EBS volumes
-6. Harden your Linux instance
-7. Add WAF (it's so cheap!)
-8. Set up Alerts
-9. Something something CouchDB
-10. Add SSL Cert
-11. Other random security services AWS offers
+1. Set up users and KMS
+2. Upload Code.
+3. Set up networks and the necessary security
+4. Launch DB separetely from Elastic Beanstalk??
+5. Launch Elastic Beanstalk app
+6. Encrypt EBS volumes
+7. Harden your Linux instance
+8. Add WAF and SSL Cert
+9. Set up Alerts and Audit Logging
+10. Set up EFS
+
 
 ## Resources:
 - Great series: https://aws.amazon.com/blogs/security/how-to-automate-hipaa-compliance-part-1-use-the-cloud-to-protect-the-cloud/
