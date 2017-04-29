@@ -4,6 +4,49 @@
 - Steps on how to provision OpenEMR in AWS
 - Links to articles and documentation that helped me proof out an AWS devops concept
 
+## Elasticache Memcached Sessions
+
+The default `$_SESSION['...']` data storage mechanism in PHP is the disk of the web server. This is an acceptable solution for OpenEMR until many users and patients are in the system and scaling is needed. For example, load balancing between 4 servers, all with their own `$_SESSION['...']` data, instead of a central cluster will result in errorneous state in the application. AWS Elasticache solves this by providing a Memcached or Redis cache store that can be used by an application to store ephemeral session state such as this.
+
+1) (There will be steps previous to this for base setup)
+2) In the AWS console, navigate to Services > ElastiCache and click "Get Started Now"
+3) Under "Cluster engine" check "Memcached"
+4) Under "Memcached settings" enter "openemr-sessions" for "Name" and leave all default settings
+5) In the Dashboard, wait until "status" is "created" and then expand the row and note the public dns
+
+Somehow php.ini needs to be tweaked to:
+
+```
+session.save_handler = memcached
+session.save_path = 'scheme://ip:port'
+```
+
+Sample program to test with:
+
+```
+<?php
+    header('Content-Type: text/plain');
+    session_start();
+    if(!isset($_SESSION['visit']))
+    {
+        echo "This is the first time you're visiting this server\n";
+        $_SESSION['visit'] = 0;
+    }
+    else
+            echo "Your number of visits: ".$_SESSION['visit'] . "\n";
+
+    $_SESSION['visit']++;
+
+    echo "Server IP: ".$_SERVER['SERVER_ADDR'] . "\n";
+    echo "Client IP: ".$_SERVER['REMOTE_ADDR'] . "\n";
+    print_r($_COOKIE);
+```
+
+If problems arise from the lack of documentation around Elasticache for PHP sessions, bite the bullet and try:
+
+https://aws.amazon.com/blogs/aws/scalable-session-handling-in-php-using-amazon-dynamodb/
+
+
 ## Elastic File System
 
 In OpenEMR, an administrator can add a site to achieve a multi-tenant EMR solution (note that this is _not_ the same as having multiple facilities). By default, OpenEMR ships with the `default` site found in `openemr/sites/default/`. This folder contains uploaded documents, templates, and admin templates.
