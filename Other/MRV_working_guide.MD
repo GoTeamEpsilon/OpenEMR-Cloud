@@ -6,6 +6,8 @@
 
 ## Elasticache Memcached Sessions
 
+NOTE: THIS SECTION IS INCOMPLETE. I NEED TO AUTOMATE THE MEMCACHED INSTALL, PASSWORD PROTECT THE CONNECTION, AND SMOKE TEST WITH OPENEMR SOFTWARE!
+
 The default `$_SESSION['...']` data storage mechanism in PHP is the disk of the web server. This is an acceptable solution for OpenEMR until many users and patients are in the system and scaling is needed. For example, load balancing between 4 servers, all with their own `$_SESSION['...']` data, instead of a central cluster will result in errorneous state in the application. AWS Elasticache solves this by providing a Memcached or Redis cache store that can be used by an application to store ephemeral session state such as this.
 
 1) (There will be steps previous to this for base setup)
@@ -14,15 +16,36 @@ The default `$_SESSION['...']` data storage mechanism in PHP is the disk of the 
 4) Under "Memcached settings" enter "openemr-sessions" for "Name" and leave all default settings
 5) In the Dashboard, wait until "status" is "created" and then expand the row and note the public dns
 
-Somehow php.ini needs to be tweaked to:
+These steps must be automated for EC2 instances:
 
 ```
+sudo apt-get install -y memcached
+service memcached restart
+sudo apt-get install -y php7.0-dev git pkg-config build-essential libmemcached-dev
+git clone https://github.com/php-memcached-dev/php-memcached.git
+cd php-memcached
+git checkout php7
+phpize
+./configure --disable-memcached-sasl
+make
+sudo make install
+```
+
+php.ini needs to include:
+
+```
+[Session]
 session.save_handler = memcached
-session.save_path = 'scheme://ip:port'
+session.save_path = '127.0.0.1:11211'
 ```
 
-Sample program to test with:
+Restart Apache:
 
+```
+sudo service apache2 restart
+```
+
+To test that this all works, create the following test file and visit it in the browser a few times:
 ```
 <?php
     header('Content-Type: text/plain');
@@ -42,10 +65,29 @@ Sample program to test with:
     print_r($_COOKIE);
 ```
 
-If problems arise from the lack of documentation around Elasticache for PHP sessions, bite the bullet and try:
+Which should show something like:
 
-https://aws.amazon.com/blogs/aws/scalable-session-handling-in-php-using-amazon-dynamodb/
+```
+Your number of visits: 4
+Server IP: 127.0.0.1
+Client IP: 127.0.0.1
+Array
+(
+    [PHPSESSID] => 3b66keemv7uu5gi64s5bch8mp2
+)
+```
 
+Next, open up a terminal and run:
+```
+sudo apt-get install -y libmemcached-tools
+memcdump --server=127.0.0.1
+```
+
+Which should show the key (proves that this works):
+
+```
+memc.sess.3b66keemv7uu5gi64s5bch8mp2
+```
 
 ## Elastic File System
 
