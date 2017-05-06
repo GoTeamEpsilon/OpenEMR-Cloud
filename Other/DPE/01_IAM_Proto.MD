@@ -1,7 +1,6 @@
-- DOWNLOAD GOOGLE AUTHENTICATOR…A VIRTUAL MFA DEVICE
-- LOCK DOWN ROOT USER??
-- STRICT PASSWORD POLICY WITH ROTATION, PREVENT REUSE, SPECIAL SYMBOLS, ETC
-- CREATE IAM USER WITH ADMINISTRATORACCESS…USE THIS ACCOUNT 
-INSTEAD
-- ANY OTHER USERS?
-
+- sign up for AWS
+- download google authenticator…a virtual MFA device
+- set up MFA 
+- strict password policy with rotation, prevent reuse, special symbols, etc
+- create IAM user with administratoraccess…use this account instead
+- any other users??
