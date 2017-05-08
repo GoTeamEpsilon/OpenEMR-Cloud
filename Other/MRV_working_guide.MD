@@ -6,88 +6,72 @@
 
 ## Elasticache Memcached Sessions
 
-NOTE: THIS SECTION IS INCOMPLETE. I NEED TO AUTOMATE THE MEMCACHED INSTALL, PASSWORD PROTECT THE CONNECTION, AND SMOKE TEST WITH OPENEMR SOFTWARE!
+(Memcached in Elasticache has failed me: http://stackoverflow.com/questions/43825089/elasticache-session-start-failed-to-create-session-id (sadface.jpg). Therefore, I'm going to take a different approach entirely...)
 
 The default `$_SESSION['...']` data storage mechanism in PHP is the disk of the web server. This is an acceptable solution for OpenEMR until many users and patients are in the system and scaling is needed. For example, load balancing between 4 servers, all with their own `$_SESSION['...']` data, instead of a central cluster will result in errorneous state in the application. AWS Elasticache solves this by providing a Memcached or Redis cache store that can be used by an application to store ephemeral session state such as this.
 
-1) (There will be steps previous to this for base setup)
-2) In the AWS console, navigate to Services > ElastiCache and click "Get Started Now"
-3) Under "Cluster engine" check "Memcached"
-4) Under "Memcached settings" enter "openemr-sessions" for "Name" and leave all default settings
-5) In the Dashboard, wait until "status" is "created" and then expand the row and note the public dns
-
-These steps must be automated for EC2 instances:
-
-```
-sudo apt-get install -y memcached
-service memcached restart
-sudo apt-get install -y php7.0-dev git pkg-config build-essential libmemcached-dev
-git clone https://github.com/php-memcached-dev/php-memcached.git
-cd php-memcached
-git checkout php7
-phpize
-./configure --disable-memcached-sasl
-make
-sudo make install
-```
-
-php.ini needs to include:
+0) Steps to create a VPC, redis security group, keypair, ssh, etc go here!
+1) In the AWS console, navigate to Services > EC2 and click "Launch Instance"
+2) Under "Quick Start", select "Ubuntu Server 16.04 LTS (HVM), SSD Volume Type" (ami-80861296)
+3) Under "Choose an Instance Type", select your instance size (the bigger the better because this cache is scaled vertically), then click "Next: Configure Instance Details"
+4) Under "Network", select VPC from step 0 then click "Next: Add Storage"
+5) Under "Size", select the disk GBs (Redis saves data to disk from time to time, so consider your scale and select the size accordingly) then click "Review and Launch"
+6) When "Select an existing key pair or create a new key pair" dialog shows up, select your key pair and click "Launch Instances"
+7) Navigate to Services > EC2 > Running Instances and identify the new instance being initialized.
+8) Click the edit icon in the "Name" column and call the instance "Redis"
+9) Wait for the instances to be fully running
+10) Using the Public DNS at the bottom right, ssh into the instance with the `ubuntu` user
+11) Run `cd ~ && touch x.sh && chmod +x x.sh && vi x.sh` and then enter the following code:
 
 ```
-[Session]
-session.save_handler = memcached
-session.save_path = '127.0.0.1:11211'
+#!/bin/bash
+
+sudo apt-get install -y docker.io
+sudo usermod -aG docker ubuntu
+sudo gpasswd -a $USER docker
+sudo service docker restart
+newgrp docker
+docker pull docker.io/redis
+docker run -d --name redis_server -p 6379:6379 redis
 ```
 
-Restart Apache:
+12) Run `sudo ./x.sh && rm x.sh
+13) Once complete, run `sudo vi /etc/systemd/system/redis-container.service` and then enter the following content:
 
 ```
-sudo service apache2 restart
+[Unit]
+Description=Redis container
+After=docker.service
+
+[Service]
+Restart=always
+ExecStart=/usr/bin/docker start -a redis_server
+ExecStop=/usr/bin/docker stop -t 2 redis_server
+
+[Install]
+WantedBy=local.target
 ```
 
-To test that this all works, create the following test file and visit it in the browser a few times:
-```
-<?php
-    header('Content-Type: text/plain');
-    session_start();
-    if(!isset($_SESSION['visit']))
-    {
-        echo "This is the first time you're visiting this server\n";
-        $_SESSION['visit'] = 0;
-    }
-    else
-            echo "Your number of visits: ".$_SESSION['visit'] . "\n";
-
-    $_SESSION['visit']++;
-
-    echo "Server IP: ".$_SERVER['SERVER_ADDR'] . "\n";
-    echo "Client IP: ".$_SERVER['REMOTE_ADDR'] . "\n";
-    print_r($_COOKIE);
-```
-
-Which should show something like:
+14) Once complete run `sudo systemctl enable redis-container.service && sudo systemctl start redis-container.service` and wait a moment
+15) Run `sudo lsof -i :6379` and check for and make sure `docker-pr` is shown under the `COMMAND` column
+16) (Steps to apply the locked down redis security group to the instance and then to elasticbeanstalk for access)
+17) (Steps to apply a fixed IP address to the redis instance)
+18) (Steps on how to apply .ebextensions/redis-sessions.config)
 
 ```
-Your number of visits: 4
-Server IP: 127.0.0.1
-Client IP: 127.0.0.1
-Array
-(
-    [PHPSESSID] => 3b66keemv7uu5gi64s5bch8mp2
-)
-```
-
-Next, open up a terminal and run:
-```
-sudo apt-get install -y libmemcached-tools
-memcdump --server=127.0.0.1
-```
-
-Which should show the key (proves that this works):
-
-```
-memc.sess.3b66keemv7uu5gi64s5bch8mp2
-```
+files:
+  "/etc/php.d/project.ini" :
+    mode: "000644"
+    owner: root
+    group: root
+    content: |
+      [Session]
+      session.save_handler = redis
+      session.save_path = "tcp://ec2-54-160-234-194.compute-1.amazonaws.com:6379"
+container_commands:
+  01_install_redis_php_extension:
+    command: "sudo yum -y --enablerepo=remi,remi-test install php70-pecl-redis
+```    
 
 ## Elastic File System
 
