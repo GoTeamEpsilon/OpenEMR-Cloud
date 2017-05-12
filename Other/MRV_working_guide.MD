@@ -4,7 +4,7 @@
 - Steps on how to provision OpenEMR in AWS
 - Links to articles and documentation that helped me proof out an AWS devops concept
 
-## Elasticache Memcached Sessions
+## Redis Sessions
 
 (Memcached in Elasticache has failed me: http://stackoverflow.com/questions/43825089/elasticache-session-start-failed-to-create-session-id (sadface.jpg). Therefore, I'm going to take a different approach entirely...)
 
@@ -19,24 +19,18 @@ The default `$_SESSION['...']` data storage mechanism in PHP is the disk of the 
 6) When "Select an existing key pair or create a new key pair" dialog shows up, select your key pair and click "Launch Instances"
 7) Navigate to Services > EC2 > Running Instances and identify the new instance being initialized.
 8) Click the edit icon in the "Name" column and call the instance "Redis"
-9) Wait for the instances to be fully running
-10) Using the Public DNS at the bottom right, ssh into the instance with the `ubuntu` user
-11) Run `cd ~ && touch x.sh && chmod +x x.sh && vi x.sh` and then enter the following code:
-
-```
-#!/bin/bash
-
-sudo apt-get install -y docker.io
-sudo usermod -aG docker ubuntu
-sudo gpasswd -a $USER docker
-sudo service docker restart
-newgrp docker
-docker pull docker.io/redis
-docker run -d --name redis_server -p 6379:6379 redis
-```
-
-12) Run `sudo ./x.sh && rm x.sh
-13) Once complete, run `sudo vi /etc/systemd/system/redis-container.service` and then enter the following content:
+9) Wait for the instance to be fully running
+10) Navigate to Services > VPC and click "Elastic IPs"
+11) Click "Allocate new address" and then "Allocate"
+12) After a moment a green "New address request succeeded" message will appear. Note the IP and click "Close".
+13) Check the recent created IP, click the "Actions" dropdown, and click "Associate address"
+14) Under "Instance" select the "Redis" instance
+15) Under "Private IP" select the first dropdown value and note this address
+16) Click "Associate" and then "Close"
+17) Using the Public DNS at the bottom right, ssh into the instance with the `ubuntu` user
+18) Run `sudo apt-get install -y docker.io && sudo usermod -aG docker ubuntu && sudo gpasswd -a $USER docker && sudo service docker restart && newgrp docker` to install Docker and associate it with the system user
+19) Run `docker pull docker.io/redis && docker run -d --name redis_server -p 6379:6379 redis` to spin up a redis image
+20) Run `sudo vi /etc/systemd/system/redis-container.service` and then enter the following content
 
 ```
 [Unit]
@@ -52,11 +46,24 @@ ExecStop=/usr/bin/docker stop -t 2 redis_server
 WantedBy=local.target
 ```
 
-14) Once complete run `sudo systemctl enable redis-container.service && sudo systemctl start redis-container.service` and wait a moment
-15) Run `sudo lsof -i :6379` and check for and make sure `docker-pr` is shown under the `COMMAND` column
-16) (Steps to apply the locked down redis security group to the instance and then to elasticbeanstalk for access)
-17) (Steps to apply a fixed IP address to the redis instance)
-18) (Steps on how to apply .ebextensions/redis-sessions.config)
+21) Once complete run `sudo systemctl enable redis-container.service && sudo systemctl start redis-container.service` and wait a moment
+22) Run `sudo lsof -i :6379` and check for and make sure `docker-pr` is shown under the `COMMAND` column
+21) Navigate to Services > EC2 > Running Instances and select the Redis instance
+22) Under "Security groups" in the bottom pane (note: this step is not referring to the "Security Groups" link in the left pane), click the security group starting with "launch-wizard-"
+23) Note the "Group ID"
+24) Click the "Actions" dropdown and click "Edit inbound rules"
+25) Under Type, select "Custom TCP Port" (will originally be "SSH")
+26) Under Port Range, enter 6379 and click "Save"
+27) Click the "Security Groups" link in the left pane and locate the row with the Group ID noted in step 23
+28) Click the "Actions" dropdown and click "Copy to new"
+29) Under "Security group name", enter "redis-security-group"
+30) Under "Description", enter "Restricted Redis security group", click "Create", and note the Group ID
+31) Navigate to Services > EC2 > Running Instances and select the Redis instance
+32) Click the "Actions" dropdown and click "Networking" > "Change Security Groups"
+33) Uncheck the Security Group noted in step 23
+34) Check the Security Group noted in step 29
+35) Click "Assign Security Group"
+36) Open your local OpenEMR project and add `redis-sessions.config` to the `.ebextensions` directory (replace `{{REDIS_IP}}` with the address noted in step 15)
 
 ```
 files:
@@ -67,11 +74,41 @@ files:
     content: |
       [Session]
       session.save_handler = redis
-      session.save_path = "tcp://ec2-54-160-234-194.compute-1.amazonaws.com:6379"
+      session.save_path = "tcp://{{REDIS_IP}}:6379"
 container_commands:
   01_install_redis_php_extension:
-    command: "sudo yum -y --enablerepo=remi,remi-test install php70-pecl-redis
-```    
+    command: "wget http://rpms.famillecollet.com/enterprise/remi-release-6.rpm && rpm -Uvh remi-release-6.rpm && sudo yum -y --enablerepo=remi,remi-test install php70-pecl-redis"
+```
+
+37) Deploy the application
+
+TODO:
+- When rebooting the Redis instance, Dockerized Redis Systemd does NOT start
+- Need to lock down the redis security group source (current it's 0.0.0.0/0)
+
+NOTES:
+This is the test program I am using to test this (make sure you have the .ebextensions folder in place):
+
+```
+<?php
+    header('Content-Type: text/plain');
+    session_start();
+    if(!isset($_SESSION['visit']))
+    {
+        echo "This is the first time you're visiting this server\n";
+        $_SESSION['visit'] = 0;
+    }
+    else
+            echo "Your number of visits: ".$_SESSION['visit'] . "\n";
+
+    $_SESSION['visit']++;
+
+    echo "Server IP: ".$_SERVER['SERVER_ADDR'] . "\n";
+    echo "Client IP: ".$_SERVER['REMOTE_ADDR'] . "\n";
+    print_r($_COOKIE);
+	
+	session_write_close();
+```
 
 ## Elastic File System
 
