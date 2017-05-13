@@ -28,7 +28,7 @@ The default `$_SESSION['...']` data storage mechanism in PHP is the disk of the 
 15. Under "Private IP" select the first dropdown value and note this address
 16. Click "Associate" and then "Close"
 17. Using the Public DNS at the bottom right, ssh into the instance with the `ubuntu` user
-18. Run `sudo apt-get update -y && sudo apt-get install -y redis-server` to install Docker and associate it with the system user
+18. Run `sudo apt-get update -y && sudo apt-get install -y redis-server` to install Redis and the Redis service
 19. Run `sudo vi /etc/redis/redis.conf` and comment out the `bind 127.0.0.1` line
 20. Run `sudo service redis-server restart`
 21. Navigate to Services > EC2 > Running Instances and select the Redis instance
