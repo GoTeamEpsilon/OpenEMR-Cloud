@@ -6,37 +6,39 @@ A turnkey solution for small facilities and hospitals to run their OpenEMR v5 in
 
 Many OpenEMR users run the system on premise and have not yet realized the benefits of cloud technologies. This step-by-step guide provides a straightforward approach in getting OpenEMR deployed to the cloud in a secure and reliable way.
 
+This entire process should take about an hour. Be sure to follow the steps exactly and if any instruction confuses you, [enter a bug](https://github.com/GoTeamEpsilon/OpenEMR-AWS-Guide/issues) so our team can improve the wording.
+
 ## 🚴 Getting Started
 
-This entire process should take about an hour. Be sure to follow the steps exactly and if any instruction confuses you, [enter a bug](https://github.com/GoTeamEpsilon/OpenEMR-AWS-Guide/issues) so our team can improve the process.
-
-#### To start things off, let's clone OpenEMR v5 to the local computer.
+**Start by getting a local copy of OpenEMR v5**
 
 1. Download the latest [tarball](http://sourceforge.net/projects/openemr/files/OpenEMR%20Current/5.0.0/openemr-5.0.0.tar.gz/download).
-2. Extract the contents with your favorite archive extractor (If you aren't sure, install [7Zip](http://www.7-zip.org/a/7z1700-x64.exe) program and right click the downloaded file to access 7Zip extraction).
+2. Extract the contents with your favorite archive extractor (If you aren't sure, install [7Zip](http://www.7-zip.org/a/7z1700-x64.exe) program and right click the downloaded file to access [7Zip extraction](https://www.youtube.com/watch?v=Z73m14PGs88)).
 3. Enter into the "**openemr-5.0.0**" directory.
 4. Create the "**.ebextensions**" AWS specific directory for the purposes of this guide with (If you aren't sure, follow [this approach](https://superuser.com/a/331924) to create such a directory).
-5. Download the [assets/openemr-dependencies.config](assets/openemr-dependencies.config) to your local "**openemr-5.0.0/.ebextensions/**" directory.
 
-#### Let’s create an AWS account and set you up as an administrative user.
+**Create an AWS Account**
 
 1. Navigate to [https://aws.amazon.com/](https://aws.amazon.com/), and then choose **Create an AWS Account**.
 2. Follow along with the signup wizard.
-3. Now that you are logged into the AWS Management Console, click **Services** and then choose **IAM**.
-4. In the left pane, click **Users**.
-5. Click **Add user**.
-6. Under **Set user details**, enter your username in the **User name** field.
-7. Under **Select AWS access type**, select **Programmatic access** in the **Access type** area.
-8. Click **Next: Permissions**.
-9. Under **Set permissions for ...**, click the **Attach existing policies directly**  box.
-10. With the table at the bottom of the page in view, select **AdministratorAccess** (will be the first row).
-11. Click **Next: Review**.
-12. Under **Review**, ensure all information reflects the above steps.
-13. Click **Next: Create user**.
+
+**Add yourself as an administrative user**
+
+1. Now that you are logged into the AWS Management Console, click **Services** and then choose **IAM**.
+2. In the left pane, click **Users**.
+3. Click **Add user**.
+4. Under **Set user details**, enter your username in the **User name** field.
+5. Under **Select AWS access type**, select **Programmatic access** in the **Access type** area.
+6. Click **Next: Permissions**.
+7. Under **Set permissions for ...**, click the **Attach existing policies directly**  box.
+8. With the table at the bottom of the page in view, select **AdministratorAccess** (will be the first row).
+9. Click **Next: Review**.
+10. Under **Review**, ensure all information reflects the above steps.
+11. Click **Next: Create user**.
 
 ## ☁️ Private Cloud
 
-Locking down system components to a private virtual network provides an extra layer of security and configurability on the cloud. The following steps will step up a network with outbound access to the public internet.
+**Lock down your system components with a private virtual network**
 
 1. In the AWS Management Console, click **Services** and then choose **Start VPC Wizard**.
 2. Click **VPC with a Single Public Subnet** and click **Select**.
@@ -45,7 +47,7 @@ Locking down system components to a private virtual network provides an extra la
 
 ## 📁 Network File System
 
-OpenEMR stores patient documents and site-specific data on disk. Setting up a network file system to store these files will provide an access mechanism for each server.
+**Provide a network file system to store patient documents and site configuration across systems**
 
 1. In the AWS Management Console, click **Services** and then choose **EFS**.
 2. Click **Create file system**.
@@ -58,12 +60,15 @@ OpenEMR stores patient documents and site-specific data on disk. Setting up a ne
 9. Click **Create File System**.
 10. Wait a few moments.
 11. Note the **File System ID**. Make sure this is recorded in a safe place.
-12. Download the [assets/storage-efs-mountfilesystem.config](assets/storage-efs-mountfilesystem.config) to your local "**openemr-5.0.0/.ebextensions/**" directory.
-13. Open "**openemr-5.0.0/.ebextensions/storage-efs-mountfilesystem.config**" and replace "**{{FS_ID_HERE}}**" with your noted ID from before. If you aren't sure, Install [Notepad++](https://notepad-plus-plus.org/repository/7.x/7.3.3/npp.7.3.3.Installer.exe) and right click the file to access Notepad++ editing.
+
+**Configure OpenEMR servers to mount the shared drive on bootup**
+
+1. Download the [assets/storage-efs-mountfilesystem.config](assets/storage-efs-mountfilesystem.config) to your local "**openemr-5.0.0/.ebextensions/**" directory.
+2. Open "**openemr-5.0.0/.ebextensions/storage-efs-mountfilesystem.config**" and replace "**{{FS_ID_HERE}}**" with your noted ID from before. If you aren't sure, Install [Notepad++](https://notepad-plus-plus.org/repository/7.x/7.3.3/npp.7.3.3.Installer.exe) and right click the file to access Notepad++ editing.
 
 ## 💽 Database System
 
-MySQL is the database of OpenEMR. Fortunately, it is trivial to set up a managed database in the cloud that will scale, self-heal, and backup without manual intervention.
+**Create a fully managed MySQL database**
 
 1. In the AWS Management Console, click **Services** and then choose **RDS**.
 2. Under **Create Instance**, click **Launch a DB Instance**.
@@ -82,92 +87,139 @@ MySQL is the database of OpenEMR. Fortunately, it is trivial to set up a managed
     2. In **Master User**, enter "**openemr_db_user**".
     3. In **Master Password**, enter a [strong password](https://www.random.org/passwords/). Make sure this is recorded in a safe place.
 9. Click **Next Step**.
-10. Apply the following under **Network & Security**:
+
+**Restrict database access to your private network**
+
+1. Apply the following under **Network & Security**
     1. In **VPC**, select "**openemr-vpc**".
     2. In **Subnet Group**, select "**default**".
     3. In **Publicly Accessible**, select "**No**".
     4. In **Availability Zone**, select your preferred zone. If you aren't sure, select "**No Preference**".
     5. In **VPC Security Group(s)**, select "**Create new Security Group**".
-11. Apply the following under **Database Options**:
+2. Apply the following under **Database Options**:
     1. In **Database Name**, enter "**openemr-db**".
     2. In **Database Port**, enter "**3306**".
     3. In **DB Parameter Group**, select "**default.mysql5.6**".
     4. In **Option Group**, select "**default:mysql-5-6**".
     5. In **Copy Tags To Snapshots**, uncheck box.
-12. Apply the following under **Backup**:
+
+**Setup a data backup strategy**
+
+1. Apply the following under **Backup**:
     1. In **Backup Retention Period**, select your preferred days. If you aren't sure, select "**7**".
     2. In **Backup Window**, select "**Select Window**" and choose your preferred window. If you aren't sure, select "**00:00**".
-13. Apply the following under **Monitoring**:
+
+**Allow for system health checks**
+
+1. Apply the following under **Monitoring**:
     1. In **Enable Enhanced Monitoring**, select "**Yes**".
     2. In **Monitoring Role**, select "**Default**".
     3. In **Granularity**, select your preferred second(s). If you aren't sure, select "**60**".
-14. Apply the following under **Maintenance**:
+
+**Permit minor safety updates to your database engine**
+
+1. Apply the following under **Maintenance**:
     1. In **Auto Minor Version Upgrade**, select your preferred strategy. If you aren't sure, select "**Yes**".
     2. In **Maintenance Window**, and choose your preferred window. If you aren't sure, select "**00:00**".
-15. Click **Launch Instance**.
-16. Click **View your db instances**.
-17. Wait a few moments.
-18. Click on the first row of the **Instances** table.
-19. Record the **Endpoint** in a safe place.
+
+**Launch your fully configured database**
+
+1. Click **Launch Instance**.
+2. Click **View your db instances**.
+3. Wait a few moments.
+4. Click on the first row of the **Instances** table.
+5. Record the **Endpoint** in a safe place.
 
 ## 💻 Session Management
 
-In order to support running OpenEMR on many servers, user session data must be stored in a centralized area. Redis will be used for this purpose.
+**Setup Redis cache for user session data storage across servers**
 
 1. In the AWS Management Console, click **Services**, **EC2**, and then choose **Launch Instance**.
 2. Under **Quick Start**, select "**Ubuntu Server 16.04 LTS (HVM), SSD Volume Type**" (ami-80861296).
 3. Under **Choose an Instance Type**, select your preferred instance size. If you aren't sure, select "**t2.medium**".
 4. Click **Next: Configure Instance Details**.
-5. Under **Network**, select "**openemr-vpc**".
-6. Click **Next: Add Storage**.
-7. Under **Size**, select your preferred disk size. If you aren't sure, enter "**10GB**".
-8. Click **Review and Launch**.
-9. Wait a few moments.
-10. When **Select an existing key pair or create a new key pair** dialog shows up, select your key pair and click **Launch Instances**.
-11. In the AWS Management Console, click **EC2** and then click **Running Instances**.
-12. Wait a few moments.
-13. Identify the recently created instance.
-14. Click the icon in the **Name** column and call the instance "**openemr-redis**".
-15. In the AWS Management Consule, click **Services**, **VPC**, and then choose **Elastic IPs**.
-16. Click **Allocate new address** and then click **Allocate**.
-17. Wait a few moments.
-18. A **New address request succeeded** appear. Note the IP in a safe place.
-19. Click **Close**.
-20. Checkbox the recent created IP.
-21. Click the **Actions** dropdown.
-22. Click **Associate address**.
-23. Under **Instance**, select "**openemr-redis**".
-24. Under **Private IP**, select the first dropdown value and note the IP in a safe place.
-25. Click **Associate**.
-26. Click **Close**.
-27. SSH into the Redis server and copy/paste [assets/redis-setup.sh](assets/redis-setup.sh) to an executable file and run it. if you aren't sure, watch [this video](www.youtube.com).
-28. In the AWS Management Console, click **EC2** and then click **Running Instances**.
-29. Select the "**openemr-redis**" instance.
-30. Under **Security groups** in the bottom pane, click the group starting with "**launch-wizard-"**.
-31. Note the **Group IP** in a safe place.
-32. Click the **Actions** dropdown.
-33. Click **Edit inbound rules**.
-34. Under **Type**, select "**Custom TCP Port**" (will originally be "**SSH**").
-35. Under **Port Range**, enter 6379 and click **Save**.
-36. Download [assets/redis-sessions.config](assets/redis-sessions.config) to your local "**openemr-5.0.0/.ebextensions/**" directory.
-37. Open "**openemr-5.0.0/.ebextensions/redis-sessions.config**" and replace "**{{REDIS_IP}}**" with your noted ID from before (step 18). If you aren't sure, Install [Notepad++](https://notepad-plus-plus.org/repository/7.x/7.3.3/npp.7.3.3.Installer.exe) and right click the file to access Notepad++ editing.
 
+**Associate cache with your private network**
+
+1. Under **Network**, select "**openemr-vpc**".
+
+**Provide disk space for the cache when occasional writes are made outside of memory**
+
+1. Click **Next: Add Storage**.
+2. Under **Size**, select your preferred disk size. If you aren't sure, enter "**10GB**".
+
+**Launch the instance**
+1. Click **Review and Launch**.
+2. Wait a few moments.
+3. When **Select an existing key pair or create a new key pair** dialog shows up, select your key pair and click **Launch Instances**.
+
+**Specify the name and location of instance**
+
+1. In the AWS Management Console, click **EC2** and then click **Running Instances**.
+2. Wait a few moments.
+3. Identify the recently created instance.
+4. Click the icon in the **Name** column and call the instance "**openemr-redis**".
+5. In the AWS Management Consule, click **Services**, **VPC**, and then choose **Elastic IPs**.
+6. Click **Allocate new address** and then click **Allocate**.
+7. Wait a few moments.
+8. A **New address request succeeded** appear. Note the IP in a safe place.
+9. Click **Close**.
+10. Checkbox the recent created IP.
+11. Click the **Actions** dropdown.
+12. Click **Associate address**.
+13. Under **Instance**, select "**openemr-redis**".
+14. Under **Private IP**, select the first dropdown value and note the IP in a safe place.
+15. Click **Associate**.
+16. Click **Close**.
+
+**Provision the server**
+
+1. SSH into the Redis server and copy/paste [assets/redis-setup.sh](assets/redis-setup.sh) to an executable file and run it. If you aren't sure, watch [this video](www.youtube.com).
+
+**Lock down the server**
+1. In the AWS Management Console, click **EC2** and then click **Running Instances**.
+2. Select the "**openemr-redis**" instance.
+3. Under **Security groups** in the bottom pane, click the group starting with "**launch-wizard-"**.
+4. Note the **Group IP** in a safe place.
+5. Click the **Actions** dropdown.
+6. Click **Edit inbound rules**.
+7. Under **Type**, select "**Custom TCP Port**" (will originally be "**SSH**").
+8. Under **Port Range**, enter 6379 and click **Save**.
+
+**Configure OpenEMR servers to point at the cache**
+
+1. Download [assets/redis-sessions.config](assets/redis-sessions.config) to your local "**openemr-5.0.0/.ebextensions/**" directory.
+2. Open "**openemr-5.0.0/.ebextensions/redis-sessions.config**" and replace "**{{REDIS_IP}}**" with your noted ID from before. If you aren't sure, Install [Notepad++](https://notepad-plus-plus.org/repository/7.x/7.3.3/npp.7.3.3.Installer.exe) and right click the file to access Notepad++ editing.
 
 ## 🖥️ Application Servers
 
-1. Archive **openemr-5.0.0** as "**openemr-5.0.0-deployment-1.zip**". If you aren't sure, install [7Zip](http://www.7-zip.org/a/7z1700-x64.exe) program and right click the folder to access 7Zip archival.
-2. In the AWS Management Console, click **Services**, **Elastic Beanstalk**, and then choose **Create New Application**.
-3. Enter "**openemr**" for the **Application Name**
-4. Click **Create**.
-5. Under **Environments**, click **Create one now**.
-6. Select **Web server environment** and click **Select**.
-7. Under **Preconfigured platform**, select "**PHP**".
-8. Under **Application code**, radio check **Upload your code**.
-9. Click **Upload** and select "**openemr-5.0.0-deployment-1.zip**".
-10. At the bottom of the page, click **Configure more options**.
-11. Under **Configuration presets**, radio check "**Custom configuration**".
-12. Under **Network**, click **Modify**.
-13. Under **Virtual private cloud (VPC)**, select "**openemr-vpc**".
+_this section is under construction!!!_
+
+**Configure OpenEMR servers to satify system dependencies on startup**
+
+1. Download the [assets/openemr-dependencies.config](assets/openemr-dependencies.config) to your local "**openemr-5.0.0/.ebextensions/**" directory.
+
+**Prepare your first deployment**
+1. Archive **openemr-5.0.0** as "**openemr-5.0.0-deployment-1.zip**". If you aren't sure, install [7Zip](http://www.7-zip.org/a/7z1700-x64.exe) program and right click the folder to access [7Zip archival](https://www.youtube.com/watch?v=Z73m14PGs88).
+
+**Establish fully managed web server infrastructure**
+
+1. In the AWS Management Console, click **Services**, **Elastic Beanstalk**, and then choose **Create New Application**.
+2. Enter "**openemr**" for the **Application Name**
+3. Click **Create**.
+4. Under **Environments**, click **Create one now**.
+5. Select **Web server environment** and click **Select**.
+6. Under **Preconfigured platform**, select "**PHP**".
+
+**Upload your first deployment**
+1. Under **Application code**, radio check **Upload your code**.
+2. Click **Upload** and select "**openemr-5.0.0-deployment-1.zip**".
+
+**Lock down your environment**
+1. At the bottom of the page, click **Configure more options**.
+2. Under **Configuration presets**, radio check "**Custom configuration**".
+3. Under **Network**, click **Modify**.
+4. Under **Virtual private cloud (VPC)**, select "**openemr-vpc**".
 14. _... TODO ... Check all items in "Load balancer subnets",_
 15. _... TODO ... "Instance subnets", and "Instance security groups", and click "Save"_
 16. _... TODO ...  Under "Environment settings", click "Modify"_
@@ -176,11 +228,18 @@ In order to support running OpenEMR on many servers, user session data must be s
 19. _... TODO ...  Under "Auto Scaling Group", enter "2" for "min" and click "Save"_
 20. _... TODO ...  Click "Create environment"_
 
-## ▶️ Domain Setup
+**Configure OpenEMR for use**
+1. _... TODO ... some general install steps to make sure everything is working_
 
-_... TODO ..._
+## ▶️ Secure Domain Setup
+
+_this section is under construction!!!_
+
+Talk about purchasing a domain and using https.
 
 ## 🎛️ Administration
+
+_this section is under construction!!!_
 
 Should answer the questions:
 - _... TODO ... How do I access the logs?_
