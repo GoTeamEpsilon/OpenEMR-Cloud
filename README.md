@@ -10,19 +10,19 @@ This entire process should take about an hour. Be sure to follow the steps exact
 
 ## 🚴 Getting Started
 
-**Start by getting a local copy of OpenEMR v5**
+#### Start by getting a local copy of OpenEMR v5
 
 1. Download the latest [tarball](http://sourceforge.net/projects/openemr/files/OpenEMR%20Current/5.0.0/openemr-5.0.0.tar.gz/download).
 2. Extract the contents with your favorite archive extractor (If you aren't sure, install [7Zip](http://www.7-zip.org/a/7z1700-x64.exe) program and right click the downloaded file to access [7Zip extraction](https://www.youtube.com/watch?v=Z73m14PGs88)).
 3. Enter into the "**openemr-5.0.0**" directory.
 4. Create the "**.ebextensions**" AWS specific directory for the purposes of this guide with (If you aren't sure, follow [this approach](https://superuser.com/a/331924) to create such a directory).
 
-**Create an AWS Account**
+#### Create an AWS Account
 
 1. Navigate to [https://aws.amazon.com/](https://aws.amazon.com/), and then choose **Create an AWS Account**.
 2. Follow along with the signup wizard.
 
-**Add yourself as an administrative user**
+#### Add yourself as an administrative user
 
 1. Now that you are logged into the AWS Management Console, click **Services** and then choose **IAM**.
 2. In the left pane, click **Users**.
@@ -38,7 +38,7 @@ This entire process should take about an hour. Be sure to follow the steps exact
 
 ## ☁️ Private Cloud
 
-**Lock down your system components with a private virtual network**
+#### Lock down your system components with a private virtual network
 
 1. In the AWS Management Console, click **Services** and then choose **Start VPC Wizard**.
 2. Click **VPC with a Single Public Subnet** and click **Select**.
@@ -47,7 +47,7 @@ This entire process should take about an hour. Be sure to follow the steps exact
 
 ## 📁 Network File System
 
-**Provide a network file system to store patient documents and site configuration across systems**
+#### Provide a network file system to store patient documents and site configuration across systems
 
 1. In the AWS Management Console, click **Services** and then choose **EFS**.
 2. Click **Create file system**.
@@ -61,14 +61,14 @@ This entire process should take about an hour. Be sure to follow the steps exact
 10. Wait a few moments.
 11. Note the **File System ID**. Make sure this is recorded in a safe place.
 
-**Configure OpenEMR servers to mount the shared drive on bootup**
+#### Configure OpenEMR servers to mount the shared drive on bootup
 
 1. Download the [assets/storage-efs-mountfilesystem.config](assets/storage-efs-mountfilesystem.config) to your local "**openemr-5.0.0/.ebextensions/**" directory.
 2. Open "**openemr-5.0.0/.ebextensions/storage-efs-mountfilesystem.config**" and replace "**{{FS_ID_HERE}}**" with your noted ID from before. If you aren't sure, Install [Notepad++](https://notepad-plus-plus.org/repository/7.x/7.3.3/npp.7.3.3.Installer.exe) and right click the file to access Notepad++ editing.
 
 ## 💽 Database System
 
-**Create a fully managed MySQL database**
+#### Create a fully managed MySQL database
 
 1. In the AWS Management Console, click **Services** and then choose **RDS**.
 2. Under **Create Instance**, click **Launch a DB Instance**.
@@ -88,7 +88,7 @@ This entire process should take about an hour. Be sure to follow the steps exact
     3. In **Master Password**, enter a [strong password](https://www.random.org/passwords/). Make sure this is recorded in a safe place.
 9. Click **Next Step**.
 
-**Restrict database access to your private network**
+#### Restrict database access to your private network
 
 1. Apply the following under **Network & Security**
     1. In **VPC**, select "**openemr-vpc**".
@@ -103,26 +103,26 @@ This entire process should take about an hour. Be sure to follow the steps exact
     4. In **Option Group**, select "**default:mysql-5-6**".
     5. In **Copy Tags To Snapshots**, uncheck box.
 
-**Setup a data backup strategy**
+#### Setup a data backup strategy
 
 1. Apply the following under **Backup**:
     1. In **Backup Retention Period**, select your preferred days. If you aren't sure, select "**7**".
     2. In **Backup Window**, select "**Select Window**" and choose your preferred window. If you aren't sure, select "**00:00**".
 
-**Allow for system health checks**
+#### Allow for system health checks
 
 1. Apply the following under **Monitoring**:
     1. In **Enable Enhanced Monitoring**, select "**Yes**".
     2. In **Monitoring Role**, select "**Default**".
     3. In **Granularity**, select your preferred second(s). If you aren't sure, select "**60**".
 
-**Permit minor safety updates to your database engine**
+#### Permit minor safety updates to your database engine
 
 1. Apply the following under **Maintenance**:
     1. In **Auto Minor Version Upgrade**, select your preferred strategy. If you aren't sure, select "**Yes**".
     2. In **Maintenance Window**, and choose your preferred window. If you aren't sure, select "**00:00**".
 
-**Launch your fully configured database**
+#### Launch your fully configured database
 
 1. Click **Launch Instance**.
 2. Click **View your db instances**.
@@ -132,28 +132,28 @@ This entire process should take about an hour. Be sure to follow the steps exact
 
 ## 💻 Session Management
 
-**Setup Redis cache for user session data storage across servers**
+#### Setup Redis cache for user session data storage across servers
 
 1. In the AWS Management Console, click **Services**, **EC2**, and then choose **Launch Instance**.
 2. Under **Quick Start**, select "**Ubuntu Server 16.04 LTS (HVM), SSD Volume Type**" (ami-80861296).
 3. Under **Choose an Instance Type**, select your preferred instance size. If you aren't sure, select "**t2.medium**".
 4. Click **Next: Configure Instance Details**.
 
-**Associate cache with your private network**
+#### Associate cache with your private network
 
 1. Under **Network**, select "**openemr-vpc**".
 
-**Provide disk space for the cache when occasional writes are made outside of memory**
+#### Provide disk space for the cache when occasional writes are made outside of memory
 
 1. Click **Next: Add Storage**.
 2. Under **Size**, select your preferred disk size. If you aren't sure, enter "**10GB**".
 
-**Launch the instance**
+#### Launch the instance
 1. Click **Review and Launch**.
 2. Wait a few moments.
 3. When **Select an existing key pair or create a new key pair** dialog shows up, select your key pair and click **Launch Instances**.
 
-**Specify the name and location of instance**
+#### Specify the name and location of instance
 
 1. In the AWS Management Console, click **EC2** and then click **Running Instances**.
 2. Wait a few moments.
@@ -172,11 +172,11 @@ This entire process should take about an hour. Be sure to follow the steps exact
 15. Click **Associate**.
 16. Click **Close**.
 
-**Provision the server**
+#### Provision the server
 
 1. SSH into the Redis server and copy/paste [assets/redis-setup.sh](assets/redis-setup.sh) to an executable file and run it. If you aren't sure, watch [this video](www.youtube.com).
 
-**Lock down the server**
+#### Lock down the server
 1. In the AWS Management Console, click **EC2** and then click **Running Instances**.
 2. Select the "**openemr-redis**" instance.
 3. Under **Security groups** in the bottom pane, click the group starting with "**launch-wizard-"**.
@@ -186,7 +186,7 @@ This entire process should take about an hour. Be sure to follow the steps exact
 7. Under **Type**, select "**Custom TCP Port**" (will originally be "**SSH**").
 8. Under **Port Range**, enter 6379 and click **Save**.
 
-**Configure OpenEMR servers to point at the cache**
+#### Configure OpenEMR servers to point at the cache
 
 1. Download [assets/redis-sessions.config](assets/redis-sessions.config) to your local "**openemr-5.0.0/.ebextensions/**" directory.
 2. Open "**openemr-5.0.0/.ebextensions/redis-sessions.config**" and replace "**{{REDIS_IP}}**" with your noted ID from before. If you aren't sure, Install [Notepad++](https://notepad-plus-plus.org/repository/7.x/7.3.3/npp.7.3.3.Installer.exe) and right click the file to access Notepad++ editing.
@@ -195,14 +195,14 @@ This entire process should take about an hour. Be sure to follow the steps exact
 
 _this section is under construction!!!_
 
-**Configure OpenEMR servers to satify system dependencies on startup**
+#### Configure OpenEMR servers to satify system dependencies on startup
 
 1. Download the [assets/openemr-dependencies.config](assets/openemr-dependencies.config) to your local "**openemr-5.0.0/.ebextensions/**" directory.
 
-**Prepare your first deployment**
+#### Prepare your first deployment
 1. Archive **openemr-5.0.0** as "**openemr-5.0.0-deployment-1.zip**". If you aren't sure, install [7Zip](http://www.7-zip.org/a/7z1700-x64.exe) program and right click the folder to access [7Zip archival](https://www.youtube.com/watch?v=Z73m14PGs88).
 
-**Establish fully managed web server infrastructure**
+#### Establish fully managed web server infrastructure
 
 1. In the AWS Management Console, click **Services**, **Elastic Beanstalk**, and then choose **Create New Application**.
 2. Enter "**openemr**" for the **Application Name**
@@ -211,11 +211,11 @@ _this section is under construction!!!_
 5. Select **Web server environment** and click **Select**.
 6. Under **Preconfigured platform**, select "**PHP**".
 
-**Upload your first deployment**
+#### Upload your first deployment
 1. Under **Application code**, radio check **Upload your code**.
 2. Click **Upload** and select "**openemr-5.0.0-deployment-1.zip**".
 
-**Lock down your environment**
+#### Lock down your environment
 1. At the bottom of the page, click **Configure more options**.
 2. Under **Configuration presets**, radio check "**Custom configuration**".
 3. Under **Network**, click **Modify**.
@@ -228,7 +228,7 @@ _this section is under construction!!!_
 19. _... TODO ...  Under "Auto Scaling Group", enter "2" for "min" and click "Save"_
 20. _... TODO ...  Click "Create environment"_
 
-**Configure OpenEMR for use**
+#### Configure OpenEMR for use
 1. _... TODO ... some general install steps to make sure everything is working_
 
 ## ▶️ Secure Domain Setup
