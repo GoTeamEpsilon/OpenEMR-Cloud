@@ -10,15 +10,15 @@ Many OpenEMR users run the system on premise and have not yet realized the benef
 
 This entire process should take about an hour. Be sure to follow the steps exactly and if any instruction confuses you, [enter a bug](https://github.com/GoTeamEpsilon/OpenEMR-AWS-Guide/issues) so our team can improve the process.
 
-### To start things off, let's clone OpenEMR v5 to the local computer.
+#### To start things off, let's clone OpenEMR v5 to the local computer.
 
 1. Download the latest [tarball](http://sourceforge.net/projects/openemr/files/OpenEMR%20Current/5.0.0/openemr-5.0.0.tar.gz/download).
 2. Extract the contents with your favorite archive extractor (If you aren't sure, install [7Zip](http://www.7-zip.org/a/7z1700-x64.exe) program and right click the downloaded file to access 7Zip extraction).
 3. Enter into the "**openemr-5.0.0**" directory.
 4. Create the "**.ebextensions**" AWS specific directory for the purposes of this guide with (If you aren't sure, follow [this approach](https://superuser.com/a/331924) to create such a directory).
-5. Download the [openemr-dependencies.config](assets/openemr-dependencies.config) to your local "**openemr-5.0.0/.ebextensions/**" directory.
+5. Download the [assets/openemr-dependencies.config](assets/openemr-dependencies.config) to your local "**openemr-5.0.0/.ebextensions/**" directory.
 
-### Let’s create an AWS account and set you up as an administrative user.
+#### Let’s create an AWS account and set you up as an administrative user.
 
 1. Navigate to [https://aws.amazon.com/](https://aws.amazon.com/), and then choose **Create an AWS Account**.
 2. Follow along with the signup wizard.
@@ -58,7 +58,7 @@ OpenEMR stores patient documents and site-specific data on disk. Setting up a ne
 9. Click **Create File System**.
 10. Wait a few moments.
 11. Note the **File System ID**. Make sure this is recorded in a safe place.
-12. Download the [storage-efs-mountfilesystem.config](assets/storage-efs-mountfilesystem.config) to your local "**openemr-5.0.0/.ebextensions/**" directory.
+12. Download the [assets/storage-efs-mountfilesystem.config](assets/storage-efs-mountfilesystem.config) to your local "**openemr-5.0.0/.ebextensions/**" directory.
 13. Open "**openemr-5.0.0/.ebextensions/storage-efs-mountfilesystem.config**" and replace "**{{FS_ID_HERE}}**" with your noted ID from before. If you aren't sure, Install [Notepad++](https://notepad-plus-plus.org/repository/7.x/7.3.3/npp.7.3.3.Installer.exe) and right click the file to access Notepad++ editing.
 
 ## 💽 Database System
@@ -110,7 +110,6 @@ MySQL is the database of OpenEMR. Fortunately, it is trivial to set up a managed
 18. Click on the first row of the **Instances** table.
 19. Record the **Endpoint** in a safe place.
 
-
 ## 💻 Session Management
 
 In order to support running OpenEMR on many servers, user session data must be stored in a centralized area. Redis will be used for this purpose.
@@ -141,7 +140,7 @@ In order to support running OpenEMR on many servers, user session data must be s
 24. Under **Private IP**, select the first dropdown value and note the IP in a safe place.
 25. Click **Associate**.
 26. Click **Close**.
-27. SSH into the Redis server and copy/paste [redis-setup.sh](assets/redis-setup.sh) to an executable file and run it. if you aren't sure, watch [this video](www.youtube.com).
+27. SSH into the Redis server and copy/paste [assets/redis-setup.sh](assets/redis-setup.sh) to an executable file and run it. if you aren't sure, watch [this video](www.youtube.com).
 28. In the AWS Management Console, click **EC2** and then click **Running Instances**.
 29. Select the "**openemr-redis**" instance.
 30. Under **Security groups** in the bottom pane, click the group starting with "**launch-wizard-"**.
@@ -150,7 +149,7 @@ In order to support running OpenEMR on many servers, user session data must be s
 33. Click **Edit inbound rules**.
 34. Under **Type**, select "**Custom TCP Port**" (will originally be "**SSH**").
 35. Under **Port Range**, enter 6379 and click **Save**.
-36. Download [redis-sessions.config](assets/redis-sessions.config) to your local "**openemr-5.0.0/.ebextensions/**" directory.
+36. Download [assets/redis-sessions.config](assets/redis-sessions.config) to your local "**openemr-5.0.0/.ebextensions/**" directory.
 37. Open "**openemr-5.0.0/.ebextensions/redis-sessions.config**" and replace "**{{REDIS_IP}}**" with your noted ID from before (step 18). If you aren't sure, Install [Notepad++](https://notepad-plus-plus.org/repository/7.x/7.3.3/npp.7.3.3.Installer.exe) and right click the file to access Notepad++ editing.
 
 
