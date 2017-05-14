@@ -10,7 +10,7 @@ Many OpenEMR users run the system on premise and have not yet realized the benef
 
 This entire process should take about an hour. Be sure to follow the steps exactly and if any instruction confuses you, [enter a bug](https://github.com/GoTeamEpsilon/OpenEMR-AWS-Guide/issues) so our team can improve the process.
 
-To start things off, let's clone OpenEMR v5 to the local computer.
+### To start things off, let's clone OpenEMR v5 to the local computer.
 
 1. Download the latest [tarball](http://sourceforge.net/projects/openemr/files/OpenEMR%20Current/5.0.0/openemr-5.0.0.tar.gz/download).
 2. Extract the contents with your favorite archive extractor (If you aren't sure, install [7Zip](http://www.7-zip.org/a/7z1700-x64.exe) program and right click the downloaded file to access 7Zip extraction).
@@ -18,7 +18,7 @@ To start things off, let's clone OpenEMR v5 to the local computer.
 4. Create the "**.ebextensions**" AWS specific directory for the purposes of this guide with (If you aren't sure, follow [this approach](https://superuser.com/a/331924) to create such a directory).
 5. Download the [openemr-dependencies.config](assets/openemr-dependencies.config) to your local "**openemr-5.0.0/.ebextensions/**" directory.
 
-Let’s create an AWS account and set you up as an administrative user.
+### Let’s create an AWS account and set you up as an administrative user.
 
 1. Navigate to [https://aws.amazon.com/](https://aws.amazon.com/), and then choose **Create an AWS Account**.
 2. Follow along with the signup wizard.
@@ -156,7 +156,6 @@ In order to support running OpenEMR on many servers, user session data must be s
 
 ## 🖥️ Application Servers
 
-
 1. Archive **openemr-5.0.0** as "**openemr-5.0.0-deployment-1.zip**". If you aren't sure, install [7Zip](http://www.7-zip.org/a/7z1700-x64.exe) program and right click the folder to access 7Zip archival.
 2. In the AWS Management Console, click **Services**, **Elastic Beanstalk**, and then choose **Create New Application**.
 3. Enter "**openemr**" for the **Application Name**
@@ -170,26 +169,26 @@ In order to support running OpenEMR on many servers, user session data must be s
 11. Under **Configuration presets**, radio check "**Custom configuration**".
 12. Under **Network**, click **Modify**.
 13. Under **Virtual private cloud (VPC)**, select "**openemr-vpc**".
-14. ... TODO ... Check all items in "Load balancer subnets", 
-15. ... TODO ... "Instance subnets", and "Instance security groups", and click "Save"
-16. ... TODO ...  Under "Environment settings", click "Modify"
-17. ... TODO ...  Under "Name", enter "OpenEMR" and click "Save"
-18. ... TODO ...  Under "Capacity", click "Modify"
-19. ... TODO ...  Under "Auto Scaling Group", enter "2" for "min" and click "Save"
-20. ... TODO ...  Click "Create environment"
+14. _... TODO ... Check all items in "Load balancer subnets",_
+15. _... TODO ... "Instance subnets", and "Instance security groups", and click "Save"_
+16. _... TODO ...  Under "Environment settings", click "Modify"_
+17. _... TODO ...  Under "Name", enter "OpenEMR" and click "Save"_
+18. _... TODO ...  Under "Capacity", click "Modify"_
+19. _... TODO ...  Under "Auto Scaling Group", enter "2" for "min" and click "Save"_
+20. _... TODO ...  Click "Create environment"_
 
 ## ▶️ Domain Setup
 
-... TODO ...
+_... TODO ..._
 
 ## 🎛️ Administration
 
 Should answer the questions:
-- ... TODO ... How do I access the logs?
-- ... TODO ... How do I configure and see my backups?
-- ... TODO ... How do I make changes to my OpenEMR instance and redeploy it to my cloud?
-- ... TODO ... How do I add other system users?
-- ... TODO ... How do I access the database?
+- _... TODO ... How do I access the logs?_
+- _... TODO ... How do I configure and see my backups?_
+- _... TODO ... How do I make changes to my OpenEMR instance and redeploy it to my cloud?_
+- _... TODO ... How do I add other system users?_
+- _... TODO ... How do I access the database?_
 
 ## 📓 Notes
 
