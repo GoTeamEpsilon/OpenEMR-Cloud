@@ -1,11 +1,117 @@
-Step #1 IAM - CloudFormation Pseudocode for Template
+# Flow of this Template:
+# - Create User...[link](http://docs.aws.amazon.com/AWSCloudFormation/latest/UserGuide/quickref-iam.html#scenario-iam-user)
+# - Create Admin Group with an Admin-like Policy...[link](http://docs.aws.amazon.com/AWSCloudFormation/latest/UserGuide/quickref-iam.html#scenario-iam-group)
+# - Attach User to Admin Group...[link](http://docs.aws.amazon.com/AWSCloudFormation/latest/UserGuide/quickref-iam.html#scenario-iam-addusertogroup)
+# - Lock down Root Account also through CloudFormation???
 
-### Flow of this Template:
-- Create User...[link](http://docs.aws.amazon.com/AWSCloudFormation/latest/UserGuide/quickref-iam.html#scenario-iam-user)
-- Create Admin Group with an Admin-like Policy...[link](http://docs.aws.amazon.com/AWSCloudFormation/latest/UserGuide/quickref-iam.html#scenario-iam-group)
-- Attach User to Admin Group...[link](http://docs.aws.amazon.com/AWSCloudFormation/latest/UserGuide/quickref-iam.html#scenario-iam-addusertogroup)
-- Lock down Root Account also through CloudFormation???
+# NOTE #1: We could just create a single user with an admin policy but you're really supposed to use groups and it's better in the long run if a hospital needs multiple admins...which seems likely.
+# NOTE #2: Will use AWS managed policies to attach to groups...[link here](http://docs.aws.amazon.com/IAM/latest/UserGuide/access_policies_job-functions.html)
 
 
-NOTE: We could just create a single user with an admin policy but you're really supposed to use groups
- and it's better in the long run if a hospital needs multiple admins...which seems likely.
+AWSTemplateFormatVersion: 2010-09-09
+Metadata:
+  'AWS::CloudFormation::Designer':
+    b6ed0dea-a36a-48b4-b3f9-a7b37a5443c2:
+      size:
+        width: 60
+        height: 60
+      position:
+        x: 150
+        'y': 120
+      z: 0
+      embeds: []
+    6a1b564c-c5ec-450c-8219-c8862cea36a1:
+      size:
+        width: 60
+        height: 60
+      position:
+        x: 150
+        'y': 220
+      z: 0
+      embeds: []
+      isassociatedwith:
+        - b6ed0dea-a36a-48b4-b3f9-a7b37a5443c2
+      dependson:
+        - b6ed0dea-a36a-48b4-b3f9-a7b37a5443c2
+    469730a7-e1c2-4b0c-8a55-293d8cca62d3:
+      source:
+        id: b220bacc-ba78-40bb-95b2-ba0f26654a74
+      target:
+        id: b6ed0dea-a36a-48b4-b3f9-a7b37a5443c2
+      z: 1
+    af981386-3d76-40de-8784-e7b01a5fd686:
+      source:
+        id: 6a1b564c-c5ec-450c-8219-c8862cea36a1
+      target:
+        id: c208ca17-7b8a-4acd-9c5f-08c2cc0059b6
+      z: 11
+    6f7f034d-60e9-4147-951c-1bac4e2bfc6b:
+      source:
+        id: c208ca17-7b8a-4acd-9c5f-08c2cc0059b6
+      target:
+        id: b6ed0dea-a36a-48b4-b3f9-a7b37a5443c2
+      z: 12
+    59d40db1-5481-46b8-acf5-c4fc19ab1a98:
+      size:
+        width: 60
+        height: 60
+      position:
+        x: 150
+        'y': 40
+      z: 0
+      embeds: []
+      isassociatedwith:
+        - b6ed0dea-a36a-48b4-b3f9-a7b37a5443c2
+      dependson:
+        - b6ed0dea-a36a-48b4-b3f9-a7b37a5443c2
+    e60c24c0-306a-486b-a08c-9dc53ab2632f:
+      source:
+        id: 59d40db1-5481-46b8-acf5-c4fc19ab1a98
+      target:
+        id: b6ed0dea-a36a-48b4-b3f9-a7b37a5443c2
+      z: 11
+    771d716b-c4ff-43d9-a447-fd306f357407:
+      source:
+        id: 59d40db1-5481-46b8-acf5-c4fc19ab1a98
+      target:
+        id: b6ed0dea-a36a-48b4-b3f9-a7b37a5443c2
+      z: 11
+    ee48751b-eedd-4167-880b-176f6d2d346a:
+      source:
+        id: 6a1b564c-c5ec-450c-8219-c8862cea36a1
+      target:
+        id: b6ed0dea-a36a-48b4-b3f9-a7b37a5443c2
+      z: 12
+    aa711503-9f68-4cff-9b9a-266524fe8160:
+      source:
+        id: 6a1b564c-c5ec-450c-8219-c8862cea36a1
+      target:
+        id: b6ed0dea-a36a-48b4-b3f9-a7b37a5443c2
+      z: 13
+Resources:
+  AdminGroup:
+    Type: 'AWS::IAM::Group'
+    Properties: {}
+    Metadata:
+      'AWS::CloudFormation::Designer':
+        id: b6ed0dea-a36a-48b4-b3f9-a7b37a5443c2
+  FirstUser:
+    Type: 'AWS::IAM::User'
+    Properties:
+      Groups:
+        - !Ref AdminGroup
+    Metadata:
+      'AWS::CloudFormation::Designer':
+        id: 6a1b564c-c5ec-450c-8219-c8862cea36a1
+    DependsOn:
+      - AdminGroup
+  AWSManagedAdmin:
+    Type: 'AWS::IAM::ManagedPolicy'
+    Properties:
+      Groups:
+        - !Ref AdminGroup
+    Metadata:
+      'AWS::CloudFormation::Designer':
+        id: 59d40db1-5481-46b8-acf5-c4fc19ab1a98
+    DependsOn:
+      - AdminGroup
