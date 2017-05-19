@@ -6,4 +6,4 @@
 - create IAM user with administratoraccess…use this account instead
 - any other users??
 
-* (do you need to create groups with all the policies attached to them you might use and then later just put users in those groups?)
+* These are the only reasons you ever need to use the Root account: [link](http://docs.aws.amazon.com/general/latest/gr/aws_tasks-that-require-root.html)
