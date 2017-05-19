@@ -1,0 +1,11 @@
+Step #1 IAM - CloudFormation Pseudocode for Template
+
+### Flow of this Template:
+- Create User...[link](http://docs.aws.amazon.com/AWSCloudFormation/latest/UserGuide/quickref-iam.html#scenario-iam-user)
+- Create Admin Group with an Admin-like Policy...[link](http://docs.aws.amazon.com/AWSCloudFormation/latest/UserGuide/quickref-iam.html#scenario-iam-group)
+- Attach User to Admin Group...[link](http://docs.aws.amazon.com/AWSCloudFormation/latest/UserGuide/quickref-iam.html#scenario-iam-addusertogroup)
+- Lock down Root Account also through CloudFormation???
+
+
+NOTE: We could just create a single user with an admin policy but you're really supposed to use groups
+ and it's better in the long run if a hospital needs multiple admins...which seems likely.
