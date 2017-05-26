@@ -14,8 +14,10 @@ This entire process should take about an hour. Be sure to follow the steps exact
 
 1. Download the latest [tarball](http://sourceforge.net/projects/openemr/files/OpenEMR%20Current/5.0.0/openemr-5.0.0.tar.gz/download).
 2. Extract the contents with your favorite archive extractor (If you aren't sure, install [7Zip](http://www.7-zip.org/a/7z1700-x64.exe) program and right click the downloaded file to access [7Zip extraction](https://www.youtube.com/watch?v=Z73m14PGs88)).
-3. Enter into the "**openemr-5.0.0**" directory.
-4. Create the "**.ebextensions**" AWS specific directory for the purposes of this guide with (If you aren't sure, follow [this approach](https://superuser.com/a/331924) to create such a directory).
+3. Rename the downloaded "**openemr-5.0.0**" directory to "**openemr**".
+4. Enter into the "**openemr**" directory.
+5. Create the "**.ebextensions**" AWS specific directory for the purposes of this guide with (If you aren't sure, follow [this approach](https://superuser.com/a/331924) to create such a directory).
+6. Download all files in [this](https://github.com/GoTeamEpsilon/OpenEMR-AWS-Guide/tree/master/assets/eb) area to the newly created "**.ebextensions**" directory (If you aren't sure, right click on each file link and choose "**Save As**" to download the file to the appropriate directory).
 
 #### Create an AWS Account
 
@@ -63,8 +65,7 @@ This entire process should take about an hour. Be sure to follow the steps exact
 
 #### Configure OpenEMR servers to mount the shared drive on bootup
 
-1. Download the [assets/storage-efs-mountfilesystem.config](assets/storage-efs-mountfilesystem.config) to your local "**openemr-5.0.0/.ebextensions/**" directory.
-2. Open "**openemr-5.0.0/.ebextensions/storage-efs-mountfilesystem.config**" and replace "**{{FS_ID_HERE}}**" with your noted ID from before. If you aren't sure, Install [Notepad++](https://notepad-plus-plus.org/repository/7.x/7.3.3/npp.7.3.3.Installer.exe) and right click the file to access Notepad++ editing.
+1. Open "**openemr/.ebextensions/06-redis-configuration.config**" and replace "**<<REDIS_IP>>**" with your noted ID from before. If you aren't sure, Install [Notepad++](https://notepad-plus-plus.org/repository/7.x/7.3.3/npp.7.3.3.Installer.exe) and right click the file to access Notepad++ editing.
 
 ## 💽 Database System
 
@@ -174,7 +175,7 @@ This entire process should take about an hour. Be sure to follow the steps exact
 
 #### Provision the server
 
-1. SSH into the Redis server and copy/paste [assets/redis-setup.sh](assets/redis-setup.sh) to an executable file and run it. If you aren't sure, watch [this video](www.youtube.com).
+1. SSH into the Redis server and copy/paste [assets/ec2/redis-setup.sh](assets/ec2/redis-setup.sh) to an executable file and run it. If you aren't sure, watch [this video](www.youtube.com).
 
 #### Lock down the server
 1. In the AWS Management Console, click **EC2** and then click **Running Instances**.
@@ -188,19 +189,18 @@ This entire process should take about an hour. Be sure to follow the steps exact
 
 #### Configure OpenEMR servers to point at the cache
 
-1. Download [assets/redis-sessions.config](assets/redis-sessions.config) to your local "**openemr-5.0.0/.ebextensions/**" directory.
-2. Open "**openemr-5.0.0/.ebextensions/redis-sessions.config**" and replace "**{{REDIS_IP}}**" with your noted ID from before. If you aren't sure, Install [Notepad++](https://notepad-plus-plus.org/repository/7.x/7.3.3/npp.7.3.3.Installer.exe) and right click the file to access Notepad++ editing.
+1. Open "**openemr/.ebextensions/06-redis-configuration.config**" and replace "**<<REDIS_IP>>**" with your noted ID from before. If you aren't sure, Install [Notepad++](https://notepad-plus-plus.org/repository/7.x/7.3.3/npp.7.3.3.Installer.exe) and right click the file to access Notepad++ editing.
 
 ## 🖥️ Application Servers
 
 _this section is under construction!!!_
 
-#### Configure OpenEMR servers to satify system dependencies on startup
+#### Configure the servers to use your timezone
 
-1. Download the [assets/openemr-dependencies.config](assets/openemr-dependencies.config) to your local "**openemr-5.0.0/.ebextensions/**" directory.
+1. Open "**openemr/.ebextensions/05-php-configuration.config**" and replace "**<<TIME_ZONE_HERE>>**" with your timezone from the [following list](http://php.net/manual/en/timezones.php). Do not enter spaces (e.g.: **America/New_York** is valid while **America/New York** is not).
 
 #### Prepare your first deployment
-1. Archive **openemr-5.0.0** as "**openemr-5.0.0-deployment-1.zip**". If you aren't sure, install [7Zip](http://www.7-zip.org/a/7z1700-x64.exe) program and right click the folder to access [7Zip archival](https://www.youtube.com/watch?v=Z73m14PGs88).
+1. Archive **openemr** as "**openemr.zip**". If you aren't sure, install [7Zip](http://www.7-zip.org/a/7z1700-x64.exe) program and right click the folder to access [7Zip archival](https://www.youtube.com/watch?v=Z73m14PGs88).
 
 #### Establish fully managed web server infrastructure
 
@@ -213,7 +213,7 @@ _this section is under construction!!!_
 
 #### Upload your first deployment
 1. Under **Application code**, radio check **Upload your code**.
-2. Click **Upload** and select "**openemr-5.0.0-deployment-1.zip**".
+2. Click **Upload** and select "**openemr.zip**".
 
 #### Lock down your environment
 1. At the bottom of the page, click **Configure more options**.
@@ -229,7 +229,10 @@ _this section is under construction!!!_
 20. _... TODO ...  Click "Create environment"_
 
 #### Configure OpenEMR for use
-1. _... TODO ... some general install steps to make sure everything is working_
+1. _... TODO ... notes about following the online wizard_
+
+#### Post install security updates
+1. _... TODO ... notes about how the user must restart the beanstalk env so that the 09-post-install-file-permission-updates.config triggers_
 
 ## ▶️ Secure Domain Setup
 
