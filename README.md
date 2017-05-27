@@ -38,6 +38,11 @@ This entire process should take about an hour. Be sure to follow the steps exact
 10. Under **Review**, ensure all information reflects the above steps.
 11. Click **Next: Create user**.
 
+#### Restrict permissions to your Root account
+
+0. Explanation of why this is important since it sometimes confuses me
+1. Steps Steps Steps XYZ XYZ XYZ
+
 ## ☁️ Private Cloud
 
 #### Lock down your system components with a private virtual network
@@ -45,7 +50,7 @@ This entire process should take about an hour. Be sure to follow the steps exact
 1. In the AWS Management Console, click **Services** and then choose **Start VPC Wizard**.
 2. Click **VPC with a Single Public Subnet** and click **Select**.
 3. In **VPC Name**, enter "**openemr-vpc**".
-4. In **Availability Zone**, select your preferred zone. If you aren't sure, select "**No Preference**".
+4. In **Availability Zone**, select your preferred zone. If you aren't sure, select "**No Preference**". #wording?
 
 ## 📁 Network File System
 
