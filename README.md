@@ -297,8 +297,20 @@ The most robust and maintainable approach for deployments is to keep an internal
 4. Click **Full Logs** and wait a moment for the logs to download.
 5. Extract the contents with your favorite archive extractor to view each instance's Apache logs in **logs_directory/var/log/httpd**.
 
+#### How do I restore a database backup?
+
+1. In the AWS Management Console, click **Services**, **RDS**.
+2. In the lefthand pane, click **Instances**.
+3. Checkbox your database instance.
+4. Click the **Instance Actions** button in the center of the screen.
+5. Click **Restore to Point in Time**.
+6. Enter the date and time for your restore under **Use Custom Restore Time**.
+7. Configure the database restore instance as you did when [creating the initial system](#-database-system).
+8. SSH into any EC2 instance associated with the Elastic Beanstalk environment and note the values in **openemr/sites/default/sqlconf.php**.
+9. Update your local **openemr/sites/default/sqlconf.php** with these noted values, but with the new MySQL restore endpoint information.
+10. Reploy the application via [the instructions in the deployment section](#how-do-i-deploy-custom-changes-to-my-cloud).
+
 Should answer the questions:
-- _... TODO ... How do I configure and see my backups?_
 - _... TODO ... How do I add other system users?_
 - _... TODO ... How do I access the database?_
 
