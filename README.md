@@ -286,10 +286,18 @@ The most robust and maintainable approach for deployments is to keep an internal
 1. In the AWS Management Console, click **Services**, **Elastic Beanstalk**, and then choose **openemr/openemr**.
 2. Click the **Upload and Deploy** button in the center of the screen.
 3. Click **Choose File** and select "**openemr.zip**". Note that the name of this file must be exact.
-4. Enter in **"openemr-deployment-N"** where **N** is most recent version of your deployment.
+4. Under **Label**, enter in **"openemr-deployment-N"** where **N** is most recent version of your deployment.
+5. Click **Deploy**.
+
+#### How do I access system logs?
+
+1. In the AWS Management Console, click **Services**, **Elastic Beanstalk**, and then choose **openemr/openemr**.
+2. In the lefthand pane, click **Logs**.
+3. Click the **Request Logs** button to the to pright of the screen.
+4. Click **Full Logs** and wait a moment for the logs to download.
+5. Extract the contents with your favorite archive extractor to view each instance's Apache logs in **logs_directory/var/log/httpd**.
 
 Should answer the questions:
-- _... TODO ... How do I access the logs?_
 - _... TODO ... How do I configure and see my backups?_
 - _... TODO ... How do I add other system users?_
 - _... TODO ... How do I access the database?_
