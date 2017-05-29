@@ -279,10 +279,18 @@ _this section is under construction!!!_
 
 _this section is under construction!!!_
 
+#### How do I deploy custom changes to my cloud?
+
+The most robust and maintainable approach for deployments is to keep an internal changelog of your changes along with associated [version control tags](https://git-scm.com/book/en/v2/Git-Basics-Tagging). Not only will this help you stay organized, but you can also reference it in the case you wish to rollback to a previous deployment and aid in reapplying your custom changes when a newer version of OpenEMR is available.
+
+1. In the AWS Management Console, click **Services**, **Elastic Beanstalk**, and then choose **openemr/openemr**.
+2. Click the **Upload and Deploy** button in the center of the screen.
+3. Click **Choose File** and select "**openemr.zip**". Note that the name of this file must be exact.
+4. Enter in **"openemr-deployment-N"** where **N** is most recent version of your deployment.
+
 Should answer the questions:
 - _... TODO ... How do I access the logs?_
 - _... TODO ... How do I configure and see my backups?_
-- _... TODO ... How do I make changes to my OpenEMR instance and redeploy it to my cloud?_
 - _... TODO ... How do I add other system users?_
 - _... TODO ... How do I access the database?_
 
