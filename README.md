@@ -45,7 +45,7 @@ _TODO: I just realized that when one creates a fresh AWS account, there are spec
 _TODO: Revert the **AdministratorAccess** step from above once this is in place :)_
 
 0. Explanation of why this is important since it sometimes confuses me
-1. Steps Steps Steps XYZ XYZ XYZ
+1. Steps Steps Steps XYZ XYZ XYZ (this includes setting up an individual account, right?)
 
 #### Generate an AWS SSH keypair
 
@@ -327,11 +327,11 @@ The most robust and maintainable approach for deployments is to keep an internal
 
 Accessing your instances with SSH is one of the more challenging tasks in this guide and you may experience some challenges along the way. As such, be sure to treat this as a learning opportunity and pay close attention to the instructions to ensure the most seamless experience. As previously noted, if any step isn't clear enough, enter a bug so our team can correct the issue and provide you with support.
 
-_TODO: Talk about redis instance access as well as EB EC2 instance access_
+_TODO_
 
-Should answer the questions:
-- _... TODO ... How do I add other system users?_
-- _... TODO ... How do I access the database?_
+#### How do I Access the Database?
+
+_TODO_
 
 ## 📓 Notes
 
