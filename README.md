@@ -267,7 +267,7 @@ _... TODO ... Assign EC2 instances to their own custom "Instance security groups
 ## ▶ Secure Domain Setup
 
 _this section is under construction!!!_
-### Route53 stuff
+#### Route53 stuff
 1. Go to Route53, and in the text box near the middle of the page enter the domain name you'd like to register. This will be what you type in your browser to access your OpenEMR instance.
 2. Click "Add To Cart" if the domain is available.
 3. If it is n to available, check for another site or choose one of the "Related domain suggestions".
@@ -277,7 +277,7 @@ _this section is under construction!!!_
 7. Click "Complete Purchase"
 8. You should be directed back to the main dashboard.
 
-### Certificate Manager
+#### Certificate Manager
 1. Go to AWS Certificate Manager
 2. Click on "Get Started"
 3. In the text box in the middle of the screen type in "yourdomain.com" and then click XYZ and in the new box type "*.yourdomain.com". The asterisk followed by a dot (and then followed by your domain name) is important because it enables SSL for various versions how your site is typed into a browser and later subdomains.
@@ -289,8 +289,6 @@ _this section is under construction!!!_
 9. You should now be approved and you have enabled SSL/TLS for your sites on AWS!!!
 
 ## 🎛 Administration
-
-_this section is under construction!!!_
 
 #### How do I deploy custom changes to my cloud?
 
@@ -325,13 +323,66 @@ The most robust and maintainable approach for deployments is to keep an internal
 
 #### How do I SSH Into Instances?
 
-Accessing your instances with SSH is one of the more challenging tasks in this guide and you may experience some challenges along the way. As such, be sure to treat this as a learning opportunity and pay close attention to the instructions to ensure the most seamless experience. As previously noted, if any step isn't clear enough, enter a bug so our team can correct the issue and provide you with support.
+Accessing your instances with SSH is one of the more challenging tasks in this guide. As such, be sure to treat this as a learning opportunity and pay close attention to the instructions to ensure the most seamless experience.
 
-_TODO_
+##### Prerequisites
 
-#### How do I Access the Database?
+1. Download and install the latest [PuTTY MSI](https://www.chiark.greenend.org.uk/~sgtatham/putty/latest.html) software suite. If you aren't sure, click [here](https://the.earth.li/~sgtatham/putty/latest/w64/putty-64bit-0.69-installer.msi).
+2. Using your AWS SSH keypair that is saved as **"your-username.pem"**, convert it to a **ppk** file by following [these instructions](http://docs.aws.amazon.com/AWSEC2/latest/UserGuide/putty.html#putty-private-key).
 
-_TODO_
+##### Redis Access
+
+_TODO: The security group should have a name and not use default launch wizard_
+_TODO: Test SSH out with the "my ip address" as source_
+
+1. In the AWS Management Console, click **EC2** and then click **Running Instances**.
+2. Select the "**openemr-redis**" instance.
+3. Under **Elastic IPs**, note the address.
+4. Under **Security groups** in the bottom pane, click the group starting with "**launch-wizard-"**.
+5. Click the **Actions** dropdown.
+6. Click **Edit inbound rules**.
+7. Click **Add Rule**.
+8. Under **Type**, select "**SSH**".
+9. Under **Source**, select "**Anywhere**".
+10. Click **Save**.
+11. Using your **"your-username.ppk"** keypair, access your instance by following [these instructions](http://docs.aws.amazon.com/AWSEC2/latest/UserGuide/putty.html#putty-ssh). Note that step 1 can be skipped and that **"user_name@public_dns_name"** is **"ubuntu@(your previously noted elastic ip)"**.
+12. Perform your SSH work.
+13. In the AWS Management Console, click **EC2** and then click **Running Instances**.
+14. Select the "**openemr-redis**" instance.
+15. Under **Security groups** in the bottom pane, click the group starting with "**launch-wizard-"**.
+16. Click the **Actions** dropdown.
+17. Click **Edit inbound rules**.
+18. Click the **X** next to the **SSH** Rule.
+19. Click **Save**.
+
+##### Elastic Beanstalk Instance Access
+
+_TODO: The security group should have a name and not use default generated group_
+_TODO: The security group already have the SSH revoked... currently it is there by default_
+_TODO: Test SSH out with the "my ip address" as source_
+
+1. In the AWS Management Console, click **EC2** and then click **Running Instances**.
+2. Select the **openemr** instance you are interested in accessing.
+3. Under **Public DNS (IPv4)**, note the address.
+4. Under **Security groups** in the bottom pane, click the first group.
+5. Click the **Actions** dropdown.
+6. Click **Edit inbound rules**.
+7. Click **Add Rule**.
+8. Under **Type**, select "**SSH**".
+9. Under **Source**, select "**Anywhere**".
+10. Click **Save**.
+11. Using your **"your-username.ppk"** keypair, access your instance by following [these instructions](http://docs.aws.amazon.com/AWSEC2/latest/UserGuide/putty.html#putty-ssh). Note that step 1 can be skipped and that **"user_name@public_dns_name"** is **"ec2-user@(your previously noted public dns ip)"**.
+12. Perform your SSH work.
+13. In the AWS Management Console, click **EC2** and then click **Running Instances**.
+14. Select the **openemr** instance you recently accessed.
+15. Under **Security groups** in the bottom pane, click the first group.
+16. Click the **Actions** dropdown.
+17. Click **Edit inbound rules**.
+18. Click the **X** next to the **SSH** Rule.
+19. Click **Save**.
+
+Should answer the questions:
+- _... TODO ... How do I access the database?_
 
 ## 📓 Notes
 
