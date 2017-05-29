@@ -198,8 +198,6 @@ This entire process should take about an hour. Be sure to follow the steps exact
 
 ## 🖥️ Application Servers
 
-_this section is under construction!!!_
-
 #### Configure the servers to use your timezone
 
 1. Open "**openemr/.ebextensions/05-php-configuration.config**" and replace "**<<TIME_ZONE_HERE>>**" with your timezone from the [following list](http://php.net/manual/en/timezones.php). Do not enter spaces (e.g.: **America/New_York** is valid while **America/New York** is not).
@@ -221,23 +219,36 @@ _this section is under construction!!!_
 2. Click **Upload** and select "**openemr.zip**".
 
 #### Lock down your environment
+
+_... TODO ... Assign EC2 instances to their own custom "Instance security groups"_
+
 1. At the bottom of the page, click **Configure more options**.
 2. Under **Configuration presets**, radio check "**Custom configuration**".
 3. Under **Network**, click **Modify**.
 4. Under **Virtual private cloud (VPC)**, select "**openemr-vpc**".
-14. _... TODO ... Check all items in "Load balancer subnets",_
-15. _... TODO ... "Instance subnets", and "Instance security groups", and click "Save"_
-16. _... TODO ...  Under "Environment settings", click "Modify"_
-17. _... TODO ...  Under "Name", enter "OpenEMR" and click "Save"_
-18. _... TODO ...  Under "Capacity", click "Modify"_
-19. _... TODO ...  Under "Auto Scaling Group", enter "2" for "min" and click "Save"_
-20. _... TODO ...  Click "Create environment"_
+5. Under **Load balancer subnets**, check all entries.
+6. Under **Instance subnets**, check all entries.
+7. Click **Save**.
 
-#### Configure OpenEMR for use
-1. _... TODO ... notes about following the online wizard_
+#### Establish the environment's capacity
+
+1. Under **Capacity**, click **Modify**.
+2. Under **Instances**, enter your desired **Min** and **Max** values. (If you aren't sure, enter "**2**" and "**4**", respectively).
+3. Under **Placement**, select all entries.
+4. Click **Save**.
+
+#### Launch the initial deployment and configure OpenEMR
+
+1. Click **Create environment**.
+2. Wait many moments for the environment to build.
+3. Click the the URL that looks like **"openemr.abcde12345.my-area-1.elasticbeanstalk.com"** at the top of the screen.
+4. At the end of the address bar in your browser, append **"/openemr"** and press enter to start the signup wizard.
+5. Go through each step of the signup wizard, using the MySQL credentials noted in previous steps.
 
 #### Post install security updates
-1. _... TODO ... notes about how the user must restart the beanstalk env so that the 09-post-install-file-permission-updates.config triggers_
+
+1. In the AWS Management Console, click **Services**, **Elastic Beanstalk**, and then choose **openemr/openemr**.
+2. Click the **Actions** dropdown to the top right and select **Restart App Server(s)** so each instance can perform post-install security updates.
 
 ## ▶️ Secure Domain Setup
 
