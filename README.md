@@ -49,7 +49,11 @@ _TODO: Revert the **AdministratorAccess** step from above once this is in place 
 
 #### Generate an AWS SSH keypair
 
-_TODO: write this up :)_
+1. In the AWS Management Console, click **Services** and then click **EC2**.
+2. In the lefthand pane, click **Keypairs**.
+3. Click **Create Key Pair**.
+4. When the **"Create Key Pair"** dialog appears, enter your username for the **Key pair name** field and click **Create**.
+5. When the **Save As** dialog appears, save the key to a safe place.
 
 ## ☁ Private Cloud
 
