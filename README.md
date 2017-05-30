@@ -321,6 +321,21 @@ The most robust and maintainable approach for deployments is to keep an internal
 9. Update your local **openemr/sites/default/sqlconf.php** with these noted values, but with the new MySQL restore endpoint information.
 10. Reploy the application via [the instructions in the deployment section](#how-do-i-deploy-custom-changes-to-my-cloud).
 
+#### How do I Access the Database?
+
+_TODO: Shouldn't this be using the pem file for added security?_
+
+1. In the AWS Management Console, click **Services**, **RDS**.
+2. In the lefthand pane, click **Instances**.
+3. Checkbox your database instance.
+4. Note the database **Endpoint** including the port number.
+5. Click the **Instance Actions** button in the center of the screen.
+6. Click **Modify**.
+7. Under **Network & Security**, select **"Yes"** for **Publicly Accessible**.
+8. Click **Continue** and then **Modify DB Instance**.
+9. Perform your MySQL work by running `mysql -u (stored database username) -p (stored database password) -h (noted endpoint:port) openemr` on your local computer. If you aren't sure, [download and install MySQL](https://dev.mysql.com/downloads/mysql/) and [familiarize yourself with interacting with data](https://www.google.com/search?q=learn+mysql).
+10. Back in the AWS Management Console, reset **Publicly Accessible** to **"No"**, using the previous steps as a guide.
+
 #### How do I SSH Into Instances?
 
 Accessing your instances with SSH is one of the more challenging tasks in this guide. As such, be sure to treat this as a learning opportunity and pay close attention to the instructions to ensure the most seamless experience.
@@ -333,6 +348,7 @@ Accessing your instances with SSH is one of the more challenging tasks in this g
 ##### Redis Access
 
 _TODO: The security group should have a name and not use default launch wizard_
+
 _TODO: Test SSH out with the "my ip address" as source_
 
 1. In the AWS Management Console, click **EC2** and then click **Running Instances**.
@@ -347,21 +363,17 @@ _TODO: Test SSH out with the "my ip address" as source_
 10. Click **Save**.
 11. Using your **"your-username.ppk"** keypair, access your instance by following [these instructions](http://docs.aws.amazon.com/AWSEC2/latest/UserGuide/putty.html#putty-ssh). Note that step 1 can be skipped and that **"user_name@public_dns_name"** is **"ubuntu@(your previously noted elastic ip)"**.
 12. Perform your SSH work.
-13. In the AWS Management Console, click **EC2** and then click **Running Instances**.
-14. Select the "**openemr-redis**" instance.
-15. Under **Security groups** in the bottom pane, click the group starting with "**launch-wizard-"**.
-16. Click the **Actions** dropdown.
-17. Click **Edit inbound rules**.
-18. Click the **X** next to the **SSH** Rule.
-19. Click **Save**.
+13. Back in the AWS Management Console, remove the **SSH** inbound rule, using the previous steps as a guide.
 
 ##### Elastic Beanstalk Instance Access
 
 _TODO: The security group should have a name and not use default generated group_
+
 _TODO: The security group already have the SSH revoked... currently it is there by default_
+
 _TODO: Test SSH out with the "my ip address" as source_
 
-1. In the AWS Management Console, click **EC2** and then click **Running Instances**.
+1. In the AWS Management Console, click **Services**, **EC2**, and then **Running Instances**.
 2. Select the **openemr** instance you are interested in accessing.
 3. Under **Public DNS (IPv4)**, note the address.
 4. Under **Security groups** in the bottom pane, click the first group.
@@ -373,16 +385,7 @@ _TODO: Test SSH out with the "my ip address" as source_
 10. Click **Save**.
 11. Using your **"your-username.ppk"** keypair, access your instance by following [these instructions](http://docs.aws.amazon.com/AWSEC2/latest/UserGuide/putty.html#putty-ssh). Note that step 1 can be skipped and that **"user_name@public_dns_name"** is **"ec2-user@(your previously noted public dns ip)"**.
 12. Perform your SSH work.
-13. In the AWS Management Console, click **EC2** and then click **Running Instances**.
-14. Select the **openemr** instance you recently accessed.
-15. Under **Security groups** in the bottom pane, click the first group.
-16. Click the **Actions** dropdown.
-17. Click **Edit inbound rules**.
-18. Click the **X** next to the **SSH** Rule.
-19. Click **Save**.
-
-Should answer the questions:
-- _... TODO ... How do I access the database?_
+13. Back in the AWS Management Console, remove the **SSH** inbound rule, using the previous steps as a guide.
 
 ## 📓 Notes
 
