@@ -215,7 +215,7 @@ _TODO: Revert the **AdministratorAccess** step from above once this is in place 
 
 #### Configure the servers to use your timezone
 
-1. Open "**openemr/.ebextensions/05-php-configuration.config**" and replace "**<<TIME_ZONE_HERE>>**" with your timezone from the [following list](http://php.net/manual/en/timezones.php). Do not enter spaces (e.g.: "**America/New_York**" is valid while "**America/New York**" is not).
+1. Open "**openemr/.ebextensions/05-php-configuration.config**" and replace "**<<TIME_ZONE_HERE>>**" with your timezone from the [following list](http://php.net/manual/en/timezones.php). Do not enter spaces (e.g.: "**America\/New_York**" is valid while "**America\/New York**" is not - note the "\" is required for sed escaping).
 
 #### Prepare your first deployment
 1. Archive **openemr** as "**openemr.zip**".
