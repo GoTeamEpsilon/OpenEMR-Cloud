@@ -83,7 +83,7 @@ _TODO: Revert the **AdministratorAccess** step from above once this is in place 
 
 #### Configure OpenEMR servers to mount the shared drive on bootup
 
-1. Open "**openemr/.ebextensions/07-efs-mount-install.config**" and replace "**<<FS ID HERE>>**" with your noted **File System ID** from before.
+1. Open "**openemr/.ebextensions/07-efs-mount-install.config**" and replace "**<<FS_ID_HERE>>**" with your noted **File System ID** from before.
 
 ## 💽 Database System
 
@@ -194,8 +194,7 @@ _TODO: Revert the **AdministratorAccess** step from above once this is in place 
 #### Provision the server
 
 1. Using the Elastic IP noted from before, SSH into the server. If you aren't sure, please review [How do I SSH into Instances](#how-do-i-ssh-into-instances) section.
-2. Call the following script [assets/ec2/redis-setup.sh](assets/ec2/redis-setup.sh) by running it via `curl -s https://raw.githubusercontent.com/GoTeamEpsilon/OpenEMR-AWS-Guide/master/assets/ec2/redis-setup.sh | sh`.
-3. Once the script has completed, run `echo $?` and make sure the value printed to the screen is "**0**".
+2. Setup the server by running the following `curl -s https://raw.githubusercontent.com/GoTeamEpsilon/OpenEMR-AWS-Guide/master/assets/ec2/redis-setup.sh | sh`.
 
 #### Lock down the server
 1. In the AWS Management Console, click **EC2** and then click **Running Instances**.
@@ -224,46 +223,55 @@ _TODO: Revert the **AdministratorAccess** step from above once this is in place 
 
 1. In the AWS Management Console, click **Services**, **Elastic Beanstalk**, and then click **Create New Application**.
 2. Enter "**openemr**" for the **Application Name**
-3. Click **Create**.
-4. Under **Environments**, click **Create one now**.
-5. Select **Web server environment** and click **Select**.
-6. Under **Preconfigured platform**, select "**PHP**".
+3. Click **Create web server**.
+4. Under **Preconfigured platform**, select "**PHP**".
+5. Click **Next**.
 
 #### Upload your first deployment
 1. Under **Application code**, radio check **Upload your code**.
 2. Click **Upload** and select "**openemr.zip**". Note that the name of the file must be exact.
+3. Click **Next**.
+
+#### Name the environment
+
+1. Under **Environment name**, enter **"<<your_practice>>"**.
+2. Click **Next**.
 
 #### Lock down your environment
 
-_... TODO ... Assign EC2 instances to their own custom "Instance security groups"_
+1. Under **Additional Resources**, checkbox **"Create this environment inside a VPC"**.
+2. Click **Next**.
 
-1. At the bottom of the page, click **Configure more options**.
-2. Under **Configuration presets**, radio check "**Custom configuration**".
-3. Under **Network**, click **Modify**.
-4. Under **Virtual private cloud (VPC)**, select "**openemr-vpc**".
-5. Under **Load balancer subnets**, check all entries.
-6. Under **Instance subnets**, check all entries.
-7. Click **Save**.
+#### Configure Instance Servers
+
+1. Select an instance size under **Instance type**. If you're not sure, select **"t1.micro"**.
+2. Under **EC2 key pair**, select your keypair.
+3. Under **Email address**, enter your email.
+4. Click **Next** twice.
+
+#### Attach environment to VPC
+
+1. Under **VPC**, select the VPC that includes **"10.0.0.0/16"**.
+2. Under the subnet table, checkbox all rows.
+3. Click **Next** twice and then click **Launch**.
+4. Wait many moments for the environment to be created.
 
 #### Establish the environment's capacity
 
-1. Under **Capacity**, click **Modify**.
-2. Under **Instances**, enter your desired **Min** and **Max** values. If you aren't sure, enter "**2**" and "**4**", respectively.
-3. Under **Placement**, select all entries.
-4. Click **Save**.
+1. Click **Configuration**.
+2. Under **Scaling**, click the gear icon.
+3. Under **Auto Scaling**, enter your desired **Minimum instance count** and **Maximum instance count** values. If you aren't sure, enter "**2**" and "**4**", respectively.
+4. Click **Apply**.
 
-#### Launch the initial deployment and configure OpenEMR
+#### OpenEMR setup
 
-1. Click **Create environment**.
-2. Wait many moments for the environment to build.
-3. Click the the URL that looks like **"openemr.abcde12345.my-area-1.elasticbeanstalk.com"** at the top of the screen.
-4. At the end of the address bar in your browser, append **"/openemr"** and press enter to start the signup wizard.
-5. Go through each step of the signup wizard, using the MySQL credentials noted in previous steps.
+1. Visit your Elastic Beanstalk URL. It should look look like **"your_practice.my-area-1.elasticbeanstalk.com"**.
+2. At the end of the address bar in your browser, append **"/openemr"** and press enter to start the signup wizard.
+3. Go through each step of the signup wizard, using the MySQL credentials noted in previous steps.
 
 #### Post install security updates
 
-1. In the AWS Management Console, click **Services**, **Elastic Beanstalk**, and then click **openemr/openemr**.
-2. Click the **Actions** dropdown to the top right and click **Restart App Server(s)** so each instance can perform post-install security updates.
+__TODO__
 
 ## ▶ Secure Domain Setup
 
@@ -281,7 +289,7 @@ _this section is under construction!!!_
 #### Certificate Manager
 1. Go to AWS Certificate Manager
 2. Click on "Get Started"
-3. In the text box in the middle of the screen type in "yourdomain.com" and then click XYZ and in the new box type "*.yourdomain.com". The asterisk followed by a dot (and then followed by your domain name) is important because it enables SSL for various versions how your site is typed into a browser and later subdomains.
+3. In the text box in the middle of the screen type in "yourdomain.com" and then click XYZ and in the new box type "*.yourpractice.com". The asterisk followed by a dot (and then followed by your domain name) is important because it enables SSL for various versions how your site is typed into a browser and later subdomains.
 4. Click "Review and request".
 5. Click "Confirm and request".
 6. The request has now been made. Click "Continue" to head to the next screen where you will see your domain in the "Pending verification" state.
@@ -295,7 +303,7 @@ _this section is under construction!!!_
 
 The most robust and maintainable approach for deployments is to keep an internal changelog of your changes along with associated [version control tags](https://git-scm.com/book/en/v2/Git-Basics-Tagging). Not only will this help you stay organized, but you can also reference it in the case you wish to rollback to a previous deployment and aid in reapplying your custom changes when a newer version of OpenEMR is available.
 
-1. In the AWS Management Console, click **Services**, **Elastic Beanstalk**, and then choose **openemr/openemr**.
+1. In the AWS Management Console, click **Services**, **Elastic Beanstalk**, and then choose **openemr/your_practice**.
 2. Click the **Upload and Deploy** button in the center of the screen.
 3. Click **Choose File** and select "**openemr.zip**". Note that the name of this file must be exact.
 4. Under **Label**, enter in **"openemr-deployment-N"** where **N** is most recent version of your deployment.
@@ -303,7 +311,7 @@ The most robust and maintainable approach for deployments is to keep an internal
 
 #### How do I access system logs?
 
-1. In the AWS Management Console, click **Services**, **Elastic Beanstalk**, and then choose **openemr/openemr**.
+1. In the AWS Management Console, click **Services**, **Elastic Beanstalk**, and then choose **openemr/your_practice**.
 2. In the lefthand pane, click **Logs**.
 3. Click the **Request Logs** button to the to pright of the screen.
 4. Click **Full Logs** and wait a moment for the logs to download.
