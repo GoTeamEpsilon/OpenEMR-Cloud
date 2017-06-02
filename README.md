@@ -149,6 +149,16 @@ _TODO: Revert the **AdministratorAccess** step from above once this is in place 
 4. Click on the first row of the **Instances** table.
 5. Record the **Endpoint** in a safe place.
 
+#### Permit access to other instances
+
+__TODO: This should be limited to only the VPC__
+
+1. Click the tab handle with the magnifying glass icon.
+2. Under **Security Groups**, click the first link.
+3. Click the **Actions** dropdown.
+4. Click **Edit inbound rules**.
+5. Under the entry, select **"Anywhere"** for **Source** and click **Save**.
+
 ## 💻 Session Management
 
 #### Setup Redis cache for user session data storage across servers
@@ -262,6 +272,15 @@ _TODO: Revert the **AdministratorAccess** step from above once this is in place 
 2. Under **Scaling**, click the gear icon.
 3. Under **Auto Scaling**, enter your desired **Minimum instance count** and **Maximum instance count** values. If you aren't sure, enter "**2**" and "**4**", respectively.
 4. Click **Apply**.
+
+#### Extend the load balancer idle timeout
+
+1. In the AWS Management Console, click **EC2** and then click **Load Balancer** in the left hand pane.
+2. Checkbox the first load balancer.
+3. In the the bottom hand pane, scroll down to the **Attributes** area.
+4. Click **Edit idle timeout**.
+5. For **Idle timeout**, enter **"3600"**.
+6. Click **Save**.
 
 #### OpenEMR setup
 
