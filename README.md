@@ -266,11 +266,11 @@ __TODO: This should be limited to only the VPC__
 3. Click **Next** twice and then click **Launch**.
 4. Wait many moments for the environment to be created.
 
-#### Establish the environment's capacity
+#### Establish the environment's initial capacity
 
 1. Click **Configuration**.
 2. Under **Scaling**, click the gear icon.
-3. Under **Auto Scaling**, enter your desired **Minimum instance count** and **Maximum instance count** values. If you aren't sure, enter "**2**" and "**4**", respectively.
+3. Under **Auto Scaling**, enter "**1**" for **Minimum instance count** and "**1**" for **Maximum instance count** values. These values will be changed later, a single instance will be used to set the baseline for the EFS.
 4. Click **Apply**.
 
 #### Extend the load balancer idle timeout
@@ -288,9 +288,15 @@ __TODO: This should be limited to only the VPC__
 2. At the end of the address bar in your browser, append **"/openemr"** and press enter to start the signup wizard.
 3. Go through each step of the signup wizard, using the MySQL credentials noted in previous steps.
 
-#### Post install security updates
+#### Post install steps
 
-__TODO__
+#### Establish the environment's maximum capacity
+
+1. In the AWS Management Console, click **Services**, **Elastic Beanstalk**, and then choose **openemr/your_practice**.
+2. Click **Configuration**.
+3. Under **Scaling**, click the gear icon.
+4. Under **Auto Scaling**, enter your desired **Minimum instance count** and **Maximum instance count** values. If you aren't sure, enter "**3**" and "**6**", respectively.
+5. Click **Apply**.
 
 ## ▶ Secure Domain Setup
 
