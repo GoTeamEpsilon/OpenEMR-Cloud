@@ -288,7 +288,11 @@ __TODO: This should be limited to only the VPC__
 2. At the end of the address bar in your browser, append **"/openemr"** and press enter to start the signup wizard.
 3. Go through each step of the signup wizard, using the MySQL credentials noted in previous steps.
 
-#### Post install steps
+#### Post-install security update
+
+1. In the AWS Management Console, click **Services**, **Elastic Beanstalk**, and then choose **openemr/your_practice**.
+2. Click **"Actions"** in the top right.
+3. Click **"Restart App Server(s)"** to limit permissions of the OpenEMR install and update features.
 
 #### Establish the environment's maximum capacity
 
