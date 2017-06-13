@@ -62,7 +62,7 @@ _TODO: Revert the **AdministratorAccess** step from above once this is in place 
 1. In the AWS Management Console, click **Services** and then click **Start VPC Wizard**.
 2. Click **VPC with a Single Public Subnet** and click **Select**.
 3. In **VPC Name**, enter "**openemr-vpc**".
-4. In **Availability Zone**, select your preferred zone. If you aren't sure, select "**No Preference**".
+4. In **Availability Zone**, select your preferred zone. If you aren't sure, select the first entry (selecting an entry at the bottom of the list may not be supported in ElasticBeanstalk, such as with us-east-1e).
 5. Click **Create VPC**.
 
 ## 📁 Network File System
