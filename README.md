@@ -74,12 +74,11 @@ _TODO: Revert the **AdministratorAccess** step from above once this is in place 
 3. Under **VPC**, select **"openemr-vpc"**.
 4. Under **Create mount targets**, checkbox all items.
 5. Click **Next Step**.
-6. Under **Add tags**, enter "**openemr-efs**" for the **Key** and "**sys**" for **Value**.
-7. Under **Choose performance mode**, select your preferred performance setting. If you aren't sure, select "**General Purpose**".
-8. Click **Next Step**.
-9. Click **Create File System**.
-10. Wait a few moments.
-11. Note the **File System ID** in a safe place.
+6. Under **Choose performance mode**, select your preferred performance setting. If you aren't sure, select "**General Purpose**".
+7. Click **Next Step**.
+8. Click **Create File System**.
+9. Wait a few moments.
+10. Note the **File System ID** in a safe place.
 
 #### Configure OpenEMR servers to mount the shared drive on bootup
 
