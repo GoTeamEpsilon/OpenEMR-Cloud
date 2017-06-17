@@ -2,6 +2,10 @@ _[< previous chapter](07-Secure-Domain-Setup.md)_
 
 # 🎛 Administration
 
+### What does the architecture look like?
+
+![diagram](../Assets/diagrams/architecture.png)
+
 ### How do I deploy custom changes to my cloud?
 
 The most robust and maintainable approach for deployments is to keep an internal changelog of your changes along with associated [version control tags](https://git-scm.com/book/en/v2/Git-Basics-Tagging). Not only will this help you stay organized, but you can also reference it in the case you wish to rollback to a previous deployment and aid in reapplying your custom changes when a newer version of OpenEMR is available.
