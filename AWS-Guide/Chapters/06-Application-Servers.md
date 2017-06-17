@@ -79,5 +79,5 @@ _[< previous chapter](05-Session-Management.md) | [next chapter >](07-Secure-Dom
 1. In the AWS Management Console, click **Services**, **Elastic Beanstalk**, and then choose **openemr/your_practice**.
 2. Click **Configuration**.
 3. Under **Scaling**, click the gear icon.
-4. Under **Auto Scaling**, enter your desired **Minimum instance count** and **Maximum instance count** values. If you aren't sure, enter "**3**" and "**6**", respectively.
+4. Under **Auto Scaling**, enter your desired **Minimum instance count** and **Maximum instance count** values. If you aren't sure, enter "**2**" and "**4**", respectively.
 5. Click **Apply**.
