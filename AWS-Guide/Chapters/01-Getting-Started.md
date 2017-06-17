@@ -30,13 +30,6 @@ _[next chapter >](02-Private-Cloud.md)_
 10. Under **Review**, ensure all information reflects the above steps.
 11. Click **Next: Create user**.
 
-### Restrict permissions to your Root account
-
-_TODO: Revert the **AdministratorAccess** step from above once this is in place :)_
-
-0. Explanation of why this is important since it sometimes confuses me
-1. Steps Steps Steps XYZ XYZ XYZ (this includes setting up an individual account, right?)
-
 ### Generate an AWS SSH keypair
 
 1. In the AWS Management Console, click **Services** and then click **EC2**.
