@@ -61,7 +61,7 @@ Accessing your instances with SSH is one of the more challenging tasks in this g
 1. Download and install the latest [PuTTY MSI](https://www.chiark.greenend.org.uk/~sgtatham/putty/latest.html) software suite. If you aren't sure, click [here](https://the.earth.li/~sgtatham/putty/latest/w64/putty-64bit-0.69-installer.msi).
 2. Using your AWS SSH keypair that is saved as **"your-username.pem"**, convert it to a **ppk** file by following [these instructions](http://docs.aws.amazon.com/AWSEC2/latest/UserGuide/putty.html#putty-private-key).
 
-#### What are the Recommendations for Development and Testing?
+### What are the Recommendations for Development and Testing?
 
 If you aren't planning on customizing OpenEMR source code, you can simply use one AWS environment.
 
