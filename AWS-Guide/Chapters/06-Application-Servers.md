@@ -7,6 +7,7 @@ _[< previous chapter](05-Session-Management.md) | [next chapter >](07-Secure-Dom
 1. Open "**openemr/.ebextensions/05-php-configuration.config**" and replace "**<<TIME_ZONE_HERE>>**" with your timezone from the [following list](http://php.net/manual/en/timezones.php). Do not enter spaces (e.g.: "**America\\/New_York**" is valid while "**America\\/New York**" is not - note the "\\" is required for sed escaping).
 
 ### Prepare your first deployment
+
 1. Archive **openemr** as "**openemr.zip**".
 
 ### Establish fully managed web server infrastructure
@@ -70,9 +71,10 @@ _[< previous chapter](05-Session-Management.md) | [next chapter >](07-Secure-Dom
 
 ### Post-install security update
 
-1. In the AWS Management Console, click **Services**, **Elastic Beanstalk**, and then choose **openemr/your_practice**.
-2. Click **"Actions"** in the top right.
-3. Click **"Restart App Server(s)"** to limit permissions of the OpenEMR install and update features.
+1. In the AWS Management Console, click **EC2** and then click **Instances** in the left hand pane.
+2. Clickbox the running **your_practice** instance and note the **Public DNS (IPv4)** in the bottom pane.
+3. Using this IP, SSH into the server. If you aren't sure, please review [How do I SSH into Instances](#how-do-i-ssh-into-instances) section.
+4. Run `sudo /opt/elasticbeanstalk/hooks/appdeploy/post/09-post-install-setup-file-deletion.sh` to remove public setup files from the network drive.
 
 ### Establish the environment's maximum capacity
 
