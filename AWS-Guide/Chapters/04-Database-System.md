@@ -22,11 +22,11 @@ _[< previous chapter](03-Network-File-System.md) | [next chapter >](05-Session-M
     3. In **Master Password**, enter a [strong password](https://www.random.org/passwords/?num=1&len=16&format=html&rnd=new). Make sure this is recorded in a safe place.
 9. Click **Next Step**.
 
-### Restrict database access to your private network
+### Restrict database access to its own private network
 
 1. Apply the following under **Network & Security**
-    1. In **VPC**, select "**openemr-vpc**".
-    2. In **Subnet Group**, select "**default**".
+    1. In **VPC**, select "**Create new VPC**".
+    2. In **Subnet Group**, select "**Create new DB Subnet Group**".
     3. In **Publicly Accessible**, select "**No**".
     4. In **Availability Zone**, select your preferred zone. If you aren't sure, select "**No Preference**".
     5. In **VPC Security Group(s)**, select "**Create new Security Group**".
@@ -66,7 +66,7 @@ _[< previous chapter](03-Network-File-System.md) | [next chapter >](05-Session-M
 
 ### Permit access to other instances
 
-__TODO: This should be limited to only the VPC__
+__TODO: This should be limited to only the other VPC__
 
 1. Click the tab handle with the magnifying glass icon.
 2. Under **Security Groups**, click the first link.
