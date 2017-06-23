@@ -74,7 +74,7 @@ _[< previous chapter](05-Session-Management.md) | [next chapter >](07-Secure-Dom
 1. In the AWS Management Console, click **EC2** and then click **Instances** in the left hand pane.
 2. Clickbox the running **your_practice** instance and note the **Public DNS (IPv4)** in the bottom pane.
 3. Using this IP, SSH into the server. If you aren't sure, please review [How do I SSH into Instances](#how-do-i-ssh-into-instances) section.
-4. Run `sudo /opt/elasticbeanstalk/hooks/appdeploy/post/09-post-install-setup-file-deletion.sh` to remove public setup files from the network drive.
+4. Run `sudo /opt/elasticbeanstalk/hooks/appdeploy/post/09-post-install-setup-file-deletion.sh` to manually remove public setup files (will be ran automatically when subsequent instances are created by ElasticBeanstalk).
 
 ### Establish the environment's maximum capacity
 
