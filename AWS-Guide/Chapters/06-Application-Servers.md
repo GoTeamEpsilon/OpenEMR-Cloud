@@ -44,8 +44,9 @@ _[< previous chapter](05-Session-Management.md) | [next chapter >](07-Secure-Dom
 
 1. Under **VPC**, select the VPC that includes **"10.0.0.0/16"**.
 2. Under the subnet table, checkbox all rows.
-3. Click **Next** twice and then click **Launch**.
-4. Wait many moments for the environment to be created.
+3. Under **VPC security group**, select the **"openemr-vpc"** default security group id.
+4. Click **Next** twice and then click **Launch**.
+5. Wait many moments for the environment to be created.
 
 ### Establish the environment's initial capacity
 
