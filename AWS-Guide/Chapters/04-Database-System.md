@@ -73,3 +73,14 @@ __TODO: This should be limited to only the other VPC__
 3. Click the **Actions** dropdown.
 4. Click **Edit inbound rules**.
 5. Under the entry, select **"Anywhere"** for **Source** and click **Save**.
+
+### Enforce the database to use UTF-8
+
+1. Open "**openemr/sql/database.sql**" and add the following code to the bottom:
+
+```
+use openemr;
+ALTER DATABASE openemr CHARACTER SET utf8 COLLATE utf8_general_ci;
+ALTER TABLE lang_definitions CONVERT TO CHARACTER SET utf8 COLLATE utf8_general_ci;
+ALTER TABLE lang_constants CONVERT TO CHARACTER SET utf8 COLLATE utf8_general_ci;
+```
