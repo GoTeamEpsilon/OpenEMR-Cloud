@@ -58,7 +58,7 @@ _[< previous chapter](03-Network-File-System.md) | [next chapter >](05-Session-M
 
 ### Launch your fully configured database
 
-1. Click **Launch Instance**.
+1. Click **Launch DB Instance**.
 2. Click **View your db instances**.
 3. Wait many moments for the database to be created.
 4. Click on the first row of the **Instances** table.
