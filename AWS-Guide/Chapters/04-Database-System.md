@@ -6,7 +6,7 @@ _[< previous chapter](03-Network-File-System.md) | [next chapter >](05-Session-M
 
 1. In the AWS Management Console, click **Services** and then click **RDS**.
 2. Under **Create Instance**, click **Launch a DB Instance**. If you are using a brand new account, you'll have to click **Instances** in the left-hand pane to get around the marketing screen.
-3. Click **MySQL**.
+3. Select **MySQL** and click **MySQL**.
 4. Click **Select**.
 5. Under **Production**, click **MySQL**.
 6. Click **Next Step**.
@@ -62,14 +62,23 @@ _[< previous chapter](03-Network-File-System.md) | [next chapter >](05-Session-M
 2. Click **View Your DB Instances**.
 3. Wait many moments for the database to be created.
 4. Click on the first row of the **Instances** table.
-5. Record the **Endpoint** in a safe place.
+5. Record the **Endpoint** (without the ":3306" section) in a safe place.
 
 ### Permit access to other instances
-
-__TODO: This should be limited to only the other VPC__
 
 1. Click the tab handle with the magnifying glass icon.
 2. Under **Security Groups**, click the first link.
 3. Click the **Actions** dropdown.
 4. Click **Edit inbound rules**.
 5. Under the entry, select **"Anywhere"** for **Source** and click **Save**.
+
+### Enforce the database to use UTF-8
+
+1. Open "**openemr/sql/database.sql**" and add the following code to the bottom:
+
+```
+use openemr;
+ALTER DATABASE openemr CHARACTER SET utf8 COLLATE utf8_general_ci;
+ALTER TABLE lang_definitions CONVERT TO CHARACTER SET utf8 COLLATE utf8_general_ci;
+ALTER TABLE lang_constants CONVERT TO CHARACTER SET utf8 COLLATE utf8_general_ci;
+```
