@@ -67,9 +67,10 @@ _[< previous chapter](05-Session-Management.md) | [next chapter >](07-Secure-Dom
 ### OpenEMR setup
 
 1. In the AWS Management Console, click **Services**, **Elastic Beanstalk**, and then choose **openemr/your_practice**.
-2. Note the Elastic Beanstalk **URL** at the top. It should look look like **"your_practice.my-area-1.elasticbeanstalk.com"**.
-3. At the end of the address bar in your browser, append **"/openemr"** and press enter to start the signup wizard.
-4. Go through each step of the signup wizard using the MySQL credentials noted in previous steps. Make sure to enter a [strong password](https://www.random.org/passwords/?num=1&len=16&format=html&rnd=new) for the initial user and record it in a safe place.
+2. If a big loading spinner is displayed, wait for the big green checkmark to display.
+3. Note the Elastic Beanstalk **URL** at the top. It should look look like **"your_practice.my-area-1.elasticbeanstalk.com"**.
+4. At the end of the address bar in your browser, append **"/openemr"** and press enter to start the signup wizard.
+5. Go through each step of the signup wizard using the MySQL credentials noted in previous steps. Make sure to enter a [strong password](https://www.random.org/passwords/?num=1&len=16&format=html&rnd=new) for the initial user and record it in a safe place.
 
 ### Post-install security update
 

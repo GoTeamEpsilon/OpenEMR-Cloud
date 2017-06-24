@@ -19,7 +19,7 @@ The most robust and maintainable approach for deployments is to keep an internal
 ### How do I access system logs?
 
 1. In the AWS Management Console, click **Services**, **Elastic Beanstalk**, and then choose **openemr/your_practice**.
-2. In the lefthand pane, click **Logs**.
+2. In the left hand pane, click **Logs**.
 3. Click the **Request Logs** button to the to pright of the screen.
 4. Click **Full Logs** and wait a moment for the logs to download.
 5. Extract the contents with your favorite archive extractor to view each instance's Apache logs in **logs_directory/var/log/httpd**.
@@ -27,7 +27,7 @@ The most robust and maintainable approach for deployments is to keep an internal
 ### How do I restore a database backup?
 
 1. In the AWS Management Console, click **Services**, **RDS**.
-2. In the lefthand pane, click **Instances**.
+2. In the left hand pane, click **Instances**.
 3. Checkbox your database instance.
 4. Click the **Instance Actions** button in the center of the screen.
 5. Click **Restore to Point in Time**.
@@ -42,7 +42,7 @@ The most robust and maintainable approach for deployments is to keep an internal
 _TODO: Shouldn't this be using the pem file for added security?_
 
 1. In the AWS Management Console, click **Services**, **RDS**.
-2. In the lefthand pane, click **Instances**.
+2. In the left hand pane, click **Instances**.
 3. Checkbox your database instance.
 4. Note the database **Endpoint** including the port number.
 5. Click the **Instance Actions** button in the center of the screen.

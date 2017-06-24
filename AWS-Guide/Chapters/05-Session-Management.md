@@ -4,7 +4,7 @@ _[< previous chapter](04-Database-System.md) | [next chapter >](06-Application-S
 
 ### Create environment security group
 
-1. In the AWS Management Consule, click **Services**, **VPC**, and then click **Security Groups**.
+1. In the AWS Management Console, click **Services**, **VPC**, and then click **Security Groups** in the left hand pane.
 2. Click **Create Security Group**.
 3. Under **Name tag**, **Description**, and **Group name** enter **"redis"**.
 4. Under **VPC**, select the recently created **"openemr-vpc"**.
@@ -30,7 +30,7 @@ _[< previous chapter](04-Database-System.md) | [next chapter >](06-Application-S
 ### Provide disk space for the cache when occasional writes are made outside of memory
 
 1. Click **Next: Add Storage**.
-2. Under **Size**, select your preferred disk size. If you aren't sure, enter "**8GB**".
+2. Under **Size**, select your preferred disk size. If you aren't sure, enter "**8**".
 
 ### Configure security group
 
@@ -42,8 +42,8 @@ _[< previous chapter](04-Database-System.md) | [next chapter >](06-Application-S
 
 ### Launch the instance
 1. Click **Launch**.
-2. Wait a few moments.
-3. When **Select an existing key pair or create a new key pair** dialog shows up, select your key pair, accept the terms, and click **Launch Instances**.
+2. When **Select an existing key pair or create a new key pair** dialog shows up, select your key pair, accept the terms, and click **Launch Instances**.
+3. Wait a few moments.
 
 ### Specify the name and location of instance
 
@@ -51,7 +51,7 @@ _[< previous chapter](04-Database-System.md) | [next chapter >](06-Application-S
 2. Wait a few moments.
 3. Identify the recently created instance.
 4. Click the icon in the **Name** column and name the instance "**openemr-redis**".
-5. In the AWS Management Consule, click **Services**, **VPC**, and then click **Elastic IPs**.
+5. In the AWS Management Console, click **Services**, **VPC**, and then click **Elastic IPs** in the left hand pane.
 6. Click **Allocate new address** and then click **Allocate**.
 7. Wait a few moments.
 8. A **New address request succeeded** appear. Note the Elastic IP in a safe place.
@@ -69,14 +69,13 @@ _[< previous chapter](04-Database-System.md) | [next chapter >](06-Application-S
 1. Using the Elastic IP noted from before, SSH into the server. If you aren't sure, please review [How do I SSH into Instances](#how-do-i-ssh-into-instances) section.
 2. Setup the server by running the following `curl -s https://raw.githubusercontent.com/GoTeamEpsilon/OpenEMR-AWS-Guide/master/AWS-Guide/Assets/ec2/redis-setup.sh | sh`.
 
-### Lock down the server
+### Revoke SSH access
 
-1. In the AWS Management Console, click **Services**, **VPC**, and then click **Security Groups**.
+1. In the AWS Management Console, click **Services**, **VPC**, and then click **Security Groups** in the left hand pane.
 2. Click **redis**.
 3. In the bottom pane, click **Inbound Rules** and then **Edit**.
 4. Click the **x** on the **SSH** row.
-5. For the **"CUSTOM TCP Rule"** row, edit the **source** to be the **openemr-vpc** default security group id.
-6. Click **Save**.
+5. Click **Save**.
 
 ### Configure OpenEMR servers to point at the cache
 
