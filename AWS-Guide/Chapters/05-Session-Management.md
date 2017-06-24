@@ -54,13 +54,13 @@ _[< previous chapter](04-Database-System.md) | [next chapter >](06-Application-S
 5. In the AWS Management Consule, click **Services**, **VPC**, and then click **Elastic IPs**.
 6. Click **Allocate new address** and then click **Allocate**.
 7. Wait a few moments.
-8. A **New address request succeeded** appear. Note the Elastic IP and internal IP in a safe place.
+8. A **New address request succeeded** appear. Note the Elastic IP in a safe place.
 9. Click **Close**.
 10. Checkbox the recent created IP.
 11. Click the **Actions** dropdown.
 12. Click **Associate address**.
 13. Under **Instance**, select "**openemr-redis**".
-14. Under **Private IP**, select the first dropdown value.
+14. Under **Private IP**, select the first dropdown value and note this internal IP in a safe place.
 15. Click **Associate**.
 16. Click **Close**.
 
