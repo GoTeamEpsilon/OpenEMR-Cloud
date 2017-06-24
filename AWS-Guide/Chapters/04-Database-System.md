@@ -66,8 +66,6 @@ _[< previous chapter](03-Network-File-System.md) | [next chapter >](05-Session-M
 
 ### Permit access to other instances
 
-__TODO: This should be limited to only the other VPC__
-
 1. Click the tab handle with the magnifying glass icon.
 2. Under **Security Groups**, click the first link.
 3. Click the **Actions** dropdown.
