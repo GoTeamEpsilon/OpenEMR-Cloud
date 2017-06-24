@@ -12,7 +12,7 @@ _[< previous chapter](05-Session-Management.md) | [next chapter >](07-Secure-Dom
 
 ### Establish fully managed web server infrastructure
 
-1. In the AWS Management Console, click **Services**, **Elastic Beanstalk**, and then click **Create New Application**.
+1. In the AWS Management Console, click **Services**, **Elastic Beanstalk**, and then click **Create New Application** to the top right.
 2. Enter "**openemr**" for the **Application Name**
 3. Click **Create web server**.
 4. Under **Preconfigured platform**, select "**PHP**".
