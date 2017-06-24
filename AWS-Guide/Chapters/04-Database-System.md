@@ -6,7 +6,7 @@ _[< previous chapter](03-Network-File-System.md) | [next chapter >](05-Session-M
 
 1. In the AWS Management Console, click **Services** and then click **RDS**.
 2. Under **Create Instance**, click **Launch a DB Instance**. If you are using a brand new account, you'll have to click **Instances** in the left-hand pane to get around the marketing screen.
-3. Click **MySQL**.
+3. Select **MySQL** and click **MySQL**.
 4. Click **Select**.
 5. Under **Production**, click **MySQL**.
 6. Click **Next Step**.
