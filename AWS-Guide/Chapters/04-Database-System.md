@@ -27,7 +27,7 @@ _[< previous chapter](03-Network-File-System.md) | [next chapter >](05-Session-M
 1. Apply the following under **Network & Security**
     1. In **VPC**, select "**Create new VPC**".
     2. In **Subnet Group**, select "**Create new DB Subnet Group**".
-    3. In **Publicly Accessible**, select "**No**".
+    3. In **Publicly Accessible**, select "**Yes**".
     4. In **Availability Zone**, select your preferred zone. If you aren't sure, select "**No Preference**".
     5. In **VPC Security Group(s)**, select "**Create new Security Group**".
 2. Apply the following under **Database Options**:
