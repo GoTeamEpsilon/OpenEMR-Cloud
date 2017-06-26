@@ -17,4 +17,4 @@ _[< previous chapter](02-Private-Cloud.md) | [next chapter >](04-Database-System
 
 ### Configure OpenEMR servers to mount the shared drive on bootup
 
-1. Open "**openemr/.ebextensions/07-efs-mount-install.config**" and replace "**<<FS_ID_HERE>>**" with your noted **File System ID** from before.
+1. Open "**openemr/.ebextensions/00-options.config**" and replace "**<<enter EFS file system ID here>>**" with your noted **File System ID** from before.
