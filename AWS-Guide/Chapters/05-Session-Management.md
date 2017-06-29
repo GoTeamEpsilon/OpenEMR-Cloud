@@ -79,4 +79,4 @@ _[< previous chapter](04-Database-System.md) | [next chapter >](06-Application-S
 
 ### Configure OpenEMR servers to point at the cache
 
-1. Open "**openemr/.ebextensions/00-options.config**" and replace "**<<enter redis IP here>>**" with your noted internal IP from before.
+1. Open "**openemr/.ebextensions/00-options.config**" and replace "**&lt;&lt;enter redis IP here&gt;&gt;**" with your noted internal IP from before.
