@@ -66,7 +66,7 @@ _[< previous chapter](04-Database-System.md) | [next chapter >](06-Application-S
 
 ### Provision the server
 
-1. Using the Elastic IP noted from before, SSH into the server. If you aren't sure, please review [How do I SSH into Instances](#how-do-i-ssh-into-instances) section.
+1. Using the Elastic IP noted from before, SSH into the server. If you aren't sure, please review [How do I SSH into Instances](../Chapters/08-Administration.md#how-do-i-ssh-into-instances) section.
 2. Setup the server by running the following `curl -s https://raw.githubusercontent.com/GoTeamEpsilon/OpenEMR-AWS-Guide/master/AWS-Guide/Assets/ec2/redis-setup.sh | sh`.
 
 ### Revoke SSH access
