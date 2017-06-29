@@ -4,7 +4,7 @@ _[< previous chapter](05-Session-Management.md) | [next chapter >](07-Secure-Dom
 
 ### Configure the servers to use your timezone
 
-1. Open "**openemr/.ebextensions/00-options.config**" and replace "**&lt;&lt;enter timezone here&gt;&gt;**" with your timezone from the [following list](http://php.net/manual/en/timezones.php). Do not enter spaces (e.g.: "**America\\/New_York**" is valid while "**America\\/New York**" is not - note the "\\" is required for sed escaping).
+1. Open "**openemr/.ebextensions/00-options.config**" and replace "**&lt;&lt;enter timezone here&gt;&gt;**" with your timezone from the [following list](http://php.net/manual/en/timezones.php). Do not enter spaces (e.g.: "**America\\/New_York**" is valid while "**America\\/New York**" is not - note the "\\" is required for the sed command the bash script will run).
 
 ### Prepare your first deployment
 
@@ -70,13 +70,13 @@ _[< previous chapter](05-Session-Management.md) | [next chapter >](07-Secure-Dom
 2. If a big loading spinner is displayed, wait for the big green checkmark to display.
 3. Note the Elastic Beanstalk **URL** at the top. It should look look like **"your_practice.my-area-1.elasticbeanstalk.com"**.
 4. At the end of the address bar in your browser, append **"/openemr"** and press enter to start the signup wizard.
-5. Go through each step of the signup wizard using the MySQL credentials noted in previous steps. Make sure to enter a [strong password](https://www.random.org/passwords/?num=1&len=16&format=html&rnd=new) for the initial user and record it in a safe place.
+5. Go through each step of the signup wizard using the MySQL credentials noted in previous steps. Make sure to enter a [strong password](https://www.random.org/passwords/?num=1&len=16&format=html&rnd=new) for the initial user and record it in a safe place. Note that the first step of the wizard will take a few minutes. Although the page will be white and not have any loading indicators, please do not attempt to refresh the page or resubmit the request.
 
 ### Post-install security update
 
 1. In the AWS Management Console, click **EC2** and then click **Instances** in the left hand pane.
 2. Clickbox the running **your_practice** instance and note the **Public DNS (IPv4)** in the bottom pane.
-3. Using this IP, SSH into the server. If you aren't sure, please review [How do I SSH into Instances](#how-do-i-ssh-into-instances) section.
+3. Using this IP, SSH into the server. If you aren't sure, please review [How do I SSH into Instances](../chapters/08-Administration.md#how-do-i-ssh-into-instances) section.
 4. Run `sudo /opt/elasticbeanstalk/hooks/appdeploy/post/09-post-install-setup-file-deletion.sh` to manually remove public setup files (will be ran automatically when subsequent instances are created by ElasticBeanstalk).
 
 ### Establish the environment's maximum capacity
@@ -85,4 +85,4 @@ _[< previous chapter](05-Session-Management.md) | [next chapter >](07-Secure-Dom
 2. Click **Configuration**.
 3. Under **Scaling**, click the gear icon.
 4. Under **Auto Scaling**, enter your desired **Minimum instance count** and **Maximum instance count** values. If you aren't sure, enter "**2**" and "**4**", respectively.
-5. Click **Apply**.
+5. Click **Apply**. If you are a large institution and/or will have a lot of patient documents, please review [this note in the Administration chapter.](../chapters/08-Administration.md#im-occasionally-seeing-site-id-is-missing-from-session-data-errors)
