@@ -9,7 +9,7 @@ _[next chapter >](02-Private-Cloud.md)_
 3. Rename the downloaded "**openemr-5.0.0**" directory to "**openemr**".
 4. Enter into the "**openemr**" directory.
 5. Create an AWS specific directory called "**.ebextensions**".
-6. Download all files in [this](https://github.com/GoTeamEpsilon/OpenEMR-AWS-Guide/tree/master/assets/eb) area to the newly created "**.ebextensions**" directory.
+6. Download all files in [this](https://github.com/GoTeamEpsilon/OpenEMR-Cloud/tree/master/v1-Beta-AWS-Guide/assets/eb) area to the newly created "**.ebextensions**" directory. Be careful to save the files as `.config` files and not `.config.txt` files.
 
 ### Create an AWS Account
 

@@ -2,9 +2,24 @@ _[< previous chapter](07-Secure-Domain-Setup.md)_
 
 # 🎛 Administration
 
+_This chapter is dedicated for Administrators for reference and answering common questions. Please review it throughly._
+
+### Can I Use This Beta Guide for Production?
+
+Although this AWS Guide is in beta, it is suitable for production use for institutions mostly outside of the US because it is not HIPAA/BAA compliant. Although TeamEpsilon and OpenEMR community members have tested the guide, the following limitations should be noted:
+
+- The guide is manual, which means that it is prone to human error and the Amazon UI changing.
+- Cost estimates of monthly AWS are not provided in the guide.
+- [There is a minor issue with autoscaling with a noted workaround](#im-occasionally-seeing-site-id-is-missing-from-session-data-errors)
+- HIPAA/BAA compliance has not been met for this solution.
+- The RDS MySQL database has been deployed in another VPC as a technical workaround. While this is acceptable, the instance must be publically accessible for the OpenEMR VPC to communicate to it. This can be seen as a security issue.
+- Redis is set up as a large single instance as opposed to a cluster of instances.
+
+A **Stable** version of this solution is being worked on by TeamEpsilon. All of the above limitations will be addressed. In addition, the solution can be ran on Microsoft, Google, and Oracle clouds.
+
 ### What does the architecture look like?
 
-![diagram](../Assets/diagrams/architecture.png)
+![diagram](../assets/diagrams/architecture.png)
 
 ### How do I deploy custom changes to my cloud?
 
@@ -32,7 +47,7 @@ The most robust and maintainable approach for deployments is to keep an internal
 4. Click the **Instance Actions** button in the center of the screen.
 5. Click **Restore to Point in Time**.
 6. Enter the date and time for your restore under **Use Custom Restore Time**.
-7. Configure the database restore instance as you did when [creating the initial system](../Chapters/04-Database-System.md).
+7. Configure the database restore instance as you did when [creating the initial system](../chapters/04-Database-System.md).
 8. SSH into any EC2 instance associated with the Elastic Beanstalk environment and note the values in **openemr/sites/default/sqlconf.php**.
 9. Update your local **openemr/sites/default/sqlconf.php** with these noted values, but with the new MySQL restore endpoint information.
 10. Reploy the application via [the instructions in the deployment section](#how-do-i-deploy-custom-changes-to-my-cloud).
@@ -113,16 +128,3 @@ EFS provides no automated backup solution and leaves it to the administrator to 
 http://docs.aws.amazon.com/efs/latest/ug/efs-backup.html.
 
 As far as recommendations from TeamEpsilon, we recommend setting up a special backup EC2 instance (e.g.: Ubuntu AMI) and setting up a cron job with a script that executes something like `aws s3 sync /nfs s3://bucket`. S3 is good for backups because it allows an unlimited amount of storage and is secure.
-
-### Can I Use This Beta Guide for Production?
-
-Although this AWS Guide is in beta, it is suitable for production use for institutions mostly outside of the US because it is not HIPAA/BAA compliant. Although TeamEpsilon and OpenEMR community members have tested the guide, the following limitations should be noted:
-
-- The guide is manual, which means that it is prone to human error and the Amazon UI changing.
-- Cost estimates of monthly AWS are not provided in the guide.
-- [There is a minor issue with autoscaling with a noted workaround](#im-occasionally-seeing-site-id-is-missing-from-session-data-errors)
-- HIPAA/BAA compliance has not been met for this solution.
-- The RDS MySQL database has been deployed in another VPC as a technical workaround. While this is acceptable, the instance must be publically accessible for the OpenEMR VPC to communicate to it. This can be seen as a security issue.
-- Redis is set up as a large single instance as opposed to a cluster of instances.
-
-A **Stable** version of this solution is being worked on by TeamEpsilon. All of the above limitations will be addressed. In addition, the solution can be ran on Microsoft, Google, and Oracle clouds.
