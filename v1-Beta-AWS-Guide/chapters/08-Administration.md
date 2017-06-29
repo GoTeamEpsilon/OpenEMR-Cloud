@@ -10,7 +10,7 @@ Although this AWS Guide is in beta, it is suitable for production use for instit
 
 - The guide is manual, which means that it is prone to human error and the Amazon UI changing.
 - Cost estimates of monthly AWS are not provided in the guide.
-- [There is a minor issue with autoscaling with a noted workaround](#im-occasionally-seeing-site-id-is-missing-from-session-data-errors)
+- [There is a minor issue with autoscaling with a noted workaround but not a complete solution.](#im-occasionally-seeing-site-id-is-missing-from-session-data-errors)
 - HIPAA/BAA compliance has not been met for this solution.
 - The RDS MySQL database has been deployed in another VPC as a technical workaround. While this is acceptable, the instance must be publically accessible for the OpenEMR VPC to communicate to it. This can be seen as a security issue.
 - Redis is set up as a large single instance as opposed to a cluster of instances.
@@ -108,12 +108,12 @@ Regardless of if you planning on making a lot or a few changes to the OpenEMR so
 
 ### I'm Occasionally Seeing "Site ID is missing from session data!" Errors
 
-This is a known issue with this AWS Guide. This error will be shown when the ElasticBeanstalk is autoscaling a new instance. Fortunately, the time window for this error is extremely small (will only show if a user is load balanced to the new instance in a time window of about 30 seconds). However, this this downtime may be unacceptable for your use case (e.x.: bigger institutions) so you may set a finite number of instances for the load balanced cluster:
+This is a known issue with this AWS Guide. This error will be shown when the ElasticBeanstalk is autoscaling a new instance. Fortunately, the time window for this error is extremely small (will only show if a user is load balanced to the new instance in a time window of about 30 seconds). However, this this downtime may be unacceptable for your use case (e.x.: bigger institutions) so you may set a finite number of instances for the load balanced cluster to minimize the chance of this error happening. Note this is not a full solution, but a workaround that will _reduce_ the odds of this error occuring:
 
 1. In the AWS Management Console, click **Services**, **Elastic Beanstalk**, and then choose **openemr/your_practice**.
 2. Click **Configuration**.
 3. Under **Scaling**, click the gear icon.
-4. Under **Auto Scaling**, enter "**4**" for **Minimum instance count** and "**4**" for **Maximum instance count**. Increase/decrease "**4**" as needed, just make sure the numbers are the same.
+4. Under **Auto Scaling**, enter "**4**" for **Minimum instance count** and "**4**" for **Maximum instance count**. Increase/decrease "**4**" as needed, just make sure the numbers are the same and are relatively high.
 5. Click **Apply**.
 
 ### Can I Backup the RDS MySQL Database?
