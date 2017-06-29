@@ -14,6 +14,7 @@ Although this AWS Guide is in beta, it is suitable for production use for instit
 - HIPAA/BAA compliance has not been met for this solution.
 - The RDS MySQL database has been deployed in another VPC as a technical workaround. While this is acceptable, the instance must be publically accessible for the OpenEMR VPC to communicate to it. This can be seen as a security issue.
 - Redis is set up as a large single instance as opposed to a cluster of instances.
+- No SMTP solution is in place so OpenEMR emails will not be sent.
 
 A **Stable** version of this solution is being worked on by TeamEpsilon. All of the above limitations will be addressed. In addition, the solution can be ran on Microsoft, Google, and Oracle clouds.
 
