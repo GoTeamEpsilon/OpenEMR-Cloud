@@ -9,5 +9,5 @@ _[< previous chapter](01-Getting-Started.md) | [next chapter >](03-Network-File-
 3. In **VPC Name**, enter "**openemr-vpc**".
 4. In **Availability Zone**, select your preferred zone. If you aren't sure, select the first entry. In fact, this is strongly encouraged due to issues with selecting entries at the bottom of the list which may not be supported in ElasticBeanstalk.
 5. Click **Create VPC**.
-6. In the lefthand pane, click **Security Groups**.
+6. In the left hand pane, click **Security Groups**.
 7. Note the Group ID for the recently created **"default"** VPC.
