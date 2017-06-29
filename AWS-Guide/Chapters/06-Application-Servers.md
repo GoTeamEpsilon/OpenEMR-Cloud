@@ -4,11 +4,11 @@ _[< previous chapter](05-Session-Management.md) | [next chapter >](07-Secure-Dom
 
 ### Configure the servers to use your timezone
 
-1. Open "**openemr/.ebextensions/00-options.config**" and replace "**<<enter timezone here>>**" with your timezone from the [following list](http://php.net/manual/en/timezones.php). Do not enter spaces (e.g.: "**America\\/New_York**" is valid while "**America\\/New York**" is not - note the "\\" is required for sed escaping).
+1. Open "**openemr/.ebextensions/00-options.config**" and replace "**&lt;&lt;enter timezone here&gt;&gt;**" with your timezone from the [following list](http://php.net/manual/en/timezones.php). Do not enter spaces (e.g.: "**America\\/New_York**" is valid while "**America\\/New York**" is not - note the "\\" is required for sed escaping).
 
 ### Prepare your first deployment
 
-1. Archive **openemr** as "**openemr.zip**".
+1. Archive **openemr** as "**openemr.zip**". Note that the name of the file must be exact.
 
 ### Establish fully managed web server infrastructure
 
@@ -20,12 +20,12 @@ _[< previous chapter](05-Session-Management.md) | [next chapter >](07-Secure-Dom
 
 ### Upload your first deployment
 1. Under **Application code**, radio check **Upload your code**.
-2. Click **Upload** and select "**openemr.zip**". Note that the name of the file must be exact.
+2. Click **Upload** and select "**openemr.zip**".
 3. Click **Next**.
 
 ### Name the environment
 
-1. Under **Environment name**, enter **"<<your_practice>>"**.
+1. Under **Environment name**, enter your practice's name.
 2. Click **Next**.
 
 ### Lock down your environment
