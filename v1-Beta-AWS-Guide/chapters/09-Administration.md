@@ -1,4 +1,4 @@
-_[< previous chapter](07-Secure-Domain-Setup.md)_
+_[< previous chapter](08-CloudTrail.md)_
 
 # 🎛 Administration
 
