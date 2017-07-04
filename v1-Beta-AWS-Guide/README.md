@@ -11,4 +11,5 @@ A *beta* guide for manually setting up a production OpenEMR system on AWS. The p
 5. 💻 [Session Management](chapters/05-Session-Management.md)
 6. 🖥 [Application Servers](chapters/06-Application-Servers.md)
 7. ▶ [Secure Domain Setup](chapters/07-Secure-Domain-Setup.md)
-8. 🎛 [Administration](chapters/08-Administration.md)
+8. 📝 [CloudTrail](chapters/08-CloudTrail.md)
+9. 🎛 [Administration](chapters/09-Administration.md)
