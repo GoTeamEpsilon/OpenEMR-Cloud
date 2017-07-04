@@ -129,3 +129,9 @@ EFS provides no automated backup solution and leaves it to the administrator to 
 http://docs.aws.amazon.com/efs/latest/ug/efs-backup.html.
 
 As far as recommendations from TeamEpsilon, we recommend setting up a special backup EC2 instance (e.g.: Ubuntu AMI) and setting up a cron job with a script that executes something like `aws s3 sync /nfs s3://bucket`. S3 is good for backups because it allows an unlimited amount of storage and is secure.
+
+### How Do I Access CloudTrail Audit Logs?
+
+1. Click on **Services** and then click **S3**.
+2. Look for the bucket with a name following this format: **\<_your account ID_\>-cloudtrail-logs**.
+3. Click into the bucket, then **AWSLogs**, then **\<_your account ID_\>**, then **CloudTrail**.

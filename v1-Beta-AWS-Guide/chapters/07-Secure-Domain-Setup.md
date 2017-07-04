@@ -1,4 +1,4 @@
-_[< previous chapter](06-Application-Servers.md) | [next chapter >](08-Administration.md)_
+_[< previous chapter](06-Application-Servers.md) | [next chapter >](08-CloudTrail.md)_
 
 # ▶ Secure Domain Setup
 
