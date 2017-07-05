@@ -2,6 +2,13 @@ _[< previous chapter](03-Network-File-System.md) | [next chapter >](05-Session-M
 
 # 💽 Database System
 
+### Prepare network configuration
+
+1. In the AWS Management Console, click **Services** and then click **RDS**.
+2. In the left pane, click **Subnet Groups**, **Create DB Subnet Group**.
+3. Call it "openemr-db-subnets", "OpenEMR DB Subnets", and select the OpenEMR VPC.
+4. Add to the group the two "Private" subnets. These are probably 10.0.1.0/24 and 10.0.2.0/24, from the two Availability Zones you selected in Chapter 2. You may need to return to the VPC Subnet display to confirm these details. **Add** each subnet as you select it, and **Create** it once you've added both.
+
 ### Create a fully managed MySQL database
 
 1. In the AWS Management Console, click **Services** and then click **RDS**.
@@ -25,11 +32,11 @@ _[< previous chapter](03-Network-File-System.md) | [next chapter >](05-Session-M
 ### Restrict database access to its own private network
 
 1. Apply the following under **Network & Security**
-    1. In **VPC**, select "**Create new VPC**".
-    2. In **Subnet Group**, select "**Create new DB Subnet Group**".
-    3. In **Publicly Accessible**, select "**Yes**".
+    1. In **VPC**, select your VPC.
+    2. In **Subnet Group**, select "**openemr-db-subnets**".
+    3. In **Publicly Accessible**, select "**No**".
     4. In **Availability Zone**, select your preferred zone. If you aren't sure, select "**No Preference**".
-    5. In **VPC Security Group(s)**, select "**Create new Security Group**".
+    5. In **VPC Security Group(s)**, select "**default**".
 2. Apply the following under **Database Options**:
     1. In **Database Name**, enter "**openemr**".
     2. In **Database Port**, enter "**3306**".
@@ -64,13 +71,9 @@ _[< previous chapter](03-Network-File-System.md) | [next chapter >](05-Session-M
 4. Click on the first row of the **Instances** table.
 5. Record the **Endpoint** (without the ":3306" section) in a safe place.
 
-### Permit access to other instances
+### Check your work
 
-1. Click the tab handle with the magnifying glass icon.
-2. Under **Security Groups**, click the first link.
-3. Click the **Actions** dropdown.
-4. Click **Edit inbound rules**.
-5. Under the entry, select **"Anywhere"** for **Source** and click **Save**.
+Once the instance is done backing-up and is in the Available state, you should be able to connect, over the VPN, to this database instance (via the MySQL client of your choice).
 
 ### Enforce the database to use UTF-8
 

@@ -7,7 +7,7 @@ _[< previous chapter](02-Private-Cloud.md) | [next chapter >](04-Database-System
 1. In the AWS Management Console, click **Services** and then click **EFS**.
 2. Click **Create file system**.
 3. Under **VPC**, select **"openemr-vpc"**.
-4. Under **Create mount targets**, checkbox all items.
+4. Under **Create mount targets**, checkbox all items, selecting the "Private" and "Other Private" subnets.
 5. Click **Next Step**.
 6. Under **Choose performance mode**, select your preferred performance setting. If you aren't sure, select "**General Purpose**".
 7. Click **Next Step**.

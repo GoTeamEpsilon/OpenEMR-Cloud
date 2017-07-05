@@ -42,11 +42,12 @@ _[< previous chapter](05-Session-Management.md) | [next chapter >](07-Secure-Dom
 
 ### Attach environment to VPC
 
-1. Under **VPC**, select the VPC that includes **"10.0.0.0/16"**.
-2. Under the subnet table, checkbox all rows.
-3. Under **VPC security group**, select the **"openemr-vpc"** default security group id.
-4. Click **Next** twice and then click **Launch**.
-5. Wait many moments for the environment to be created.
+1. Under **VPC**, select your VPC.
+2. Ensure **"Associate Public IP Address"** is unchecked.
+3. Under the subnet table, checkbox ELB for the public subnets and EC2 for the private ones -- see Chapter 2.
+4. Under **VPC security group**, select the **default** security group, not the VPN.
+5. Click **Next** twice and then click **Launch**.
+6. Wait many moments for the environment to be created.
 
 ### Establish the environment's initial capacity
 
