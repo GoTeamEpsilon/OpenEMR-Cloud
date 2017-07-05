@@ -117,6 +117,16 @@ This is a known issue with this AWS Guide. This error will be shown when the Ela
 4. Under **Auto Scaling**, enter "**4**" for **Minimum instance count** and "**4**" for **Maximum instance count**. Increase/decrease "**4**" as needed, just make sure the numbers are the same and are relatively high.
 5. Click **Apply**.
 
+Another workaround that will reduce the odds of this error occuring even more than the above workaround is the following:
+
+1. In the AWS Management Console, click **Services**, **Elastic Beanstalk**, and then choose **openemr/your_practice**.
+2. Click **Configuration**.
+3. Under **Scaling**, click the gear icon.
+4. Under **Environment type**, select **"Single instance"**.
+5. Click **Apply**.
+
+Note that it will most likely make sense to increase the size of the instance in this scenario because there is only one instance servicing all production traffic. This can be accomplished by in the **Instances**: **Instance type** section of **Configuration**.
+
 ### Can I Backup the RDS MySQL Database?
 
 RDS does this for you and this AWS Guide has great defaults for its configuration. If you want to learn more about the backups or customize them further for your use case, please review http://docs.aws.amazon.com/AmazonRDS/latest/UserGuide/USER_WorkingWithAutomatedBackups.html.
