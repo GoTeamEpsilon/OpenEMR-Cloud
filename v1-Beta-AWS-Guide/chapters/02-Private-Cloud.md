@@ -60,5 +60,5 @@ _[< previous chapter](01-Getting-Started.md) | [next chapter >](03-Network-File-
 6. Log in as user **openvpnas**.
 7. Agree with the license, leave all other answers default.
 8. At the shell, run **sudo passwd openvpn**, set an administrative password, and disconnect.
-9. Browse **https://<recently noted server ip>:943/admin**, user openvpn, password as set, **Agree**, **Logout**. Note that you'll see a warning about an unsafe connection, click, you can proceed despite of this.
-10. Browse **https://<recently noted server ip>:943/?src=connect**, and follow along with the wizard to download and connect to your VPN.
+9. Browse **https://&lt;&lt;recently noted server ip&gt;&gt;:943/admin**, user openvpn, password as set, **Agree**, **Logout**. Note that you'll see a warning about an unsafe connection, click, you can proceed despite of this.
+10. Browse **https://&lt;&lt;recently noted server ip&gt;&gt;:943/?src=connect**, and follow along with the wizard to download and connect to your VPN.
