@@ -12,13 +12,14 @@ Although this AWS Guide is in beta, it is suitable for production use for instit
 - Cost estimates of monthly AWS are not provided in the guide.
 - [There is a minor issue with autoscaling with a noted workaround but not a complete solution.](#im-occasionally-seeing-site-id-is-missing-from-session-data-errors)
 - HIPAA/BAA compliance has not been met for this solution.
-- The RDS MySQL database has been deployed in another VPC as a technical workaround. While this is acceptable, the instance must be publically accessible for the OpenEMR VPC to communicate to it. This can be seen as a security issue.
 - Redis is set up as a large single instance as opposed to a cluster of instances.
 - No SMTP solution is in place so OpenEMR emails will not be sent.
 
 A **Stable** version of this solution is being worked on by TeamEpsilon. All of the above limitations will be addressed. In addition, the solution can be ran on Microsoft, Google, and Oracle clouds.
 
 ### What does the architecture look like?
+
+TODO: This needs to be updated
 
 ![diagram](../assets/diagrams/architecture.png)
 
@@ -55,11 +56,14 @@ The most robust and maintainable approach for deployments is to keep an internal
 
 ### How do I Access the Database?
 
-1. Assuming you have MySQL or simply a MySQL client library installed, perform your MySQL work by running `mysql -u openemr_db_user -p -h (noted RDS endpoint without port) openemr`
-2. When prompted, enter your password.
-3. Type `use openemr;` and hit enter.
+1. Connect to OpenVPN.
+2. Assuming you have MySQL or simply a MySQL client library installed, perform your MySQL work by running `mysql -u openemr_db_user -p -h (noted RDS endpoint without port) openemr`
+3. When prompted, enter your password.
+4. Type `use openemr;` and hit enter.
 
 ### How do I SSH Into Instances?
+
+TODO: This section needs to be updated with OpenVPN stuff
 
 Accessing your instances with SSH is one of the more challenging tasks in this guide. As such, be sure to treat this as a learning opportunity and pay close attention to the instructions to ensure the most seamless experience.
 
@@ -145,3 +149,29 @@ As far as recommendations from TeamEpsilon, we recommend setting up a special ba
 1. Click on **Services** and then click **S3**.
 2. Look for the bucket with a name following this format: **\<_your account ID_\>-cloudtrail-logs**.
 3. Click into the bucket, then **AWSLogs**, then **\<_your account ID_\>**, then **CloudTrail**.
+
+### How Do I Create Additional OpenVPN Users?
+
+TODO: format
+
+..*Create additional users that lack administrative server access, then connect to the VPN server with those users instead of **openvpn**.
+..*Consider blocking 22 and 943 from the world -- use a separate security group for the times when the server needs direct configuration from outside
+the VPN or initial provisioning of profiles.
+..*Consider turning off server admin access from 443, forcing it all to go through the (properly blocked) 943.
+..*Once your domain is configured, create an A record for "vpn.<yoursite>.com" and this server's IP.
+..*Once you have a wildcard SSL cert, come back to the VPN server and add your new SSL credentials so you don't need a security exception to administer the server.
+..*https://docs.openvpn.net/how-to-tutorialsguides/virtual-platforms/amazon-ec2-appliance-ami-quick-start-guide/ may be of interest.
+
+### Can I Turn Off OpenVPN and NAT Gateway When I'm Not Using Them?
+
+TODO: finalize (this is a copy/paste from a Slack chat)
+
+It's not /necessary/ for production, honestly. You could have both OpenVPN stopped and the NAT gateway disabled and be able to function perfectly well.
+
+Well, unless OpenEMR needs to talk to foreign servers, then you have to have it on.
+
+But it's more-or-less unavoidable if you want the network shielded and unroutable like we have it, and I think that's really important.
+
+The VPN is way more secure than spoofable IP whitelisting -- we changed our work security to that model and I adore it. No more "being on the same network as the developers means you have direct access to MySQL and sensitive ports".
+
+Now you've got to have the SSL keys for the tunnel or you're no better than any other scrub.
