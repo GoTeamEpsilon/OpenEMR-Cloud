@@ -78,7 +78,7 @@ _[< previous chapter](05-Session-Management.md) | [next chapter >](07-Secure-Dom
 
 1. In the AWS Management Console, click **EC2** and then click **Instances** in the left hand pane.
 2. Clickbox the running **your_practice** instance and note the **Public DNS (IPv4)** in the bottom pane.
-3. Using this IP, SSH into the server. If you aren't sure, please review [How do I SSH into Instances](../chapters/08-Administration.md#how-do-i-ssh-into-instances) section.
+3. Using this IP, SSH into the server. If you aren't sure, please review [How do I SSH into Instances](../chapters/09-Administration.md#how-do-i-ssh-into-instances) section.
 4. Run `sudo /opt/elasticbeanstalk/hooks/appdeploy/post/09-post-install-setup-file-deletion.sh` to manually remove public setup files (will be ran automatically when subsequent instances are created by ElasticBeanstalk).
 
 ### Establish the environment's maximum capacity
@@ -87,4 +87,4 @@ _[< previous chapter](05-Session-Management.md) | [next chapter >](07-Secure-Dom
 2. Click **Configuration**.
 3. Under **Scaling**, click the gear icon.
 4. Under **Auto Scaling**, enter your desired **Minimum instance count** and **Maximum instance count** values. If you aren't sure, enter "**2**" and "**4**", respectively.
-5. Click **Apply**. If you are a large institution and/or will have a lot of patient documents, please review [this note in the Administration chapter.](../chapters/08-Administration.md#im-occasionally-seeing-site-id-is-missing-from-session-data-errors)
+5. Click **Apply**. If you are a large institution and/or will have a lot of patient documents, please review [this note in the Administration chapter.](../chapters/09-Administration.md#im-occasionally-seeing-site-id-is-missing-from-session-data-errors)
