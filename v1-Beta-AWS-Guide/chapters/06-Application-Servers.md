@@ -19,6 +19,7 @@ _[< previous chapter](05-Session-Management.md) | [next chapter >](07-Secure-Dom
 5. Click **Next**.
 
 ### Upload your first deployment
+
 1. Under **Application code**, radio check **Upload your code**.
 2. Click **Upload** and select "**openemr.zip**".
 3. Click **Next**.
