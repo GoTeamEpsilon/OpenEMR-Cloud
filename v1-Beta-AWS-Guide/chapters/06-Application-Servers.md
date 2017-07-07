@@ -30,23 +30,24 @@ _[< previous chapter](05-Session-Management.md) | [next chapter >](07-Secure-Dom
 
 ### Lock down your environment
 
-1. Under **Additional Resources**, checkbox **"Create this environment inside a VPC"**.
+1. Under **Additional Resources**, checkbox "**Create this environment inside a VPC**".
 2. Click **Next**.
 
 ### Configure Instance Servers
 
-1. Select an instance size under **Instance type**. If you're not sure, select **"t1.micro"**.
+1. Select an instance size under **Instance type**. If you're not sure, select "**t1.micro**".
 2. Under **EC2 key pair**, select your keypair.
 3. Under **Email address**, enter your email.
 4. Click **Next** twice.
 
 ### Attach environment to VPC
 
-1. Under **VPC**, select your VPC.
-2. Ensure **"Associate Public IP Address"** is unchecked.
-3. Under the subnet table, checkbox ELB for the public subnets and EC2 for the private ones -- see Chapter 2.
-4. Under **VPC security group**, select the **default** security group, not the VPN.
-5. Click **Next** twice and then click **Launch**.
+1. Under **VPC**, select the "**10.0.0.0/16**" VPC.
+2. Ensure **"Associate Public IP Address"** is unchecked. Note that if it _is_ checkboxed, the solution will not work.
+3. Under the subnet table, checkbox **"ELB**" for the public subnets "**10.0.2.0/24**" and "**10.0.0.0/24**".
+4. Still under the subnet table, checkbox "**EC2**" for the private subnets "**10.0.1.0/24**" and "**10.0.3.0/24**".
+5. Under **VPC security group**, select the **default** security group, _not_ the VPN Server.
+5. Click **Next** twice and then click **Launch** to the bottom right.
 6. Wait many moments for the environment to be created.
 
 ### Establish the environment's initial capacity
@@ -54,7 +55,7 @@ _[< previous chapter](05-Session-Management.md) | [next chapter >](07-Secure-Dom
 1. Click **Configuration**.
 2. Under **Scaling**, click the gear icon.
 3. Under **Auto Scaling**, enter "**1**" for **Minimum instance count** and "**1**" for **Maximum instance count** values. These values will be changed later, a single instance will be used to set the baseline for the EFS.
-4. Click **Apply**.
+4. Click **Apply** to the bottom right.
 
 ### Extend the load balancer idle timeout
 
@@ -62,7 +63,7 @@ _[< previous chapter](05-Session-Management.md) | [next chapter >](07-Secure-Dom
 2. Checkbox the first load balancer.
 3. In the the bottom hand pane, scroll down to the **Attributes** area.
 4. Click **Edit idle timeout**.
-5. For **Idle timeout**, enter **"3600"**.
+5. For **Idle timeout**, enter "**3600**".
 6. Click **Save**.
 
 ### OpenEMR setup
@@ -70,7 +71,7 @@ _[< previous chapter](05-Session-Management.md) | [next chapter >](07-Secure-Dom
 1. In the AWS Management Console, click **Services**, **Elastic Beanstalk**, and then choose **openemr/your_practice**.
 2. If a big loading spinner is displayed, wait for the big green checkmark to display.
 3. Note the Elastic Beanstalk **URL** at the top. It should look look like **"your_practice.my-area-1.elasticbeanstalk.com"**.
-4. At the end of the address bar in your browser, append **"/openemr"** and press enter to start the signup wizard.
+4. At the end of the address bar in your browser, append "**/openemr**" and press enter to start the signup wizard.
 5. Go through each step of the signup wizard using the MySQL credentials noted in previous steps. Make sure to enter a [strong password](https://www.random.org/passwords/?num=1&len=16&format=html&rnd=new) for the initial user and record it in a safe place. Note that the first step of the wizard will take a few minutes. Although the page will be white and not have any loading indicators, please do not attempt to refresh the page or resubmit the request.
 
 ### Post-install security update

@@ -21,7 +21,7 @@ _[< previous chapter](06-Application-Servers.md) | [next chapter >](08-CloudTrai
 5. Checkbox your recently created domain name and then click **Create Hosted Zone** to the top left.
 6. In the new **Create Hosted Zone** right hand pane, enter your noted domain name in for **Domain Name** and then click **Create**.
 7. Click **Create Record Set** to the top.
-8. In the new **Create Record Set** right hand pane, enter **"www"** for **Name** and **"A - IPv4 address"** for **Type**.
+8. In the new **Create Record Set** right hand pane, enter "**www**" for **Name** and "**A - IPv4 address**" for **Type**.
 9. Checkbox **"Yes"** for **Alias**.
 10. Under **Alias Target**, select the only entry under **Elastic Beanstalk Environments**.
 11. Click **Create**.
@@ -30,10 +30,10 @@ _[< previous chapter](06-Application-Servers.md) | [next chapter >](08-CloudTrai
 
 1. In the AWS Management Console, click **Services** and then **Certificate Manager**.
 2. Click **Request a certificate** to the top left.
-3. Under **Domain name**, enter your domain without a **"www."** prefix.
+3. Under **Domain name**, enter your domain without a "**www.**" prefix.
 4. Click **Add another name to this certificate**.
 5. Enter another domain entry with a **"*."** prefix.
 6. Click **Review and request**.
 7. Click **Confirm and request**.
 8. Wait around 10 minutes for multiple AWS emails to be sent to you. Click the confirmation link in each message body.
-9. Navigate to **"https://www.your_practice_domain.ext/openemr"** and inform your user base of the link.
+9. Navigate to "**https://www.your_practice_domain.ext/openemr**" and inform your user base of the link.

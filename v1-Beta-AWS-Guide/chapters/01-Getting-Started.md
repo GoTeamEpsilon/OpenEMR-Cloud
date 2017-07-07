@@ -5,12 +5,11 @@ _[next chapter >](02-Private-Cloud.md)_
 ### Start by getting a local copy of OpenEMR v5
 
 1. Download the latest [tarball](http://sourceforge.net/projects/openemr/files/OpenEMR%20Current/5.0.0/openemr-5.0.0.tar.gz/download) to your computer.
-2. Extract the contents with your favorite archive extractor.
-..* Windows users: If you extract and just get a single ".tar" file, extract the contents of that.
+2. Extract the contents with your favorite archive extractor. Note that a `tar` file will need to be extracted after the initial extraction if you are using Windows.
 3. Rename the downloaded "**openemr-5.0.0**" directory to "**openemr**".
 4. Enter into the "**openemr**" directory.
 5. Create an AWS-specific directory called "**.ebextensions**".
-6. Download [this](https://github.com/GoTeamEpsilon/OpenEMR-Cloud/tree/master/v1-Beta-AWS-Guide/assets/eb/eb.zip) zip file to the newly created "**.ebextensions**" directory. Extract the contents with your favorite archive extractor (make sure files are extracted to "**.ebextensions/**" and not "**.ebextensions/eb/**").
+6. Download [this](https://github.com/GoTeamEpsilon/OpenEMR-Cloud/raw/master/v1-Beta-AWS-Guide/assets/eb/eb.zip) zip file to the newly created "**.ebextensions**" directory. Extract the contents with your favorite archive extractor (make sure files are extracted to "**.ebextensions/**" and not "**.ebextensions/eb/**").
 
 ### Create an AWS Account
 
@@ -32,14 +31,14 @@ _[next chapter >](02-Private-Cloud.md)_
 11. Under **Review**, ensure all information reflects the above steps.
 12. Click **Next: Create user**.
 13. Log out of the AWS console, go to the sign-in link you copied down in step 2, and log in with your new credentials.
-14. Optional but highly recommended: Enable two-factor authentication via the **Security credentials** tab of your user profile in IAM. Click the pencil beside **Assigned MFA Device** to start this process.
+14. (_Optional but highly recommended step_): Enable two-factor authentication via the **Security credentials** tab of your user profile in IAM. Click the pencil beside **Assigned MFA Device** to start this process.
 
 ### Select an AWS Region
 
-This walkthrough uses services that are only available in certain AWS regions. As of this writing, you will need to make sure you're in one of five Amazon regions.
+This guide uses services that are _only_ available in certain AWS regions. As of this writing, you will need to make sure you're in one the of five Amazon regions described below.
 
-1. In the AWS Management Console, click **Services** and then click **EC2**.
-2. In the region dropdown in the upper-right corner, select any of **Ohio**, **N. Virginia**, **Oregon**, **Ireland**, or **Sydney**. Be sure to remain in this region for the remainder of this walkthrough.
+1. In the AWS Management Console, click **Services**, and then click **EC2**.
+2. In the region dropdown in the top right corner, select either "**Ohio**", "**N. Virginia**", "**Oregon**", "**Ireland**", or "**Sydney**". Be sure to remain in this region for the remainder of this guide.
 
 ### Generate an AWS SSH keypair
 
@@ -47,5 +46,4 @@ This walkthrough uses services that are only available in certain AWS regions. A
 2. In the left hand pane, under **Network & Security**, click **Key Pairs**.
 3. Click **Create Key Pair**.
 4. When the **"Create Key Pair"** dialog appears, enter your username for the **Key pair name** field and click **Create**.
-5. If the **Save As** dialog appears, save the .pem keyfile to a safe place.
-..* Windows users: PuttyGen can import a .pem via the "Conversions" dropdown and save a PuTTY/Pageant-compatible .ppk keyfile.
+5. When the **Save As** dialog appears, save the .pem keyfile to a safe place.

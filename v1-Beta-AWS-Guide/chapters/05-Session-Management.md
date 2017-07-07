@@ -12,8 +12,8 @@ _[< previous chapter](04-Database-System.md) | [next chapter >](06-Application-S
 ### Associate cache with your private network
 
 1. Under **Network**, select "**openemr-vpc**".
-2. Under **Subnet**, select one the "Private" subnet.
-3. Select **Protect against accidental termination**.
+2. Under **Subnet**, select "**Private**".
+3. Checkbox **Protect against accidental termination**.
 
 ### Provide disk space for the cache when occasional writes are made outside of memory
 
@@ -23,11 +23,12 @@ _[< previous chapter](04-Database-System.md) | [next chapter >](06-Application-S
 ### Configure security group
 
 1. Click **Next: Add Tags**.
-2. **Click to add a Name tag** and call it "Redis".
-3. Click **Next: Configure Security Group**.
-4. Under **Assign a security group** checkbox **Select an existing security group**.
-5. Checkbox **"default"** under **Name**.
-6. Click **Review and Launch**.
+2. Click **Add Tag** to the left.
+3. For **Key**, enter "**OpenEMR Redis**".
+4. Click **Next: Configure Security Group**.
+5. Under **Assign a security group** checkbox **Select an existing security group**.
+6. Checkbox **"default"** under **Name**.
+7. Click **Review and Launch**.
 
 ### Launch the instance
 1. Click **Launch**.
@@ -38,14 +39,18 @@ _[< previous chapter](04-Database-System.md) | [next chapter >](06-Application-S
 
 1. In the AWS Management Console, click **EC2** and then click **Running Instances**.
 2. Wait a few moments.
-3. Identify the recently created instance.
+3. Identify the recently created instance. Note that it will be the row other than the "**openemr-vpn**".
 4. Click the icon in the **Name** column and name the instance "**openemr-redis**".
-5. Note the internal IP of the instance.
+5. Wait for the **Status Checks** column value to read "**2/2**".
+6. With the row still checkboxed, view the bottom pane area.
+7. In the bottom pane, note the **Private IP** in a safe place.
 
 ### Provision the server
 
-1. Using the IP noted from before, SSH into the server as user 'ubuntu'. If you aren't sure, please review [How do I SSH into Instances](../chapters/08-Administration.md#how-do-i-ssh-into-instances) section. Be sure you're logged into the VPN!
-2. Setup the server by running the following `curl -s https://raw.githubusercontent.com/GoTeamEpsilon/OpenEMR-Cloud/master/v1-Beta-AWS-Guide/assets/ec2/redis-setup.sh | sh`.
+1. Using the IP noted from the previous section, SSH into the server as "**ubuntu**". If you aren't sure, please review [How do I SSH into Instances](../chapters/08-Administration.md#how-do-i-ssh-into-instances) section.
+2. Setup the server by executing the following `curl -s https://raw.githubusercontent.com/GoTeamEpsilon/OpenEMR-Cloud/master/v1-Beta-AWS-Guide/assets/ec2/redis-setup.sh | sh`.
+3. Wait a few moments.
+4. Execute the command `exit` to disconnect from the SSH session.
 
 ### Configure OpenEMR servers to point at the cache
 

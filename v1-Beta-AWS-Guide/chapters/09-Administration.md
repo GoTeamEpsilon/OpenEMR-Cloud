@@ -4,6 +4,8 @@ _[< previous chapter](08-CloudTrail.md)_
 
 _This chapter is dedicated for Administrators for reference and answering common questions. Please review it throughly._
 
+## GENERAL INFORMATION
+
 ### Can I Use This Beta Guide for Production?
 
 Although this AWS Guide is in beta, it is suitable for production use for institutions mostly outside of the US because it is not HIPAA/BAA compliant. Although TeamEpsilon and OpenEMR community members have tested the guide, the following limitations should be noted:
@@ -17,11 +19,33 @@ Although this AWS Guide is in beta, it is suitable for production use for instit
 
 A **Stable** version of this solution is being worked on by TeamEpsilon. All of the above limitations will be addressed. In addition, the solution can be ran on Microsoft, Google, and Oracle clouds.
 
+### What are the Recommendations for Development and Testing?
+
+If you aren't planning on customizing OpenEMR source code, you can simply use one AWS environment. Otherwise, it is best to break out the environments as follows:
+
+- **local** - A local installation of OpenEMR for developers to code against. Refer to the [wiki](http://www.open-emr.org/wiki/index.php/OpenEMR_Downloads) to see how to set it up on Debian-based Linux and Windows.
+
+- **dev** - A small resources AWS environment for developers to try out their local code changes on. Although developers will have a local OpenEMR installation to work with, it is best to have an environment for testing these changes on an actual cloud environment. When going through the AWS Guide, select smaller instances, and select "Dev/Test" and not "Production" in the RDS section to save money.
+
+- **test** - A small resources AWS environment for testers to ensure new code changes work. This is different from dev in that it testers may use a special dataset to test code changes more realistically and, unlike dev, it is dedicated to testers so that the developers can make changes to their environment without impacting the testing efforts. When going through the AWS Guide, select smaller instances, and select "Dev/Test" and not "Production" in the RDS section to save money.
+
+- **stage** - This is an AWS environment identical to production for final testing efforts. Unlike dev and test, stage may contain a mirror of actual production data to achieve the most realistic verification before applying code changes to production.
+
+- **production** - This is the live AWS environment in which users are using. Code changes should only be applied to production after going through dev, test, and stage.
+
+### What are the Recommendations for Tracking Custom Code Changes?
+
+As noted in the first section of this guide, the user is required to hold a local copy of OpenEMR. This is the actual source code that will run in the AWS environment. If you are planning on making a lot of code customizations, it is best to use [Git with a centralized cloud setup](https://www.sitepoint.com/git-for-beginners/). This approach makes certain that no changes are lost and multiple team members can access the code.
+
+Regardless of if you planning on making a lot or a few changes to the OpenEMR source code, it is recommended to keep a running document of how to re-apply said changes when upgrading your OpenEMR codebase. This is best done in the Git repository via a markdown file should you choose that route. Otherwise, consider something like a [cloud file storage solution](http://www.makeuseof.com/tag/dropbox-vs-google-drive-vs-onedrive-cloud-storage-best/) to centrally and safely store the document.
+
+## ARCHITECTURE
+
 ### What does the architecture look like?
 
-TODO: This needs to be updated
-
 ![diagram](../assets/diagrams/architecture.png)
+
+## DEPLOYMENTS AND MAINTENANCE
 
 ### How do I deploy custom changes to my cloud?
 
@@ -53,63 +77,61 @@ The most robust and maintainable approach for deployments is to keep an internal
 8. SSH into any EC2 instance associated with the Elastic Beanstalk environment and note the values in **openemr/sites/default/sqlconf.php**.
 9. Update your local **openemr/sites/default/sqlconf.php** with these noted values, but with the new MySQL restore endpoint information.
 10. Reploy the application via [the instructions in the deployment section](#how-do-i-deploy-custom-changes-to-my-cloud).
+### Can I Backup the RDS MySQL Database?
+
+RDS does this for you and this AWS Guide has great defaults for its configuration. If you want to learn more about the backups or customize them further for your use case, please review http://docs.aws.amazon.com/AmazonRDS/latest/UserGuide/USER_WorkingWithAutomatedBackups.html.
+
+### Can I Backup the EFS NFS Drive?
+
+EFS is a "managed service" in that it is unlikely that it will experience downtime, "go away", or experience errors that you, the administrator, will have to deal with. For smaller institutions, backups may not be needed given these facts. However, larger institutions with a non-trival amount of documents will want to set up a backup solution for their use case.
+
+EFS provides no automated backup solution and leaves it to the administrator to customize their own approach. Here are a variety of well-documented approaches to setting up a backup solution:
+http://docs.aws.amazon.com/efs/latest/ug/efs-backup.html.
+
+As far as recommendations from TeamEpsilon, we recommend setting up a special backup EC2 instance (e.g.: Ubuntu AMI) and setting up a cron job with a script that executes something like `aws s3 sync /nfs s3://bucket`. S3 is good for backups because it allows an unlimited amount of storage and is secure.
+
+### How Do I Access CloudTrail Audit Logs?
+
+1. Click on **Services** and then click **S3**.
+2. Look for the bucket with a name following this format: **\<_your account ID_\>-cloudtrail-logs**.
+3. Click into the bucket, then **AWSLogs**, then **\<_your account ID_\>**, then **CloudTrail**.
+## SYSTEMS ACCESS
 
 ### How do I Access the Database?
 
-1. Connect to OpenVPN.
+1. Connect to OpenVPN. For more information, see the "**Prerequisites**" section below.
 2. Assuming you have MySQL or simply a MySQL client library installed, perform your MySQL work by running `mysql -u openemr_db_user -p -h (noted RDS endpoint without port) openemr`
 3. When prompted, enter your password.
 4. Type `use openemr;` and hit enter.
 
 ### How do I SSH Into Instances?
 
-TODO: This section needs to be updated with OpenVPN stuff
-
 Accessing your instances with SSH is one of the more challenging tasks in this guide. As such, be sure to treat this as a learning opportunity and pay close attention to the instructions to ensure the most seamless experience.
 
 #### Prerequisites
 
-1. Download and install the latest [PuTTY MSI](https://www.chiark.greenend.org.uk/~sgtatham/putty/latest.html) software suite. If you aren't sure, click [here](https://the.earth.li/~sgtatham/putty/latest/w64/putty-64bit-0.69-installer.msi).
-2. Using your AWS SSH keypair that is saved as **"your-username.pem"**, convert it to a **ppk** file by following [these instructions](http://docs.aws.amazon.com/AWSEC2/latest/UserGuide/putty.html#putty-private-key).
+1. This section assumes that you've already setup OpenVPN. If this is not the case, see chapter 2.
+2. Download and install the latest [PuTTY MSI](https://www.chiark.greenend.org.uk/~sgtatham/putty/latest.html) software suite. If you aren't sure, click [here](https://the.earth.li/~sgtatham/putty/latest/w64/putty-64bit-0.69-installer.msi).
+3. Using your AWS SSH keypair that is saved as "**your-username.pem**", convert it to a **ppk** file by following [these instructions](http://docs.aws.amazon.com/AWSEC2/latest/UserGuide/putty.html#putty-private-key).
+
+_Note: If you are not already connected to OpenVPN, be sure that the **OpenVPN Connect** program is running. The **Server** field should be the public OpenVPN IP that was noted in chapter 2 and the **Username** field is "**openvpn**"._
+
+#### OpenVPN
+
+Using your "**your-username.ppk**" keypair, access your instance by following [these instructions](http://docs.aws.amazon.com/AWSEC2/latest/UserGuide/putty.html#putty-ssh). Note that step 1 can be skipped. Also note that "**user_name@public_dns_name**" is "**openvpnas@(your noted internal redis ip)**".
 
 #### Redis Access
 
-1. In the AWS Management Console, click **Services**, **VPC**, and then click **Security Groups** in the left hand pane.
-2. Click **redis**.
-3. In the bottom pane, click **Inbound Rules** and then **Edit**.
-4. Add a second row, select **"SSH"**, protocol **"TCP"**, port **"22"**, and source of **"0.0.0.0/0"**.
-5. Click **Save**.
-6. Using your **"your-username.ppk"** keypair, access your instance by following [these instructions](http://docs.aws.amazon.com/AWSEC2/latest/UserGuide/putty.html#putty-ssh). Note that step 1 can be skipped. Also note that **"user_name@public_dns_name"** is **"ubuntu@(your noted elastic ip)"**.
-7. Perform your SSH work.
-8. Back in the AWS Management Console, remove the **SSH** inbound rule, reverting steps 1 through 5.
+Using your "**your-username.ppk**" keypair, access your instance by following [these instructions](http://docs.aws.amazon.com/AWSEC2/latest/UserGuide/putty.html#putty-ssh). Note that step 1 can be skipped. Also note that "**user_name@public_dns_name**" is "**ubuntu@(your noted internal redis ip)**".
 
 #### Elastic Beanstalk Instance Access
 
 1. In the AWS Management Console, click **Services**, **EC2**, and then **Running Instances**.
 2. Select the **openemr** instance you are interested in accessing (all instances are identical in configuration).
-3. Under **Public DNS (IPv4)**, note the address.
-4. Using your **"your-username.ppk"** keypair, access your instance by following [these instructions](http://docs.aws.amazon.com/AWSEC2/latest/UserGuide/putty.html#putty-ssh). Note that step 1 can be skipped. Also note that **"user_name@public_dns_name"** is **"ec2-user@(recently noted instance ip)"**.
-5. Perform your SSH work.
+3. Under **Private IP**, note the address.
+4. Using your "**your-username.ppk**" keypair, access your instance by following [these instructions](http://docs.aws.amazon.com/AWSEC2/latest/UserGuide/putty.html#putty-ssh). Note that step 1 can be skipped. Also note that "**user_name@public_dns_name**" is "**ec2-user@(your noted internal ec2 ip)**".
 
-### What are the Recommendations for Development and Testing?
-
-If you aren't planning on customizing OpenEMR source code, you can simply use one AWS environment. Otherwise, it is best to break out the environments as follows:
-
-- **local** - A local installation of OpenEMR for developers to code against. Refer to the [wiki](http://www.open-emr.org/wiki/index.php/OpenEMR_Downloads) to see how to set it up on Debian-based Linux and Windows.
-
-- **dev** - A small resources AWS environment for developers to try out their local code changes on. Although developers will have a local OpenEMR installation to work with, it is best to have an environment for testing these changes on an actual cloud environment. When going through the AWS Guide, select smaller instances, and select "Dev/Test" and not "Production" in the RDS section to save money.
-
-- **test** - A small resources AWS environment for testers to ensure new code changes work. This is different from dev in that it testers may use a special dataset to test code changes more realistically and, unlike dev, it is dedicated to testers so that the developers can make changes to their environment without impacting the testing efforts. When going through the AWS Guide, select smaller instances, and select "Dev/Test" and not "Production" in the RDS section to save money.
-
-- **stage** - This is an AWS environment identical to production for final testing efforts. Unlike dev and test, stage may contain a mirror of actual production data to achieve the most realistic verification before applying code changes to production.
-
-- **production** - This is the live AWS environment in which users are using. Code changes should only be applied to production after going through dev, test, and stage.
-
-### What are the Recommendations for Tracking Custom Code Changes?
-
-As noted in the first section of this guide, the user is required to hold a local copy of OpenEMR. This is the actual source code that will run in the AWS environment. If you are planning on making a lot of code customizations, it is best to use [Git with a centralized cloud setup](https://www.sitepoint.com/git-for-beginners/). This approach makes certain that no changes are lost and multiple team members can access the code.
-
-Regardless of if you planning on making a lot or a few changes to the OpenEMR source code, it is recommended to keep a running document of how to re-apply said changes when upgrading your OpenEMR codebase. This is best done in the Git repository via a markdown file should you choose that route. Otherwise, consider something like a [cloud file storage solution](http://www.makeuseof.com/tag/dropbox-vs-google-drive-vs-onedrive-cloud-storage-best/) to centrally and safely store the document.
+## KNOWN ISSUES
 
 ### I'm Occasionally Seeing "Site ID is missing from session data!" Errors
 
@@ -130,48 +152,3 @@ Another workaround that will reduce the odds of this error occuring even more th
 5. Click **Apply**.
 
 Note that it will most likely make sense to increase the size of the instance in this scenario because there is only one instance servicing all production traffic. This can be accomplished by in the **Instances**: **Instance type** section of **Configuration**.
-
-### Can I Backup the RDS MySQL Database?
-
-RDS does this for you and this AWS Guide has great defaults for its configuration. If you want to learn more about the backups or customize them further for your use case, please review http://docs.aws.amazon.com/AmazonRDS/latest/UserGuide/USER_WorkingWithAutomatedBackups.html.
-
-### Can I Backup the EFS NFS Drive?
-
-EFS is a "managed service" in that it is unlikely that it will experience downtime, "go away", or experience errors that you, the administrator, will have to deal with. For smaller institutions, backups may not be needed given these facts. However, larger institutions with a non-trival amount of documents will want to set up a backup solution for their use case.
-
-EFS provides no automated backup solution and leaves it to the administrator to customize their own approach. Here are a variety of well-documented approaches to setting up a backup solution:
-http://docs.aws.amazon.com/efs/latest/ug/efs-backup.html.
-
-As far as recommendations from TeamEpsilon, we recommend setting up a special backup EC2 instance (e.g.: Ubuntu AMI) and setting up a cron job with a script that executes something like `aws s3 sync /nfs s3://bucket`. S3 is good for backups because it allows an unlimited amount of storage and is secure.
-
-### How Do I Access CloudTrail Audit Logs?
-
-1. Click on **Services** and then click **S3**.
-2. Look for the bucket with a name following this format: **\<_your account ID_\>-cloudtrail-logs**.
-3. Click into the bucket, then **AWSLogs**, then **\<_your account ID_\>**, then **CloudTrail**.
-
-### How Do I Create Additional OpenVPN Users?
-
-TODO: format
-
-..*Create additional users that lack administrative server access, then connect to the VPN server with those users instead of **openvpn**.
-..*Consider blocking 22 and 943 from the world -- use a separate security group for the times when the server needs direct configuration from outside
-the VPN or initial provisioning of profiles.
-..*Consider turning off server admin access from 443, forcing it all to go through the (properly blocked) 943.
-..*Once your domain is configured, create an A record for "vpn.<yoursite>.com" and this server's IP.
-..*Once you have a wildcard SSL cert, come back to the VPN server and add your new SSL credentials so you don't need a security exception to administer the server.
-..*https://docs.openvpn.net/how-to-tutorialsguides/virtual-platforms/amazon-ec2-appliance-ami-quick-start-guide/ may be of interest.
-
-### Can I Turn Off OpenVPN and NAT Gateway When I'm Not Using Them?
-
-TODO: finalize (this is a copy/paste from a Slack chat)
-
-It's not /necessary/ for production, honestly. You could have both OpenVPN stopped and the NAT gateway disabled and be able to function perfectly well.
-
-Well, unless OpenEMR needs to talk to foreign servers, then you have to have it on.
-
-But it's more-or-less unavoidable if you want the network shielded and unroutable like we have it, and I think that's really important.
-
-The VPN is way more secure than spoofable IP whitelisting -- we changed our work security to that model and I adore it. No more "being on the same network as the developers means you have direct access to MySQL and sensitive ports".
-
-Now you've got to have the SSL keys for the tunnel or you're no better than any other scrub.

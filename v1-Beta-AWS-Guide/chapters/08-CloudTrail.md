@@ -11,7 +11,7 @@ _CloudFormation is used for setting up CloudTrail. Once this chapter is complete
 3. Click **Create Stack**.
 4. In the **Choose a template** section, click the **upload file** button and select the **CloudTrail-CF.json** file downloaded in step 1.
 5. Click **Next**.
-6. For **Stack name**, enter **"CloudTrail-CF"**.
+6. For **Stack name**, enter "**CloudTrail-CF**".
 7. Click **Next**.
 8. Click **Next** again.
 9. Click **Create** and wait for the stack to finish creating.
