@@ -1,6 +1,8 @@
 # v1 Beta AWS Guide
 
-A *beta* guide for manually setting up a production OpenEMR system on AWS. The process takes about 2 hours and comes with a [beginner-friendly YouTube video](https://www.youtube.com/watch?v=foobar) to follow along with. This solution is not HIPAA/BAA compliant.
+A *beta* guide for manually setting up a production OpenEMR system on AWS provided by [TeamEpsilon](https://github.com/GoTeamEpsilon/purpose).
+
+This solution is not HIPAA/BAA compliant. The stable version of the guide is currently being developed and will be automated and HIPAA/BAA compliant.
 
 ## 📒 Table of Contents
 

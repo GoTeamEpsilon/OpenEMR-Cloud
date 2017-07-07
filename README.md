@@ -6,7 +6,7 @@ Many OpenEMR users run their system on premise and have not yet realized the ben
 
 ## Solutions
 
-- [v1 Beta AWS Guide](v1-Beta-AWS-Guide/README.md) is a *beta* guide for manually setting up a production OpenEMR system on AWS. The process takes about 2 hours and comes with a beginner-friendly YouTube video to follow along with. This solution is not HIPAA/BAA compliant.
+- [v1 Beta AWS Guide](v1-Beta-AWS-Guide/README.md) is a *beta* guide for manually setting up a production OpenEMR system on AWS. This solution is not HIPAA/BAA compliant.
 
 - [v1 Stable Solution](v1-Stable-Solution) _(IN PROGRESS)_ is a fully automated solution for deploying OpenEMR to AWS, Google, Oracle, and Microsoft clouds. It contains a similar production architecture as the Beta AWS Guide, but without the manual steps. This solution is HIPAA/BAA compliant.
 

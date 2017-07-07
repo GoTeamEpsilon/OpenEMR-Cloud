@@ -5,14 +5,20 @@ _[< previous chapter](03-Network-File-System.md) | [next chapter >](05-Session-M
 ### Prepare network configuration
 
 1. In the AWS Management Console, click **Services** and then click **RDS**.
-2. In the left pane, click **Subnet Groups**, **Create DB Subnet Group**.
-3. Call it "openemr-db-subnets", "OpenEMR DB Subnets", and select the OpenEMR VPC.
-4. Add to the group the two "Private" subnets. These are probably 10.0.1.0/24 and 10.0.2.0/24, from the two Availability Zones you selected in Chapter 2. You may need to return to the VPC Subnet display to confirm these details. **Add** each subnet as you select it, and **Create** it once you've added both.
+2. In the left hand pane, click **Subnet Groups**, then **Create DB Subnet Group** to the top.
+3. For **Name**, enter "**openemr-db-subnets**".
+4. For **Description**, enter "**OpenEMR DB Subnets**".
+5. For **VPC**, select "**openemr-vpc**".
+6. For **Availability Zone**, select the zone that corresponds to the **10.0.1.0/24** subnet that was noted in chapter 2.
+7. For **Subnet ID**, select "**10.0.1.0/24**", then click **Add**.
+8. Once more, for **Availability Zone**, select the zone that corresponds to the **10.0.2.0/24** subnet that was noted in chapter 2.
+9. For **Subnet ID**, select "**10.0.2.0/24**", then click **Add**.
+10. Click **Create**.
 
 ### Create a fully managed MySQL database
 
 1. In the AWS Management Console, click **Services** and then click **RDS**.
-2. Under **Create Instance**, click **Launch a DB Instance**. If you are using a brand new account, you'll have to click **Instances** in the left-hand pane to get around the marketing screen.
+2. Under **Create Instance**, click **Launch a DB Instance**. If you are using a brand new account, you'll have to click **Instances** in the left hand pane to get around the marketing screen.
 3. Select **MySQL** and click **MySQL**.
 4. Click **Select**.
 5. Under **Production**, click **MySQL**.
@@ -24,7 +30,7 @@ _[< previous chapter](03-Network-File-System.md) | [next chapter >](05-Session-M
     4. In **Storage Type**, select "**General Purpose (SSD)**".
     5. In **Allocated Storage**, select your preferred size. If you aren't sure, enter "**500GB**".
 8. Apply the following under **Settings**:
-    1. In **DB Instance Identifier**, enter "**openemr-db**".
+    1. In **DB Instance Identifier**, enter "**openemr**".
     2. In **Master User**, enter "**openemr_db_user**".
     3. In **Master Password**, enter a [strong password](https://www.random.org/passwords/?num=1&len=16&format=html&rnd=new). Make sure this is recorded in a safe place.
 9. Click **Next Step**.
@@ -32,7 +38,7 @@ _[< previous chapter](03-Network-File-System.md) | [next chapter >](05-Session-M
 ### Restrict database access to its own private network
 
 1. Apply the following under **Network & Security**
-    1. In **VPC**, select your VPC.
+    1. In **VPC**, select "**openemr-vpc**".
     2. In **Subnet Group**, select "**openemr-db-subnets**".
     3. In **Publicly Accessible**, select "**No**".
     4. In **Availability Zone**, select your preferred zone. If you aren't sure, select "**No Preference**".
@@ -70,10 +76,6 @@ _[< previous chapter](03-Network-File-System.md) | [next chapter >](05-Session-M
 3. Wait many moments for the database to be created.
 4. Click on the first row of the **Instances** table.
 5. Record the **Endpoint** (without the ":3306" section) in a safe place.
-
-### Check your work
-
-Once the instance is done backing-up and is in the Available state, you should be able to connect, over the VPN, to this database instance (via the MySQL client of your choice).
 
 ### Enforce the database to use UTF-8
 
