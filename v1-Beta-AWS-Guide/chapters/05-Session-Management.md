@@ -47,7 +47,7 @@ _[< previous chapter](04-Database-System.md) | [next chapter >](06-Application-S
 
 ### Provision the server
 
-1. Using the IP noted from the previous section, SSH into the server as "**ubuntu**". If you aren't sure, please review [How do I SSH into Instances](../chapters/08-Administration.md#how-do-i-ssh-into-instances) section.
+1. Using the IP noted from the previous section, SSH into the server as "**ubuntu**". If you aren't sure, please review [How do I SSH into Instances](../chapters/09-Administration.md#how-do-i-ssh-into-instances) section.
 2. Setup the server by executing the following `curl -s https://raw.githubusercontent.com/GoTeamEpsilon/OpenEMR-Cloud/master/v1-Beta-AWS-Guide/assets/ec2/redis-setup.sh | sh`.
 3. Wait a few moments.
 4. Execute the command `exit` to disconnect from the SSH session.

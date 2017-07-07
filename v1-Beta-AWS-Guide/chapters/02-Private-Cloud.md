@@ -81,7 +81,7 @@ _[< previous chapter](01-Getting-Started.md) | [next chapter >](03-Network-File-
 5. To the top, click **Actions** and select **Networking**, **Change Security Groups**.
 6. Checkbox the **default** security group row.
 7. Click **Assign Security Groups**.
-8. Using the IP noted from step 4, SSH into the server as "**openvpnas**". If you aren't sure, please review [How do I SSH into Instances](../chapters/08-Administration.md#how-do-i-ssh-into-instances) section.
+8. Using the IP noted from step 4, SSH into the server as "**openvpnas**". If you aren't sure, please review [How do I SSH into Instances](../chapters/09-Administration.md#how-do-i-ssh-into-instances) section.
 9. Agree with the license, and press enter to all other answers to choose the defaults.
 10. Wait a few moments.
 11. Execute the command `sudo passwd openvpn`, set an administrative password and note it in a safe place.
