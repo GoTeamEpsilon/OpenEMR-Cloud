@@ -10,6 +10,10 @@ _[< previous chapter](05-Session-Management.md) | [next chapter >](07-Secure-Dom
 
 1. Open "**openemr/.ebextensions/00-options.config**" and replace "**&lt;&lt;enter EFS file system ID here&gt;&gt;**" with your noted **File System ID** from before.
 
+### Configure OpenEMR servers to point at the cache
+
+1. Open "**openemr/.ebextensions/00-options.config**" and replace "**&lt;&lt;enter redis IP here&gt;&gt;**" with your noted internal IP from before.
+
 ### Enforce the database to use UTF-8
 
 1. Open "**openemr/sql/database.sql**" and add the following code to the bottom:
@@ -62,7 +66,7 @@ ALTER TABLE lang_constants CONVERT TO CHARACTER SET utf8 COLLATE utf8_general_ci
 2. Ensure **"Associate Public IP Address"** is unchecked. Note that if it _is_ checkboxed, the solution will not work.
 3. Under the subnet table, checkbox **"ELB**" for the public subnets "**10.0.2.0/24**" and "**10.0.0.0/24**".
 4. Still under the subnet table, checkbox "**EC2**" for the private subnets "**10.0.1.0/24**" and "**10.0.3.0/24**".
-5. Under **VPC security group**, select the **default** security group, _not_ the VPN Server.
+5. Under **VPC security group**, select the **Application** security group.
 5. Click **Next** twice and then click **Launch** to the bottom right.
 6. Wait many moments for the environment to be created.
 

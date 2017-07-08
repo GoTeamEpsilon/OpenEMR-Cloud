@@ -205,6 +205,24 @@
       }
     },
 
+    "ApplicationSecurityGroup" : {
+      "Type" : "AWS::EC2::SecurityGroup",
+      "Properties" : {
+         "GroupDescription" : "Application Security Group",
+         "Tags" :  [ { "Key" : "Name", "Value" : "Application" } ],
+         "VpcId" : {"Ref" : "VPC"}
+      }
+    },
+
+    "AppSGIngress": {
+      "Type": "AWS::EC2::SecurityGroupIngress",
+      "Properties": {
+          "GroupId": { "Ref": "ApplicationSecurityGroup" },
+          "IpProtocol": "-1",
+          "SourceSecurityGroupId" : { "Ref": "ApplicationSecurityGroup"}
+      }
+    },
+
   "EFSSecurityGroup" : {
     "Type" : "AWS::EC2::SecurityGroup",
     "Properties" : {
@@ -218,10 +236,8 @@
     "Type": "AWS::EC2::SecurityGroupIngress",
     "Properties": {
         "GroupId": { "Ref": "EFSSecurityGroup" },
-        "IpProtocol": "tcp",
-        "FromPort": "2049",
-        "ToPort": "2049",
-        "SourceSecurityGroupId": { "Ref": "EFSSecurityGroup" }
+        "IpProtocol": "-1",
+        "SourceSecurityGroupId" : { "Ref": "ApplicationSecurityGroup"}
     }
   },
 
@@ -271,10 +287,8 @@
     "Type": "AWS::EC2::SecurityGroupIngress",
     "Properties": {
         "GroupId": { "Ref": "DBSecurityGroup" },
-        "IpProtocol": "tcp",
-        "FromPort": "3306",
-        "ToPort": "3306",
-        "SourceSecurityGroupId": { "Ref": "DBSecurityGroup" }
+        "IpProtocol": "-1",
+        "SourceSecurityGroupId" : { "Ref": "ApplicationSecurityGroup"}
     }
   },
 
@@ -298,8 +312,12 @@
 
   "S3Bucket": {
     "Type": "AWS::S3::Bucket",
+    "DeletionPolicy": "Retain",
     "Properties": {
-        "BucketName" : { "Fn::Join" : [ "-", [ { "Ref" : "AWS::AccountId" }, "cloudtrail", "logs" ] ] }
+        "BucketName" : { "Fn::Join" : [ "-", [
+          "openemr",
+          { "Fn::Select" : [ "2", { "Fn::Split": ["/", {"Ref": "AWS::StackId"}]}] }
+        ] ] }
     }
   },
   "BucketPolicy" : {
@@ -341,7 +359,52 @@
       "IsMultiRegionTrail" : "true",
       "S3BucketName": { "Ref" : "S3Bucket" }
     }
-  }
+  },
+
+  "RedisSubnetGroup" :  {
+    "Type": "AWS::ElastiCache::SubnetGroup",
+    "Properties": {
+        "Description": "Redis node locations",
+        "SubnetIds": [
+            {
+                "Ref": "SubnetPrivate2"
+            },
+            {
+                "Ref": "SubnetPrivate1"
+            }
+        ]
+      }
+    },
+
+  "RedisSecurityGroup" : {
+    "Type" : "AWS::EC2::SecurityGroup",
+    "Properties" : {
+       "GroupDescription" : "Redis Access",
+       "Tags" :  [ { "Key" : "Name", "Value" : "OpenEMR Sessions" } ],
+       "VpcId" : {"Ref" : "VPC"}
+    }
+  },
+
+  "RedisSGIngress": {
+    "Type": "AWS::EC2::SecurityGroupIngress",
+    "Properties": {
+        "GroupId": { "Ref": "RedisSecurityGroup" },
+        "IpProtocol": "-1",
+        "SourceSecurityGroupId" : { "Ref": "ApplicationSecurityGroup"}
+    }
+  },
+
+   "RedisCluster" : {
+      "Type": "AWS::ElastiCache::CacheCluster",
+      "Properties": {
+        "CacheNodeType"           : "cache.t2.medium",
+        "VpcSecurityGroupIds": [{"Fn::GetAtt": [ "RedisSecurityGroup", "GroupId"]}],
+        "CacheSubnetGroupName"    : { "Ref": "RedisSubnetGroup"},
+        "Engine"                  : "redis",
+        "NumCacheNodes"           : "1"
+      }
+    }
+
 
 },
 
@@ -353,12 +416,17 @@
 
     "EFS" : {
       "Value" : { "Ref": "ElasticFileSystem" },
-      "Description" : "EFS id for 00-config"
+      "Description" : "EFS endpoint for 00-config"
     },
 
     "RDS": {
       "Value" : { "Fn::GetAtt" : ["RDSInstance", "Endpoint.Address"]},
       "Description" : "RDS endpoint for OpenEMR setup process"
+    },
+
+    "Redis": {
+      "Value" : { "Fn::GetAtt" : ["RedisCluster", "RedisEndpoint.Address"]},
+      "Description" : "Redis endpoint for 00-config"
     }
   }
 }
