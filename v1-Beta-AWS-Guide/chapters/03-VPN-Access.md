@@ -1,47 +1,6 @@
 _[< previous chapter](01-Getting-Started.md) | [next chapter >](03-Network-File-System.md)_
 
-# ☁ Private Cloud
-
-### Lock down your system components with a private virtual network
-
-1. In the AWS Management Console, click **Services** and then click **Start VPC Wizard**.
-2. Click **VPC with a Single Public Subnet** and click **Select**.
-3. In **VPC Name**, enter "**openemr-vpc**".
-4. In **Availability Zone**, select your preferred zone. If you aren't sure, select the first entry. In fact, this is strongly encouraged due to issues with selecting entries at the bottom of the list which may not be supported in ElasticBeanstalk. Note this Availability Zone in a safe place.
-5. For **Subnet name**, enter "**Public**".
-6. Click **Create VPC**.
-7. In the left pane, click **Subnets**, **Create Subnet** to the top.
-8. For **Name tag**, enter "**Private**".
-9. For **VPC**, select "**openemr-vpc**".
-10. For **Availability Zone**, select the recently noted zone from step 4.
-11. For **IPv4 CIDR block**, enter "**10.0.1.0/24**". Note this subnet, zone, and CIDR block in a safe place.
-12. Click **Yes, Create**.
-13. Click **Create Subnet** near the top.
-14. For **Name tag**, enter "**Other Public**".
-15. For **VPC**, select "**openemr-vpc**".
-16. For **Availability Zone**, select a zone *other than* the recently noted zone from steps 4 and 10.
-17. For **IPv4 CIDR block**, enter "**10.0.2.0/24**". Note this subnet, zone, and CIDR block in a safe place.
-18. Click **Yes, Create**.
-19. Once more, click **Create Subnet** near the top.
-20. For **Name tag**, enter "**Other Private**".
-21. For **VPC**, select "**openemr-vpc**".
-22. For **Availability Zone**, select the zone that was recently noted zone in step 16.
-23. For **IPv4 CIDR block**, enter "**10.0.3.0/24**". Note this subnet, zone, and CIDR block in a safe place.
-24. Click **Yes, Create**.
-25. In the left pane, click **Route Tables** and checkbox the route row for your VPC that is not the "**Main**" route.
-26. In the bottom pane, click the **Subnet Associations** tab and observe that the "**Public**" subnet is already assigned to it in the first table.
-27. Click **Edit** and checkbox the "**Other Public**" row.
-28. Click **Save**.
-29. In the left pane, click **NAT Gateways** and then click **Create NAT Gateway** to the top.
-30. For **Subnet**, select the "**Public**" subnet.
-31. Click **Create New EIP**, note the IP created in a safe place, then click **Create a NAT Gateway**.
-32. When the **Your NAT Gateway has been created** dialog appears, note the **target** in a safe place and click **Edit Route Tables**.
-33. Checkbox the route row for your VPC that is the "**Main**" route.
-34. In the bottom pane, click the **Routes** tab, then **Edit**.
-35. Click **Add another route**.
-36. For **Destination**, enter "**0.0.0.0/0**".
-37. For **Target**, select your recently noted NAT gateway target from step 32.
-38. Click **Save**.
+# ☁ VPN Access
 
 ### Establish a VPN server for network
 

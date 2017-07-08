@@ -7,8 +7,8 @@ This solution is not HIPAA/BAA compliant. The stable version of the guide is cur
 ## 📒 Table of Contents
 
 1. 🚴 [Getting Started](chapters/01-Getting-Started.md)
-2. ☁ [Private Cloud](chapters/02-Private-Cloud.md)
-3. 📁 [Network File System](chapters/03-Network-File-System.md)
+2. ☁ [Application Backbone](chapters/02-Application-Backbone.md)
+3. 📁 [Network File System](chapters/03-VPN-Access.md)
 4. 💽 [Database System](chapters/04-Database-System.md)
 5. 💻 [Session Management](chapters/05-Session-Management.md)
 6. 🖥 [Application Servers](chapters/06-Application-Servers.md)

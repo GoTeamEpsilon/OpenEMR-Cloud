@@ -6,6 +6,10 @@ _[< previous chapter](05-Session-Management.md) | [next chapter >](07-Secure-Dom
 
 1. Open "**openemr/.ebextensions/00-options.config**" and replace "**&lt;&lt;enter timezone here&gt;&gt;**" with your timezone from the [following list](http://php.net/manual/en/timezones.php). Do not enter spaces (e.g.: "**America\\/New_York**" is valid while "**America\\/New York**" is not - note the "\\" is required for the sed command the bash script will run).
 
+### Configure OpenEMR servers to mount the shared drive on bootup
+
+1. Open "**openemr/.ebextensions/00-options.config**" and replace "**&lt;&lt;enter EFS file system ID here&gt;&gt;**" with your noted **File System ID** from before.
+
 ### Prepare your first deployment
 
 1. Archive **openemr** as "**openemr.zip**". Note that the name of the file must be exact.

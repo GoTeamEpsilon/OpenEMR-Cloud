@@ -1,0 +1,234 @@
+{
+  "AWSTemplateFormatVersion" : "2010-09-09",
+
+  "Description" : "Automated OpenEMR 5.0.0 Configuration [in progress]",
+
+  "Parameters" : {
+
+  },
+
+  "Mappings" : {
+
+  },
+
+  "Resources" : {
+
+    "VPC" : {
+      "Type" : "AWS::EC2::VPC",
+      "Properties" : {
+        "CidrBlock" : "10.0.0.0/16",
+        "EnableDNSHostnames" : "true",
+        "Tags" : [
+			{"Key" : "Name", "Value" : "OpenEMR" },
+			{"Key" : "Application", "Value" : { "Ref" : "AWS::StackId"} }
+		]
+      }
+    },
+
+    "SubnetPublic1" : {
+      "Type" : "AWS::EC2::Subnet",
+      "Properties" : {
+        "VpcId" : { "Ref" : "VPC" },
+        "CidrBlock" : "10.0.1.0/24",
+		"AvailabilityZone": { "Fn::Select": [ "0", { "Fn::GetAZs": "" } ] },
+        "Tags" : [
+			{"Key" : "Name", "Value" : "Public #1" },
+			{"Key" : "Application", "Value" : { "Ref" : "AWS::StackId"} }
+		]
+      }
+    },
+
+	"SubnetPrivate1" : {
+      "Type" : "AWS::EC2::Subnet",
+      "Properties" : {
+        "VpcId" : { "Ref" : "VPC" },
+        "CidrBlock" : "10.0.2.0/24",
+		"AvailabilityZone": { "Fn::Select": [ "0", { "Fn::GetAZs": "" } ] },
+        "Tags" : [
+			{"Key" : "Name", "Value" : "Private #1" },
+			{"Key" : "Application", "Value" : { "Ref" : "AWS::StackId"} }
+		]
+      }
+    },
+
+	"SubnetPublic2" : {
+      "Type" : "AWS::EC2::Subnet",
+      "Properties" : {
+        "VpcId" : { "Ref" : "VPC" },
+        "CidrBlock" : "10.0.3.0/24",
+		"AvailabilityZone": { "Fn::Select": [ "1", { "Fn::GetAZs": "" } ] },
+        "Tags" : [
+			{"Key" : "Name", "Value" : "Public #2" },
+			{"Key" : "Application", "Value" : { "Ref" : "AWS::StackId"} }
+		]
+      }
+    },
+
+	"SubnetPrivate2" : {
+      "Type" : "AWS::EC2::Subnet",
+      "Properties" : {
+        "VpcId" : { "Ref" : "VPC" },
+        "CidrBlock" : "10.0.4.0/24",
+		"AvailabilityZone": { "Fn::Select": [ "1", { "Fn::GetAZs": "" } ] },
+        "Tags" : [
+			{"Key" : "Name", "Value" : "Private #2" },
+			{"Key" : "Application", "Value" : { "Ref" : "AWS::StackId"} }
+		]
+      }
+    },
+
+    "InternetGateway" : {
+      "Type" : "AWS::EC2::InternetGateway",
+      "Properties" : {
+        "Tags" : [ {"Key" : "Application", "Value" : { "Ref" : "AWS::StackId"} } ]
+      }
+    },
+
+    "AttachGateway" : {
+       "Type" : "AWS::EC2::VPCGatewayAttachment",
+       "Properties" : {
+         "VpcId" : { "Ref" : "VPC" },
+         "InternetGatewayId" : { "Ref" : "InternetGateway" }
+       }
+    },
+
+    "RouteTablePublic" : {
+      "Type" : "AWS::EC2::RouteTable",
+      "Properties" : {
+        "VpcId" : {"Ref" : "VPC"},
+        "Tags" : [ {"Key" : "Application", "Value" : { "Ref" : "AWS::StackId"} } ]
+      }
+    },
+
+    "RoutePublic" : {
+      "Type" : "AWS::EC2::Route",
+      "DependsOn" : "AttachGateway",
+      "Properties" : {
+        "RouteTableId" : { "Ref" : "RouteTablePublic" },
+        "DestinationCidrBlock" : "0.0.0.0/0",
+        "GatewayId" : { "Ref" : "InternetGateway" }
+      }
+    },
+
+    "SubnetRouteTableAssociationPublic1" : {
+      "Type" : "AWS::EC2::SubnetRouteTableAssociation",
+      "Properties" : {
+        "SubnetId" : { "Ref" : "SubnetPublic1" },
+        "RouteTableId" : { "Ref" : "RouteTablePublic" }
+      }
+    },
+
+	"SubnetRouteTableAssociationPublic2" : {
+      "Type" : "AWS::EC2::SubnetRouteTableAssociation",
+      "Properties" : {
+        "SubnetId" : { "Ref" : "SubnetPublic2" },
+        "RouteTableId" : { "Ref" : "RouteTablePublic" }
+      }
+    },
+
+	"RouteTablePrivate" : {
+      "Type" : "AWS::EC2::RouteTable",
+      "Properties" : {
+        "VpcId" : {"Ref" : "VPC"},
+        "Tags" : [ {"Key" : "Application", "Value" : { "Ref" : "AWS::StackId"} } ]
+      }
+    },
+
+	"EIPNATGatewayPublic1" : {
+	  "Type" : "AWS::EC2::EIP",
+	  "Properties" : {
+		"Domain" : "vpc"
+	  }
+	},
+
+	"NATGatewayPublic1" : {
+	  "Type" : "AWS::EC2::NatGateway",
+	  "Properties" : {
+		"AllocationId" : { "Fn::GetAtt" : ["EIPNATGatewayPublic1", "AllocationId"]},
+		"SubnetId" : { "Ref" : "SubnetPublic1"}
+	  }
+	},
+
+	"RoutePrivate" : {
+      "Type" : "AWS::EC2::Route",
+      "Properties" : {
+        "RouteTableId" : { "Ref" : "RouteTablePrivate" },
+        "DestinationCidrBlock" : "0.0.0.0/0",
+        "NatGatewayId" : { "Ref" : "NATGatewayPublic1" }
+      }
+    },
+
+	"SubnetRouteTableAssociationPrivate1" : {
+      "Type" : "AWS::EC2::SubnetRouteTableAssociation",
+      "Properties" : {
+        "SubnetId" : { "Ref" : "SubnetPrivate1" },
+        "RouteTableId" : { "Ref" : "RouteTablePrivate" }
+      }
+    },
+
+	"SubnetRouteTableAssociationPrivate2" : {
+      "Type" : "AWS::EC2::SubnetRouteTableAssociation",
+      "Properties" : {
+        "SubnetId" : { "Ref" : "SubnetPrivate2" },
+        "RouteTableId" : { "Ref" : "RouteTablePrivate" }
+      }
+    },
+
+  "EFSSecurityGroup" : {
+    "Type" : "AWS::EC2::SecurityGroup",
+    "Properties" : {
+       "GroupDescription" : "EFS Access",
+       "Tags" :  [ { "Key" : "Name", "Value" : "PatientDocumentAccess" } ],
+       "VpcId" : {"Ref" : "VPC"}
+    }
+  },
+
+  "EFSSGIngress": {
+    "Type": "AWS::EC2::SecurityGroupIngress",
+    "Properties": {
+        "GroupId": { "Ref": "EFSSecurityGroup" },
+        "IpProtocol": "tcp",
+        "FromPort": "2049",
+        "ToPort": "2049",
+        "SourceSecurityGroupId": { "Ref": "EFSSecurityGroup" }
+    }
+  },
+
+  "ElasticFileSystem" : {
+    "Type" : "AWS::EFS::FileSystem",
+    "Properties" : {
+      "FileSystemTags" : [ { "Key" : "Name", "Value" : "PatientDocuments" } ]
+    }
+  },
+
+  "EFSMountPrivate1": {
+    "Type": "AWS::EFS::MountTarget",
+    "Properties": {
+      "FileSystemId": { "Ref": "ElasticFileSystem" },
+      "SubnetId": { "Ref": "SubnetPrivate1" },
+      "SecurityGroups": [ { "Ref": "EFSSecurityGroup" } ]
+    }
+  },
+
+  "EFSMountPrivate2": {
+    "Type": "AWS::EFS::MountTarget",
+    "Properties": {
+      "FileSystemId": { "Ref": "ElasticFileSystem" },
+      "SubnetId": { "Ref": "SubnetPrivate2" },
+      "SecurityGroups": [ { "Ref": "EFSSecurityGroup" } ]
+    }
+  }
+},
+
+  "Outputs" : {
+    "VPC" : {
+      "Value" : { "Ref": "VPC" },
+      "Description" : "Newly created VPC id"
+    },
+
+    "EFS" : {
+      "Value" : { "Ref": "ElasticFileSystem" },
+      "Description" : "Newly created EFS id"
+    }
+  }
+}
