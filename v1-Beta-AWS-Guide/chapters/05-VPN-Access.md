@@ -1,4 +1,4 @@
-_[< previous chapter](01-Getting-Started.md) | [next chapter >](03-Network-File-System.md)_
+_[< previous chapter](04-Secure-Domain-Setup.md) | [next chapter >](06-Administration.md)_
 
 # ☁ VPN Access
 

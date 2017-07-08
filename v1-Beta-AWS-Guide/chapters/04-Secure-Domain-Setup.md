@@ -1,4 +1,4 @@
-_[< previous chapter](06-Application-Servers.md) | [next chapter >](08-CloudTrail.md)_
+_[< previous chapter](03-Application-Backbone.md) | [next chapter >](05-VPN-Access.md)_
 
 # ▶ Secure Domain Setup
 

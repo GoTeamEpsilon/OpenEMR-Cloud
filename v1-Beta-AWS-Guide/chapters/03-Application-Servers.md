@@ -1,18 +1,14 @@
-_[< previous chapter](05-Session-Management.md) | [next chapter >](07-Secure-Domain-Setup.md)_
+_[< previous chapter](02-Application-Backbone.md) | [next chapter >](04-Secure-Domain-Setup.md)_
 
 # 🖥 Application Servers
 
-### Configure the servers to use your timezone
+### Configure the servers with application-specific details
 
-1. Open "**openemr/.ebextensions/00-options.config**" and replace "**&lt;&lt;enter timezone here&gt;&gt;**" with your timezone from the [following list](http://php.net/manual/en/timezones.php). Do not enter spaces (e.g.: "**America\\/New_York**" is valid while "**America\\/New York**" is not - note the "\\" is required for the sed command the bash script will run).
-
-### Configure OpenEMR servers to mount the shared drive on bootup
-
-1. Open "**openemr/.ebextensions/00-options.config**" and replace "**&lt;&lt;enter EFS file system ID here&gt;&gt;**" with your noted **File System ID** from before.
-
-### Configure OpenEMR servers to point at the cache
-
-1. Open "**openemr/.ebextensions/00-options.config**" and replace "**&lt;&lt;enter redis IP here&gt;&gt;**" with your noted internal IP from before.
+1. Open "**openemr/.ebextensions/00-options.config**" for editing.
+2. Replace "**&lt;&lt;enter timezone here&gt;&gt;**" with your timezone from the [following list](http://php.net/manual/en/timezones.php). Do not enter spaces (e.g.: "**America\\/New_York**" is valid while "**America\\/New York**" is not - note the "\\" is required for the sed command the bash script will run).
+3. In AWS, click on **Services**, then **CloudFormation**. The stack you started should now be in status **CREATE_COMPLETE**; click on it, and select the **Outputs** tab.
+4. Replace "**&lt;&lt;enter EFS file system ID here&gt;&gt;**" with the **fs-...** code from the **EFS** entry.
+5. Replace "**&lt;&lt;enter redis IP here&gt;&gt;**" with the hostname from the **Redis** entry.
 
 ### Enforce the database to use UTF-8
 

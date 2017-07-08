@@ -1,34 +1,27 @@
-_[< previous chapter](01-Geting-Started.md) | [next chapter >](03-VPN-Access.md)_
+_[< previous chapter](01-Geting-Started.md) | [next chapter >](03-Application-Servers.md)_
 
-# 📝 CloudTrail
+# 📝 Application Backbone
 
-# Application Backbone
+_CloudFormation is used for setting up OpenEMR._
 
-start cloudformation
-Create Stack
-Select Template: Upload Template /assets/OpenEMR.json from this repo, Next
-Specify Details:
-  pick stack name, pick SSH key, pick RDS password
-  TODO: support rds instance size, space selection
-  TODO: anything I can do to smooth the VPN setup?
-  Next
-Options: Next
-Review: Create
+### Set up CloudFormation
 
-_CloudFormation is used for setting up CloudTrail. Once this chapter is complete, you will have a new S3 bucket in which CloudTrail will store the logs._
-
-### Set up CloudTrail to provide an auditable history of API calls for compliance and security analysis.
-
-1. Download the **CloudTrail-CF.json** file [here](https://github.com/GoTeamEpsilon/OpenEMR-Cloud/tree/master/v1-Beta-AWS-Guide/assets/cf) in your local **openemr** folder. Be careful to save the file as `.json` and not `.json.txt`.
+1. Download the **OpenEMR.json** file [here](https://github.com/GoTeamEpsilon/OpenEMR-Cloud/tree/master/v1-Beta-AWS-Guide/assets/cf) in your local **openemr** folder. Be careful to save the file as `.json` and not `.json.txt`.
 2. In the AWS Management Console, click **Services** and then click **CloudFormation**.
 3. Click **Create Stack**.
-4. In the **Choose a template** section, click the **upload file** button and select the **CloudTrail-CF.json** file downloaded in step 1.
+4. In the **Choose a template** section, click the **upload file** button and select the **OpenEMR.json** file downloaded in step 1.
 5. Click **Next**.
-6. For **Stack name**, enter "**CloudTrail-CF**".
-7. Click **Next**.
-8. Click **Next** again.
-9. Click **Create** and wait for the stack to finish creating.
-10. Once the stack has a status of **CREATE_COMPLETE**, click on **Services** and then click **S3**.
-11. Find the new bucket that CloudFormation created. The bucket will have a name with this format: **\<_your account ID_\>-cloudtrail-logs**.
-12. Click into the bucket, then **AWSLogs**, then **\<_your account ID_\>**, then **CloudTrail**.
-13. Here, CloudTrail will store your AWS activity with a hierarchy of **region/year/month/day**. The data saved in these logs will be useful to administrators and auditors. Note this location in a safe place.
+6. Define the parameters of the application stack here.
+..* For Stack name, answer "OpenEMR".
+..* For EC2KeyPair, select the EC2 key you created in chapter 1 from the dropdown.
+..* For RDSPassword, this is the administrator's password to the MySQL database we'll create for OpenEMR. Pick a secure password and store it in a safe place.
+9. Click **Next**.
+10. Click **Next** again.
+11. Click **Create** and wait for the stack to finish creating.
+
+### Examine audit logs
+
+1. Once the stack has a status of **CREATE_COMPLETE**, click on **Services** and then click **S3**.
+2. Find the new bucket that CloudFormation created. The bucket will have a name with this format: **openemr-<hexadecimal uuid>**.
+3. Click into the bucket, then **AWSLogs**, then **\<_your account ID_\>**, then **CloudTrail**.
+4. Here, CloudTrail will store your AWS activity with a hierarchy of **region/year/month/day**. The data saved in these logs will be useful to administrators and auditors. Note this location in a safe place.

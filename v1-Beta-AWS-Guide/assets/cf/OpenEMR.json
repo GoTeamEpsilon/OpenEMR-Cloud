@@ -427,6 +427,11 @@
     "Redis": {
       "Value" : { "Fn::GetAtt" : ["RedisCluster", "RedisEndpoint.Address"]},
       "Description" : "Redis endpoint for 00-config"
-    }
+    },
+
+    "S3": {
+      "Value" : { "Ref" : "S3Bucket" },
+      "Description" : "S3 bucket for CloudWatch audit logs"
+    },
   }
 }
