@@ -4,7 +4,18 @@
   "Description" : "Automated OpenEMR 5.0.0 Configuration [in progress]",
 
   "Parameters" : {
-
+    "EC2KeyPair" : {
+      "Description" : "Amazon EC2 Key Pair",
+      "Type" : "AWS::EC2::KeyPair::KeyName"
+    },
+    "RDSPassword" : {
+      "NoEcho" : "true",
+      "Description" : "The database admin account password",
+      "Type" : "String",
+      "MinLength" : "10",
+      "MaxLength" : "41",
+      "AllowedPattern" : "^[a-zA-Z0-9]*$"
+    }
   },
 
   "Mappings" : {
@@ -17,7 +28,7 @@
       "Type" : "AWS::EC2::VPC",
       "Properties" : {
         "CidrBlock" : "10.0.0.0/16",
-        "EnableDNSHostnames" : "true",
+        "EnableDnsHostnames" : "true",
         "Tags" : [
 			{"Key" : "Name", "Value" : "OpenEMR" },
 			{"Key" : "Application", "Value" : { "Ref" : "AWS::StackId"} }
@@ -174,6 +185,26 @@
       }
     },
 
+    "SSHSecurityGroup" : {
+      "Type" : "AWS::EC2::SecurityGroup",
+      "Properties" : {
+         "GroupDescription" : "Public SSH Access",
+         "Tags" :  [ { "Key" : "Name", "Value" : "Global SSH INSECURE_DEV_ONLY" } ],
+         "VpcId" : {"Ref" : "VPC"}
+      }
+    },
+
+    "SSHSGIngress": {
+      "Type": "AWS::EC2::SecurityGroupIngress",
+      "Properties": {
+          "GroupId": { "Ref": "SSHSecurityGroup" },
+          "IpProtocol": "tcp",
+          "CidrIp": "0.0.0.0/0",
+          "FromPort": "22",
+          "ToPort": "22"
+      }
+    },
+
   "EFSSecurityGroup" : {
     "Type" : "AWS::EC2::SecurityGroup",
     "Properties" : {
@@ -217,7 +248,54 @@
       "SubnetId": { "Ref": "SubnetPrivate2" },
       "SecurityGroups": [ { "Ref": "EFSSecurityGroup" } ]
     }
+  },
+
+  "RDSSubnetGroup": {
+     "Type" : "AWS::RDS::DBSubnetGroup",
+     "Properties" : {
+        "DBSubnetGroupDescription" : "OpenEMR DB Subnet",
+        "SubnetIds" : [ {"Ref":"SubnetPrivate1"}, {"Ref":"SubnetPrivate2"} ]
+     }
+  },
+
+  "DBSecurityGroup" : {
+    "Type" : "AWS::EC2::SecurityGroup",
+    "Properties" : {
+       "GroupDescription" : "RDS Access",
+       "Tags" :  [ { "Key" : "Name", "Value" : "PatientRecordsAccess" } ],
+       "VpcId" : {"Ref" : "VPC"}
+    }
+  },
+
+  "DBSGIngress": {
+    "Type": "AWS::EC2::SecurityGroupIngress",
+    "Properties": {
+        "GroupId": { "Ref": "DBSecurityGroup" },
+        "IpProtocol": "tcp",
+        "FromPort": "3306",
+        "ToPort": "3306",
+        "SourceSecurityGroupId": { "Ref": "DBSecurityGroup" }
+    }
+  },
+
+  "RDSInstance" : {
+     "Type" : "AWS::RDS::DBInstance",
+     "Properties" : {
+        "DBName" : "openemr",
+        "AllocatedStorage" : "10",
+        "DBInstanceClass" : "db.t2.small",
+        "Engine" : "MySQL",
+        "EngineVersion" : "5.6.27",
+        "MasterUsername" : "openemr_db_user",
+        "MasterUserPassword" : { "Ref" : "RDSPassword" },
+        "PubliclyAccessible": "false",
+        "DBSubnetGroupName": {"Ref": "RDSSubnetGroup"},
+        "VPCSecurityGroups": [{"Ref": "DBSecurityGroup"}],
+        "MultiAZ": "false",
+        "Tags" : [ { "Key" : "Name", "Value" : "Patient Records" } ]
+     }
   }
+
 },
 
   "Outputs" : {
@@ -228,7 +306,12 @@
 
     "EFS" : {
       "Value" : { "Ref": "ElasticFileSystem" },
-      "Description" : "Newly created EFS id"
+      "Description" : "EFS id for 00-config"
+    },
+
+    "RDS": {
+      "Value" : { "Fn::GetAtt" : ["RDSInstance", "Endpoint.Address"]},
+      "Description" : "RDS endpoint for OpenEMR setup process"
     }
   }
 }

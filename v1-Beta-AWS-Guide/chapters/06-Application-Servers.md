@@ -10,6 +10,17 @@ _[< previous chapter](05-Session-Management.md) | [next chapter >](07-Secure-Dom
 
 1. Open "**openemr/.ebextensions/00-options.config**" and replace "**&lt;&lt;enter EFS file system ID here&gt;&gt;**" with your noted **File System ID** from before.
 
+### Enforce the database to use UTF-8
+
+1. Open "**openemr/sql/database.sql**" and add the following code to the bottom:
+
+```
+use openemr;
+ALTER DATABASE openemr CHARACTER SET utf8 COLLATE utf8_general_ci;
+ALTER TABLE lang_definitions CONVERT TO CHARACTER SET utf8 COLLATE utf8_general_ci;
+ALTER TABLE lang_constants CONVERT TO CHARACTER SET utf8 COLLATE utf8_general_ci;
+```
+
 ### Prepare your first deployment
 
 1. Archive **openemr** as "**openemr.zip**". Note that the name of the file must be exact.
