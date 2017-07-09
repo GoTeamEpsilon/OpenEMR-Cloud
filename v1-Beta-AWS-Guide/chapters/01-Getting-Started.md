@@ -4,7 +4,7 @@ _[next chapter >](02-Private-Cloud.md)_
 
 ### Start by getting a local copy of OpenEMR v5
 
-1. Download [this file](https://github.com/GoTeamEpsilon/OpenEMR-AWS/raw/master/openemr.tar.gz) to your computer. Extract it and make sure the folder is named `openemr` (note that you may have to extract the tar twice if you are on Windows).
+1. Download [this file](https://sourceforge.net/projects/openemr/files/OpenEMR%20Cloud/5.0.0/openemr-v5-0-0-2-cloud.tar.gz/download) to your computer. Extract it and make sure the folder is named `openemr` (note that you may have to extract the tar twice if you are on Windows).
 
 ### Create an AWS Account
 
