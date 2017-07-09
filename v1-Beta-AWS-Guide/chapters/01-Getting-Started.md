@@ -4,12 +4,7 @@ _[next chapter >](02-Private-Cloud.md)_
 
 ### Start by getting a local copy of OpenEMR v5
 
-1. Download the latest [tarball](http://sourceforge.net/projects/openemr/files/OpenEMR%20Current/5.0.0/openemr-5.0.0.tar.gz/download) to your computer.
-2. Extract the contents with your favorite archive extractor. Note that a `tar` file will need to be extracted after the initial extraction if you are using Windows.
-3. Rename the downloaded "**openemr-5.0.0**" directory to "**openemr**".
-4. Enter into the "**openemr**" directory.
-5. Create an AWS-specific directory called "**.ebextensions**".
-6. Download [this](https://github.com/GoTeamEpsilon/OpenEMR-Cloud/raw/master/v1-Beta-AWS-Guide/assets/eb/eb.zip) zip file to the newly created "**.ebextensions**" directory. Extract the contents with your favorite archive extractor (make sure files are extracted to "**.ebextensions/**" and not "**.ebextensions/eb/**").
+1. Download [this file](https://github.com/GoTeamEpsilon/OpenEMR-AWS/raw/master/openemr.tar.gz) to your computer.
 
 ### Create an AWS Account
 

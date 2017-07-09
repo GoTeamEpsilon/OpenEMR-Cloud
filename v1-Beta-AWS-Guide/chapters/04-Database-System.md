@@ -76,14 +76,3 @@ _[< previous chapter](03-Network-File-System.md) | [next chapter >](05-Session-M
 3. Wait many moments for the database to be created.
 4. Click on the first row of the **Instances** table.
 5. Record the **Endpoint** (without the ":3306" section) in a safe place.
-
-### Enforce the database to use UTF-8
-
-1. Open "**openemr/sql/database.sql**" and add the following code to the bottom:
-
-```
-use openemr;
-ALTER DATABASE openemr CHARACTER SET utf8 COLLATE utf8_general_ci;
-ALTER TABLE lang_definitions CONVERT TO CHARACTER SET utf8 COLLATE utf8_general_ci;
-ALTER TABLE lang_constants CONVERT TO CHARACTER SET utf8 COLLATE utf8_general_ci;
-```
