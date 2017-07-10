@@ -15,11 +15,23 @@
       "MinLength" : "10",
       "MaxLength" : "41",
       "AllowedPattern" : "^[a-zA-Z0-9]*$"
+    },
+    "TimeZone": {
+      "Type": "String",
+      "Default": "America\\\\/Chicago",
+      "MaxLength": "41",
+      "Description" : "The timezone OpenEMR will run in (** CHECK THE GUIDE FOR SYNTAX **)"
     }
   },
 
   "Mappings" : {
 
+    "RegionData" : {
+      "us-east-1" : {
+        "ApplicationBucket": "openemr-useast1",
+        "ApplicationSource": "beanstalk/openemr-5.0.0-001.zip"
+      }
+    }
   },
 
   "Resources" : {
@@ -403,35 +415,64 @@
         "Engine"                  : "redis",
         "NumCacheNodes"           : "1"
       }
-    }
+    },
+
+    "EBApplication" : {
+      "Type" : "AWS::ElasticBeanstalk::Application",
+      "Properties" : {
+        "Description" : "OpenEMR Application Stack"
+      }
+    },
+
+    "EBApplicationVersion" : {
+      "Type" : "AWS::ElasticBeanstalk::ApplicationVersion",
+      "Properties" : {
+        "Description" : "Version 5.0.0",
+        "ApplicationName" : { "Ref" : "EBApplication" },
+        "SourceBundle" : {
+          "S3Bucket" : { "Fn::FindInMap" : [ "RegionData", { "Ref" : "AWS::Region" }, "ApplicationBucket"]},
+          "S3Key" : { "Fn::FindInMap" : [ "RegionData", { "Ref" : "AWS::Region" }, "ApplicationSource"]}
+        }
+      }
+    },
+
+    "EBEnvironment" : {
+     "Type" : "AWS::ElasticBeanstalk::Environment",
+     "Properties" : {
+       "ApplicationName" : { "Ref" : "EBApplication" },
+        "Description" :  "OpenEMR v5.0.0, cloud deployment 001",
+        "SolutionStackName" : "64bit Amazon Linux 2017.03 v2.4.1 running PHP 7.0",
+        "VersionLabel" : { "Ref" : "EBApplicationVersion" },
+        "OptionSettings" : [
+          {"Namespace" : "aws:autoscaling:launchconfiguration", "OptionName" : "SecurityGroups", "Value" : { "Ref" : "ApplicationSecurityGroup" }},
+          {"Namespace" : "aws:autoscaling:launchconfiguration", "OptionName" : "EC2KeyName", "Value" : { "Ref" : "EC2KeyPair" }},
+          {"Namespace" : "aws:elb:policies", "OptionName" : "ConnectionSettingIdleTimeout", "Value" : "3600"},
+          {"Namespace" : "aws:ec2:vpc", "OptionName" : "VPCId", "Value" : { "Ref" : "VPC" }},
+          {"Namespace" : "aws:ec2:vpc", "OptionName" : "Subnets", "Value" :
+            { "Fn::Join" : [ ",", [ {"Ref": "SubnetPrivate1"}, {"Ref": "SubnetPrivate2"} ] ] }
+          },
+          {"Namespace" : "aws:ec2:vpc", "OptionName" : "ELBSubnets", "Value" :
+            { "Fn::Join" : [ ",", [ {"Ref": "SubnetPublic1"}, {"Ref": "SubnetPublic2"} ] ] }
+          },
+          {"Namespace" : "aws:elasticbeanstalk:application:environment", "OptionName": "TIMEZONE", "Value": {"Ref" : "TimeZone"}},
+          {"Namespace" : "aws:elasticbeanstalk:application:environment", "OptionName": "REDIS_IP", "Value": { "Fn::GetAtt" : ["RedisCluster", "RedisEndpoint.Address"]}},
+          {"Namespace" : "aws:elasticbeanstalk:application:environment", "OptionName": "FILE_SYSTEM_ID", "Value": {"Ref" : "ElasticFileSystem"}}
+       ]
+     }
+   }
 
 
 },
 
   "Outputs" : {
-    "VPC" : {
-      "Value" : { "Ref": "VPC" },
-      "Description" : "Newly created VPC id"
-    },
-
-    "EFS" : {
-      "Value" : { "Ref": "ElasticFileSystem" },
-      "Description" : "EFS endpoint for 00-config"
-    },
-
     "RDS": {
       "Value" : { "Fn::GetAtt" : ["RDSInstance", "Endpoint.Address"]},
       "Description" : "RDS endpoint for OpenEMR setup process"
     },
 
-    "Redis": {
-      "Value" : { "Fn::GetAtt" : ["RedisCluster", "RedisEndpoint.Address"]},
-      "Description" : "Redis endpoint for 00-config"
-    },
-
-    "S3": {
-      "Value" : { "Ref" : "S3Bucket" },
-      "Description" : "S3 bucket for CloudWatch audit logs"
-    },
+    "URL" : {
+      "Description" : "OpenEMR Setup",
+      "Value" :  { "Fn::Join" : [ "", [ "http://", { "Fn::GetAtt" : ["EBEnvironment", "EndpointURL"] }, "/openemr"]]}
+    }
   }
 }

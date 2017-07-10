@@ -14,6 +14,7 @@ _CloudFormation is used for setting up OpenEMR._
 6. Define the parameters of the application stack here.
 ..* For Stack name, answer "OpenEMR".
 ..* For EC2KeyPair, select the EC2 key you created in chapter 1 from the dropdown.
+..* For Time Zone, set your timezone, putting two backslashes behind the / as shown in the example.
 ..* For RDSPassword, this is the administrator's password to the MySQL database we'll create for OpenEMR. Pick a secure password and store it in a safe place.
 9. Click **Next**.
 10. Click **Next** again.
