@@ -235,6 +235,41 @@
       }
     },
 
+    "OpenEMRKey" : {
+      "Type" : "AWS::KMS::Key",
+      "Properties" : {
+        "Description" : "Encrypts Patient Records",
+        "KeyPolicy" : {
+          "Version": "2012-10-17",
+          "Id": "key-default-1",
+          "Statement": [
+            {
+              "Sid": "Enable IAM User Permissions",
+              "Effect": "Allow",
+              "Principal": {
+                "AWS": [
+                  {
+                    "Fn::Join": [
+                      ":",
+                      [
+                        "arn:aws:iam:",
+                        {
+                          "Ref": "AWS::AccountId"
+                        },
+                        "root"
+                      ]
+                    ]
+                  }
+                ]
+              },
+              "Action": "kms:*",
+              "Resource": "*"
+            }
+          ]
+        }
+      }
+    },
+
   "EFSSecurityGroup" : {
     "Type" : "AWS::EC2::SecurityGroup",
     "Properties" : {
@@ -317,6 +352,8 @@
         "PubliclyAccessible": "false",
         "DBSubnetGroupName": {"Ref": "RDSSubnetGroup"},
         "VPCSecurityGroups": [{"Ref": "DBSecurityGroup"}],
+        "KmsKeyId": {"Ref" : "OpenEMRKey"},
+        "StorageEncrypted": "true",
         "MultiAZ": "false",
         "Tags" : [ { "Key" : "Name", "Value" : "Patient Records" } ]
      }
