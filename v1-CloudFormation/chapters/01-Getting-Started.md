@@ -1,24 +1,46 @@
-_[next chapter >](02-Application-Backbone.md)_
+_[next chapter >](02-Application-Servers.md)_
 
 # 🚴 Getting Started
-
-### Start by getting a local copy of OpenEMR v5
-
-1. Download the latest [tarball](http://sourceforge.net/projects/openemr/files/OpenEMR%20Current/5.0.0/openemr-5.0.0.tar.gz/download) to your computer.
-2. Extract the contents with your favorite archive extractor. Note that a `tar` file will need to be extracted after the initial extraction if you are using Windows.
-3. Rename the downloaded "**openemr-5.0.0**" directory to "**openemr**".
-4. Enter into the "**openemr**" directory.
-5. Create an AWS-specific directory called "**.ebextensions**".
-6. Download [this](https://github.com/GoTeamEpsilon/OpenEMR-Cloud/raw/master/v1-Beta-AWS-Guide/assets/eb/eb.zip) zip file to the newly created "**.ebextensions**" directory. Extract the contents with your favorite archive extractor (make sure files are extracted to "**.ebextensions/**" and not "**.ebextensions/eb/**").
 
 ### Create an AWS Account
 
 1. Navigate to [https://aws.amazon.com/](https://aws.amazon.com/), and then click **Create an AWS Account**.
 2. Follow along with the signup wizard.
 
-### Add yourself as an administrative user
+### Select an AWS Region
 
-1. Now that you are logged into the AWS Management Console, click **Services** and then click **IAM**.
+This guide uses services that are _only_ available in certain AWS regions. As of this writing, you will need to make sure you're in one the of five Amazon regions described below.
+
+1. In the AWS Management Console, click **Services**, and then click **EC2**.
+2. In the region dropdown in the top right corner, select either "**Ohio**", "**N. Virginia**", "**Oregon**", or "**Ireland**". Be sure to remain in this region for the remainder of this guide.
+
+### Generate an AWS SSH keypair
+
+1. In the AWS Management Console, click **Services** and then click **EC2**.
+2. In the left hand pane, under **Network & Security**, click **Key Pairs**.
+3. Click **Create Key Pair**.
+4. When the **"Create Key Pair"** dialog appears, enter your username for the **Key pair name** field and click **Create**.
+5. When the **Save As** dialog appears, save the .pem keyfile to a safe place. We'll talk more about it in later chapters.
+
+### Begin your installation
+
+1. Pick the region you created your keypair in.
+   * [North Virginia, USA (least expensive)](https://console.aws.amazon.com/cloudformation/home?region=us-east-1#/stacks/new?stackName=OpenEMR&templateURL=https://s3.amazonaws.com/openemr-useast1/OpenEMR.004.json)
+   * [Ohio, USA](https://console.aws.amazon.com/cloudformation/home?region=us-east-2#/stacks/new?stackName=OpenEMR&templateURL=https://s3.amazonaws.com/openemr-useast2/OpenEMR.004.json)
+   * [Oregon, USA](https://console.aws.amazon.com/cloudformation/home?region=us-west-2#/stacks/new?stackName=OpenEMR&templateURL=https://s3.amazonaws.com/openemr-uswest2/OpenEMR.004.json)
+   * [Dublin, Ireland](https://console.aws.amazon.com/cloudformation/home?region=eu-west-1#/stacks/new?stackName=OpenEMR&templateURL=https://s3.amazonaws.com/openemr-euwest1/OpenEMR.004.json)   
+2. Define the parameters of the application stack here.
+   * For **Stack name**, leave it as **OpenEMR** or change it if you'd like.
+   * For **EC2KeyPair**, select the EC2 key you created in chapter 1 from the dropdown.
+   * For **TimeZone**, set your [PHP timezone](http://php.net/manual/en/timezones.php).
+   * For **RDSPassword**, this is the administrator's password to the MySQL database we'll create for OpenEMR. Pick a secure password and store it in a safe place.
+3. Click **Next**.
+4. Click **Next** again.
+5. Click **Create** and wait ten to fifteen minutes (or more) for OpenEMR to install to your account.
+
+### While you're waiting: Secure the account with Identity and Access Management
+
+1. In the AWS Management Console, click **Services** and then click **IAM**.
 2. In the left pane, click **Dashboard**, and copy down the IAM user sign-in link.
 3. In the left pane, click **Users**.
 4. Click **Add user**.
@@ -32,18 +54,3 @@ _[next chapter >](02-Application-Backbone.md)_
 12. Click **Next: Create user**.
 13. Log out of the AWS console, go to the sign-in link you copied down in step 2, and log in with your new credentials.
 14. (_Optional but highly recommended step_): Enable two-factor authentication via the **Security credentials** tab of your user profile in IAM. Click the pencil beside **Assigned MFA Device** to start this process.
-
-### Select an AWS Region
-
-This guide uses services that are _only_ available in certain AWS regions. As of this writing, you will need to make sure you're in one the of five Amazon regions described below.
-
-1. In the AWS Management Console, click **Services**, and then click **EC2**.
-2. In the region dropdown in the top right corner, select either "**Ohio**", "**N. Virginia**", "**Oregon**", "**Ireland**", or "**Sydney**". Be sure to remain in this region for the remainder of this guide.
-
-### Generate an AWS SSH keypair
-
-1. In the AWS Management Console, click **Services** and then click **EC2**.
-2. In the left hand pane, under **Network & Security**, click **Key Pairs**.
-3. Click **Create Key Pair**.
-4. When the **"Create Key Pair"** dialog appears, enter your username for the **Key pair name** field and click **Create**.
-5. When the **Save As** dialog appears, save the .pem keyfile to a safe place.

@@ -1,4 +1,4 @@
-_[< previous chapter](04-Secure-Domain-Setup.md) | [next chapter >](06-Administration.md)_
+_[< previous chapter](03-Secure-Domain-Setup.md) | [next chapter >](05-Administration.md)_
 
 # ☁ VPN Access
 

@@ -1,4 +1,4 @@
-_[< previous chapter](02-Application-Backbone.md) | [next chapter >](04-Secure-Domain-Setup.md)_
+_[< previous chapter](01-Getting-Started.md) | [next chapter >](03-Secure-Domain-Setup.md)_
 
 # 🖥 Application Servers
 

@@ -1,4 +1,4 @@
-_[< previous chapter](05-VPN-Access.md)_
+_[< previous chapter](04-VPN-Access.md)_
 
 # 🎛 Administration
 
@@ -14,7 +14,6 @@ Although this AWS Guide is in beta, it is suitable for production use for instit
 - Cost estimates of monthly AWS are not provided in the guide.
 - [There is a minor issue with autoscaling with a noted workaround but not a complete solution.](#im-occasionally-seeing-site-id-is-missing-from-session-data-errors)
 - HIPAA/BAA compliance has not been met for this solution.
-- Redis is set up as a large single instance as opposed to a cluster of instances.
 - No SMTP solution is in place so OpenEMR emails will not be sent.
 
 A **Stable** version of this solution is being worked on by TeamEpsilon. All of the above limitations will be addressed. In addition, the solution can be ran on Microsoft, Google, and Oracle clouds.
@@ -64,6 +63,13 @@ The most robust and maintainable approach for deployments is to keep an internal
 3. Click the **Request Logs** button to the to pright of the screen.
 4. Click **Full Logs** and wait a moment for the logs to download.
 5. Extract the contents with your favorite archive extractor to view each instance's Apache logs in **logs_directory/var/log/httpd**.
+
+### How do I access audit logs?
+
+1. Once the stack has a status of **CREATE_COMPLETE**, click on **Services** and then click **S3**.
+2. Find the new bucket that CloudFormation created. The bucket will have a name with this format: **openemr-<hexadecimal uuid>**.
+3. Click into the bucket, then **AWSLogs**, then **\<_your account ID_\>**, then **CloudTrail**.
+4. Here, CloudTrail will store your AWS activity with a hierarchy of **region/year/month/day**. The data saved in these logs will be useful to administrators and auditors. Note this location in a safe place.
 
 ### How do I restore a database backup?
 

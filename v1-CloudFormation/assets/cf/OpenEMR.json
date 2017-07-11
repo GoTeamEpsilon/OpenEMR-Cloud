@@ -30,6 +30,18 @@
       "us-east-1" : {
         "ApplicationBucket": "openemr-useast1",
         "ApplicationSource": "beanstalk/openemr-5.0.0-002.zip"
+      },
+      "us-east-2" : {
+        "ApplicationBucket": "openemr-useast2",
+        "ApplicationSource": "beanstalk/openemr-5.0.0-002.zip"
+      },
+      "us-west-2" : {
+        "ApplicationBucket": "openemr-uswest2",
+        "ApplicationSource": "beanstalk/openemr-5.0.0-002.zip"
+      },
+      "eu-west-1" : {
+        "ApplicationBucket": "openemr-euwest1",
+        "ApplicationSource": "beanstalk/openemr-5.0.0-002.zip"
       }
     }
   },
