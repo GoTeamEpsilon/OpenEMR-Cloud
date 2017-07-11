@@ -4,7 +4,7 @@ _[< previous chapter](05-Session-Management.md) | [next chapter >](07-Secure-Dom
 
 ### Configure the servers to use your timezone
 
-1. Open "**openemr/.ebextensions/00-options.config**" and replace "**&lt;&lt;enter timezone here&gt;&gt;**" with your timezone from the [following list](http://php.net/manual/en/timezones.php). Do not enter spaces (e.g.: "**America/New_York**" is valid while "**America\\/New York**" is not.
+1. Open "**openemr/.ebextensions/00-options.config**" and replace "**&lt;&lt;enter timezone here&gt;&gt;**" with your timezone from the [following list](http://php.net/manual/en/timezones.php). Do not enter spaces (e.g.: "**America/New_York**" is valid while "**America/New York**" is not.
 
 ### Prepare your first deployment
 
