@@ -18,9 +18,9 @@
     },
     "TimeZone": {
       "Type": "String",
-      "Default": "America\\\\/Chicago",
+      "Default": "America/Chicago",
       "MaxLength": "41",
-      "Description" : "The timezone OpenEMR will run in (** CHECK THE GUIDE FOR SYNTAX **)"
+      "Description" : "The timezone OpenEMR will run in"
     }
   },
 
@@ -29,7 +29,7 @@
     "RegionData" : {
       "us-east-1" : {
         "ApplicationBucket": "openemr-useast1",
-        "ApplicationSource": "beanstalk/openemr-5.0.0-001.zip"
+        "ApplicationSource": "beanstalk/openemr-5.0.0-002.zip"
       }
     }
   },
