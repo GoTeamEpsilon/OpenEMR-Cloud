@@ -7,11 +7,7 @@ This solution is not HIPAA/BAA compliant. The stable version of the guide is cur
 ## 📒 Table of Contents
 
 1. 🚴 [Getting Started](chapters/01-Getting-Started.md)
-2. ☁ [Application Backbone](chapters/02-Application-Backbone.md)
-3. 📁 [Network File System](chapters/03-VPN-Access.md)
-4. 💽 [Database System](chapters/04-Database-System.md)
-5. 💻 [Session Management](chapters/05-Session-Management.md)
-6. 🖥 [Application Servers](chapters/06-Application-Servers.md)
-7. ▶ [Secure Domain Setup](chapters/07-Secure-Domain-Setup.md)
-8. 📝 [CloudTrail](chapters/08-CloudTrail.md)
-9. 🎛 [Administration](chapters/09-Administration.md)
+2. 🖥 [Application Servers](chapters/02-Application-Servers.md)
+3. ▶ [Secure Domain Setup](chapters/03-Secure-Domain-Setup.md)
+4. 📝 [VPN Access](chapters/04-VPN-Access.md)
+5. 🎛 [Administration](chapters/05-Administration.md)

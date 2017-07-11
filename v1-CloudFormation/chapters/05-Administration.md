@@ -83,6 +83,7 @@ The most robust and maintainable approach for deployments is to keep an internal
 8. SSH into any EC2 instance associated with the Elastic Beanstalk environment and note the values in **openemr/sites/default/sqlconf.php**.
 9. Update your local **openemr/sites/default/sqlconf.php** with these noted values, but with the new MySQL restore endpoint information.
 10. Reploy the application via [the instructions in the deployment section](#how-do-i-deploy-custom-changes-to-my-cloud).
+
 ### Can I Backup the RDS MySQL Database?
 
 RDS does this for you and this AWS Guide has great defaults for its configuration. If you want to learn more about the backups or customize them further for your use case, please review http://docs.aws.amazon.com/AmazonRDS/latest/UserGuide/USER_WorkingWithAutomatedBackups.html.
