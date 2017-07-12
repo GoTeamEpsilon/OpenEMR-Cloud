@@ -10,13 +10,10 @@ _This chapter is dedicated for Administrators for reference and answering common
 
 Although this AWS Guide is in beta, it is suitable for production use for institutions mostly outside of the US because it is not HIPAA/BAA compliant. Although TeamEpsilon and OpenEMR community members have tested the guide, the following limitations should be noted:
 
-- The guide is manual, which means that it is prone to human error and the Amazon UI changing.
+- The guide is semi-automated, which means that it is prone to human error and the Amazon UI changing.
 - Cost estimates of monthly AWS are not provided in the guide.
-- [There is a minor issue with autoscaling with a noted workaround but not a complete solution.](#im-occasionally-seeing-site-id-is-missing-from-session-data-errors)
-- HIPAA/BAA compliance has not been met for this solution.
+- HIPAA/BAA compliance has not yet been met for this solution.
 - No SMTP solution is in place so OpenEMR emails will not be sent.
-
-A **Stable** version of this solution is being worked on by TeamEpsilon. All of the above limitations will be addressed. In addition, the solution can be ran on Microsoft, Google, and Oracle clouds.
 
 ### What are the Recommendations for Development and Testing?
 
@@ -117,7 +114,7 @@ Accessing your instances with SSH is one of the more challenging tasks in this g
 
 #### Prerequisites
 
-1. This section assumes that you've already setup OpenVPN. If this is not the case, see chapter 2.
+1. This section assumes that you've already setup OpenVPN. If this is not the case, see chapter 4.
 2. Download and install the latest [PuTTY MSI](https://www.chiark.greenend.org.uk/~sgtatham/putty/latest.html) software suite. If you aren't sure, click [here](https://the.earth.li/~sgtatham/putty/latest/w64/putty-64bit-0.69-installer.msi).
 3. Using your AWS SSH keypair that is saved as "**your-username.pem**", convert it to a **ppk** file by following [these instructions](http://docs.aws.amazon.com/AWSEC2/latest/UserGuide/putty.html#putty-private-key).
 
@@ -137,25 +134,3 @@ Using your "**your-username.ppk**" keypair, access your instance by following [t
 2. Select the **openemr** instance you are interested in accessing (all instances are identical in configuration).
 3. Under **Private IP**, note the address.
 4. Using your "**your-username.ppk**" keypair, access your instance by following [these instructions](http://docs.aws.amazon.com/AWSEC2/latest/UserGuide/putty.html#putty-ssh). Note that step 1 can be skipped. Also note that "**user_name@public_dns_name**" is "**ec2-user@(your noted internal ec2 ip)**".
-
-## KNOWN ISSUES
-
-### I'm Occasionally Seeing "Site ID is missing from session data!" Errors
-
-This is a known issue with this AWS Guide. This error will be shown when the ElasticBeanstalk is autoscaling a new instance. Fortunately, the time window for this error is extremely small (will only show if a user is load balanced to the new instance in a time window of about 30 seconds). However, this this downtime may be unacceptable for your use case (e.x.: bigger institutions) so you may set a finite number of instances for the load balanced cluster to minimize the chance of this error happening. Note this is not a full solution, but a workaround that will _reduce_ the odds of this error occuring:
-
-1. In the AWS Management Console, click **Services**, **Elastic Beanstalk**, and then choose **openemr/your_practice**.
-2. Click **Configuration**.
-3. Under **Scaling**, click the gear icon.
-4. Under **Auto Scaling**, enter "**4**" for **Minimum instance count** and "**4**" for **Maximum instance count**. Increase/decrease "**4**" as needed, just make sure the numbers are the same and are relatively high.
-5. Click **Apply**.
-
-Another workaround that will reduce the odds of this error occuring even more than the above workaround is the following:
-
-1. In the AWS Management Console, click **Services**, **Elastic Beanstalk**, and then choose **openemr/your_practice**.
-2. Click **Configuration**.
-3. Under **Scaling**, click the gear icon.
-4. Under **Environment type**, select **"Single instance"**.
-5. Click **Apply**.
-
-Note that it will most likely make sense to increase the size of the instance in this scenario because there is only one instance servicing all production traffic. This can be accomplished by in the **Instances**: **Instance type** section of **Configuration**.

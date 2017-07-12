@@ -2,7 +2,7 @@
 
 A *beta* guide for manually setting up a production OpenEMR system on AWS provided by [TeamEpsilon](https://github.com/GoTeamEpsilon/purpose).
 
-This solution is not HIPAA/BAA compliant. The stable version of the guide is currently being developed and will be automated and HIPAA/BAA compliant.
+This solution is expected to be HIPAA/BAA compliant when released.
 
 ## 📒 Table of Contents
 
