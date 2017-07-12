@@ -29,19 +29,28 @@
     "RegionData" : {
       "us-east-1" : {
         "ApplicationBucket": "openemr-useast1",
-        "ApplicationSource": "beanstalk/openemr-5.0.0-002.zip"
+        "ApplicationSource": "beanstalk/openemr-5.0.0-002.zip",
+        "MySQLVersion": "5.6.27"
       },
       "us-east-2" : {
         "ApplicationBucket": "openemr-useast2",
-        "ApplicationSource": "beanstalk/openemr-5.0.0-002.zip"
+        "ApplicationSource": "beanstalk/openemr-5.0.0-002.zip",
+        "MySQLVersion": "5.6.35"
       },
       "us-west-2" : {
         "ApplicationBucket": "openemr-uswest2",
-        "ApplicationSource": "beanstalk/openemr-5.0.0-002.zip"
+        "ApplicationSource": "beanstalk/openemr-5.0.0-002.zip",
+        "MySQLVersion": "5.6.27"
       },
       "eu-west-1" : {
         "ApplicationBucket": "openemr-euwest1",
-        "ApplicationSource": "beanstalk/openemr-5.0.0-002.zip"
+        "ApplicationSource": "beanstalk/openemr-5.0.0-002.zip",
+        "MySQLVersion": "5.6.27"
+      },
+      "ap-southeast-2" : {
+        "ApplicationBucket": "openemr-apsoutheast2",
+        "ApplicationSource": "beanstalk/openemr-5.0.0-002.zip",
+        "MySQLVersion": "5.6.27"
       }
     }
   },
@@ -358,7 +367,7 @@
         "AllocatedStorage" : "10",
         "DBInstanceClass" : "db.t2.small",
         "Engine" : "MySQL",
-        "EngineVersion" : "5.6.27",
+        "EngineVersion" : { "Fn::FindInMap" : [ "RegionData", { "Ref" : "AWS::Region" }, "MySQLVersion"]},
         "MasterUsername" : "openemr_db_user",
         "MasterUserPassword" : { "Ref" : "RDSPassword" },
         "PubliclyAccessible": "false",
