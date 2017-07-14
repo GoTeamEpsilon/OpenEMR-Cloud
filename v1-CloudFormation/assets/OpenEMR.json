@@ -30,7 +30,8 @@
       "us-east-1" : {
         "ApplicationBucket": "openemr-useast1",
         "ApplicationSource": "beanstalk/openemr-5.0.0-002.zip",
-        "MySQLVersion": "5.6.27"
+        "MySQLVersion": "5.6.27",
+        "UbuntuAMI": "ami-d15a75c7"
       },
       "us-east-2" : {
         "ApplicationBucket": "openemr-useast2",
@@ -368,7 +369,7 @@
         "DBInstanceClass" : "db.t2.small",
         "Engine" : "MySQL",
         "EngineVersion" : { "Fn::FindInMap" : [ "RegionData", { "Ref" : "AWS::Region" }, "MySQLVersion"]},
-        "MasterUsername" : "openemr_db_user",
+        "MasterUsername" : "openemr",
         "MasterUserPassword" : { "Ref" : "RDSPassword" },
         "PubliclyAccessible": "false",
         "DBSubnetGroupName": {"Ref": "RDSSubnetGroup"},
@@ -475,6 +476,142 @@
       }
     },
 
+    "CouchDBSecurityGroup" : {
+      "Type" : "AWS::EC2::SecurityGroup",
+      "Properties" : {
+         "GroupDescription" : "CouchDB Access",
+         "Tags" :  [ { "Key" : "Name", "Value" : "PatientDocumentsAccess" } ],
+         "VpcId" : {"Ref" : "VPC"}
+      }
+    },
+
+    "CouchDBSGIngress": {
+      "Type": "AWS::EC2::SecurityGroupIngress",
+      "Properties": {
+          "GroupId": { "Ref": "CouchDBSecurityGroup" },
+          "IpProtocol": "-1",
+          "SourceSecurityGroupId" : { "Ref": "ApplicationSecurityGroup"}
+      }
+    },
+
+    "CouchDBVolume" : {
+       "Type" : "AWS::EC2::Volume",
+       "Properties" : {
+          "Size" : "500",
+          "AvailabilityZone" : { "Fn::Select": [ "0", { "Fn::GetAZs": "" } ] },
+          "VolumeType" : "sc1",
+          "Encrypted": "true",
+          "KmsKeyId" : {"Ref" : "OpenEMRKey"},
+          "Tags" : [ { "Key" : "Name", "Value" : "Patient Documents" } ]
+       }
+    },
+
+    "CouchDBInstance": {
+      "Type": "AWS::EC2::Instance",
+      "Metadata" : {
+        "AWS::CloudFormation::Init" : {
+          "configSets" : {
+            "Setup" : [ "Install" ]
+          },
+
+          "Install" : {
+            "files" : {
+              "/tmp/ip.ini" : {
+                "content" : { "Fn::Join" : ["", [
+                  "[httpd]\n",
+                  "bind_address = 0.0.0.0\n"
+                  ]]},
+                "mode"  : "000400",
+                "owner" : "root",
+                "group" : "root"
+              },
+              "/tmp/fstab.append" : {
+                "content" : { "Fn::Join" : ["", [
+                  "/dev/xvdd /mnt/db ext4 defaults,nofail 0 0\n"
+                  ]]},
+                "mode"  : "000400",
+                "owner" : "root",
+                "group" : "root"
+              }
+            },
+
+            "commands" : {
+              "01_security" : {
+                "command" : "DEBIAN_FRONTEND=noninteractive apt-get dist-upgrade -y -o Dpkg::Options::=\"--force-confdef\" -o Dpkg::Options::=\"--force-confold\" --force-yes"
+              },
+              "02_format_volume" : {
+                "command" : "mkfs -t ext4 /dev/xvdd"
+              },
+              "03_create_mount_point" : {
+                "command" : "mkdir /mnt/db"
+              },
+              "04_update_fstab" : {
+                "command" : "cat /tmp/fstab.append >> /etc/fstab"
+              },
+              "05_mount_db_volume" : {
+                "command" : "mount /mnt/db"
+              },
+              "06_install" : {
+                "command" : "apt-get -y install couchdb"
+              },
+              "07_sleep" : {
+                "command" : "service couchdb stop"
+              },
+              "08_rehome" : {
+                "command" : "mv /var/lib/couchdb /mnt/db/couchdb && ln -s /mnt/db/couchdb /var/lib/couchdb"
+              },
+              "09_configure" : {
+                "command" : "cp /tmp/ip.ini /etc/couchdb/local.d && chown couchdb:couchdb /etc/couchdb/local.d/ip.ini"
+              },
+              "10_wake": {
+                "command" : "service couchdb restart"
+              }
+            }
+          }
+        }
+      },
+      "Properties": {
+        "ImageId" : { "Fn::FindInMap" : [ "RegionData", { "Ref" : "AWS::Region" }, "UbuntuAMI"] },
+        "InstanceType"   : "t2.micro",
+        "SubnetId"       : { "Ref": "SubnetPrivate1"},
+        "SecurityGroupIds" : [ {"Ref" : "CouchDBSecurityGroup"} ],
+        "KeyName"        : { "Ref" : "EC2KeyPair" },
+        "Volumes"        : [{
+              "Device" : "/dev/sdd",
+              "VolumeId" : { "Ref" : "CouchDBVolume" }
+        }],
+        "Tags" : [ { "Key" : "Name", "Value" : "CouchDB Server" } ],
+        "UserData"       : { "Fn::Base64" : { "Fn::Join" : ["", [
+             "#!/bin/bash -xe\n",
+             "exec > /tmp/part-001.log 2>&1\n",
+             "# this isn't stock on official Ubuntu instance /why/\n",
+             "apt-get -y update\n",
+             "apt-get -y install python-pip\n",
+             "pip install https://s3.amazonaws.com/cloudformation-examples/aws-cfn-bootstrap-latest.tar.gz\n",
+             "#cp /usr/local/init/ubuntu/cfn-hup /etc/init.d/cfn-hup \n",
+             "#chmod +x /etc/init.d/cfn-hup \n",
+             "#update-rc.d cfn-hup defaults \n ",
+             "#service cfn-hup start \n",
+             "# Install the files and packages from the metadata\n",
+             "cfn-init -v ",
+             "         --stack ", { "Ref" : "AWS::StackName" },
+             "         --resource CouchDBInstance ",
+             "         --configsets Setup ",
+             "         --region ", { "Ref" : "AWS::Region" }, "\n",
+             "# Signal the status from cfn-init\n",
+             "cfn-signal -e $? ",
+             "         --stack ", { "Ref" : "AWS::StackName" },
+             "         --resource CouchDBInstance ",
+             "         --region ", { "Ref" : "AWS::Region" }, "\n"
+        ]]}}
+      },
+      "CreationPolicy" : {
+        "ResourceSignal" : {
+          "Timeout" : "PT5M"
+        }
+      }
+    },
+
     "EBApplication" : {
       "Type" : "AWS::ElasticBeanstalk::Application",
       "Properties" : {
@@ -516,6 +653,7 @@
           {"Namespace" : "aws:elasticbeanstalk:application", "OptionName": "Application Healthcheck URL", "Value": "/openemr/version.php"},
           {"Namespace" : "aws:elasticbeanstalk:application:environment", "OptionName": "TIMEZONE", "Value": {"Ref" : "TimeZone"}},
           {"Namespace" : "aws:elasticbeanstalk:application:environment", "OptionName": "REDIS_IP", "Value": { "Fn::GetAtt" : ["RedisCluster", "RedisEndpoint.Address"]}},
+          {"Namespace" : "aws:elasticbeanstalk:application:environment", "OptionName": "COUCHDB_IP", "Value": { "Fn::GetAtt" : ["CouchDBInstance", "PrivateDnsName"]}},
           {"Namespace" : "aws:elasticbeanstalk:application:environment", "OptionName": "FILE_SYSTEM_ID", "Value": {"Ref" : "ElasticFileSystem"}}
        ]
      }
