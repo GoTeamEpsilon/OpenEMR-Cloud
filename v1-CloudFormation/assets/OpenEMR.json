@@ -12,16 +12,25 @@
       "NoEcho" : "true",
       "Description" : "The database admin account password",
       "Type" : "String",
-      "MinLength" : "10",
-      "MaxLength" : "41",
-      "AllowedPattern" : "^[a-zA-Z0-9]*$"
+      "MinLength" : "8",
+      "MaxLength" : "41"
     },
     "TimeZone": {
       "Type": "String",
       "Default": "America/Chicago",
       "MaxLength": "41",
       "Description" : "The timezone OpenEMR will run in"
+    },
+    "DeveloperMode": {
+      "Type" : "String",
+      "Default" : "yes",
+      "AllowedValues" : ["yes", "no"],
+      "Description" : "won't be in the final release"
     }
+  },
+
+  "Conditions" : {
+    "DevOnly" : {"Fn::Equals" : [{"Ref" : "DeveloperMode"}, "yes"]}
   },
 
   "Mappings" : {
@@ -32,27 +41,36 @@
         "ApplicationSource": "beanstalk/openemr-5.0.0-002.zip",
         "BackupManager": "backupmanager/backupManager.001.zip",
         "MySQLVersion": "5.6.27",
+        "AmazonAMI": "ami-a4c7edb2",
         "UbuntuAMI": "ami-d15a75c7"
       },
       "us-east-2" : {
-        "ApplicationBucket": "openemr-useast2",
+        "RegionBucket": "openemr-useast2",
         "ApplicationSource": "beanstalk/openemr-5.0.0-002.zip",
-        "MySQLVersion": "5.6.35"
+        "BackupManager": "backupmanager/backupManager.001.zip",
+        "MySQLVersion": "5.6.35",
+        "UbuntuAMI": "ami-8b92b4ee"
       },
       "us-west-2" : {
-        "ApplicationBucket": "openemr-uswest2",
+        "RegionBucket": "openemr-uswest2",
         "ApplicationSource": "beanstalk/openemr-5.0.0-002.zip",
-        "MySQLVersion": "5.6.27"
+        "BackupManager": "backupmanager/backupManager.001.zip",
+        "MySQLVersion": "5.6.27",
+        "UbuntuAMI": "ami-835b4efa"
       },
       "eu-west-1" : {
-        "ApplicationBucket": "openemr-euwest1",
+        "RegionBucket": "openemr-euwest1",
         "ApplicationSource": "beanstalk/openemr-5.0.0-002.zip",
-        "MySQLVersion": "5.6.27"
+        "BackupManager": "backupmanager/backupManager.001.zip",
+        "MySQLVersion": "5.6.27",
+        "UbuntuAMI": "ami-6d48500b"
       },
       "ap-southeast-2" : {
-        "ApplicationBucket": "openemr-apsoutheast2",
+        "RegionBucket": "openemr-apsoutheast2",
         "ApplicationSource": "beanstalk/openemr-5.0.0-002.zip",
-        "MySQLVersion": "5.6.27"
+        "BackupManager": "backupmanager/backupManager.001.zip",
+        "MySQLVersion": "5.6.27",
+        "UbuntuAMI": "ami-e94e5e8a"
       }
     }
   },
@@ -220,26 +238,6 @@
       }
     },
 
-    "SSHSecurityGroup" : {
-      "Type" : "AWS::EC2::SecurityGroup",
-      "Properties" : {
-         "GroupDescription" : "Public SSH Access",
-         "Tags" :  [ { "Key" : "Name", "Value" : "Global SSH INSECURE_DEV_ONLY" } ],
-         "VpcId" : {"Ref" : "VPC"}
-      }
-    },
-
-    "SSHSGIngress": {
-      "Type": "AWS::EC2::SecurityGroupIngress",
-      "Properties": {
-          "GroupId": { "Ref": "SSHSecurityGroup" },
-          "IpProtocol": "tcp",
-          "CidrIp": "0.0.0.0/0",
-          "FromPort": "22",
-          "ToPort": "22"
-      }
-    },
-
     "ApplicationSecurityGroup" : {
       "Type" : "AWS::EC2::SecurityGroup",
       "Properties" : {
@@ -255,6 +253,45 @@
           "GroupId": { "Ref": "ApplicationSecurityGroup" },
           "IpProtocol": "-1",
           "SourceSecurityGroupId" : { "Ref": "ApplicationSecurityGroup"}
+      }
+    },
+
+    "SSHSecurityGroup" : {
+      "Type" : "AWS::EC2::SecurityGroup",
+      "Condition": "DevOnly",
+      "Properties" : {
+         "GroupDescription" : "Public SSH Access",
+         "Tags" :  [ { "Key" : "Name", "Value" : "Global SSH" } ],
+         "VpcId" : {"Ref" : "VPC"}
+      }
+    },
+
+    "SSHSGIngress": {
+      "Type": "AWS::EC2::SecurityGroupIngress",
+      "Condition": "DevOnly",
+      "Properties": {
+          "GroupId": { "Ref": "SSHSecurityGroup" },
+          "IpProtocol": "tcp",
+          "CidrIp": "0.0.0.0/0",
+          "FromPort": "22",
+          "ToPort": "22"
+      }
+    },
+
+    "DeveloperBastion": {
+      "Type": "AWS::EC2::Instance",
+      "Condition" : "DevOnly",
+      "Properties": {
+        "ImageId" : { "Fn::FindInMap" : [ "RegionData", { "Ref" : "AWS::Region" }, "AmazonAMI"] },
+        "InstanceType"   : "t2.nano",
+        "KeyName"        : { "Ref" : "EC2KeyPair" },
+        "NetworkInterfaces": [ {
+          "AssociatePublicIpAddress": "true",
+          "DeviceIndex": "0",
+          "GroupSet": [ {"Ref" : "SSHSecurityGroup"}, {"Ref" : "ApplicationSecurityGroup"} ],
+          "SubnetId": { "Ref" : "SubnetPublic2" }
+        } ],
+        "Tags" : [ { "Key" : "Name", "Value" : "Developer Bastion" } ]
       }
     },
 
@@ -730,6 +767,7 @@
         "OptionSettings" : [
           {"Namespace" : "aws:autoscaling:launchconfiguration", "OptionName" : "SecurityGroups", "Value" : { "Ref" : "ApplicationSecurityGroup" }},
           {"Namespace" : "aws:autoscaling:launchconfiguration", "OptionName" : "EC2KeyName", "Value" : { "Ref" : "EC2KeyPair" }},
+          {"Namespace" : "aws:autoscaling:launchconfiguration", "OptionName" : "InstanceType", "Value" : "t2.micro" },
           {"Namespace" : "aws:elb:policies", "OptionName" : "ConnectionDrainingEnabled", "Value" : "true"},
           {"Namespace" : "aws:elb:policies", "OptionName" : "ConnectionSettingIdleTimeout", "Value" : "3600"},
           {"Namespace" : "aws:ec2:vpc", "OptionName" : "VPCId", "Value" : { "Ref" : "VPC" }},
@@ -761,7 +799,7 @@
       "Description" : "CouchDB endpoint for post-install configuration"
     },
 
-    "URL" : {
+    "OpenEMR" : {
       "Description" : "OpenEMR Setup",
       "Value" :  { "Fn::Join" : [ "", [ "http://", { "Fn::GetAtt" : ["EBEnvironment", "EndpointURL"] }, "/openemr"]]}
     }
