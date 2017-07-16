@@ -39,7 +39,15 @@ Regardless of if you planning on making a lot or a few changes to the OpenEMR so
 
 ### What does the architecture look like?
 
+TODO: May be out of date.
+
 ![diagram](../assets/diagrams/architecture.png)
+
+### Can I use other regions?
+
+As of this writing, only five AWS regions support the EFS service that the Elastic Beanstalk services are using to coordinate server state with each other, and of those five,
+Ohio (us-east-2) has reliability problems with Elastic Beanstalk deployments from CloudFormation that have not yet been resolved. You could replace EFS with a vanilla NFS server,
+and then you'd be able to deploy in a foreign region if you updated the mappings accordingly, but doing so will introduce a single-zone point of failure that EFS doesn't share.
 
 ## DEPLOYMENTS AND MAINTENANCE
 
@@ -70,6 +78,8 @@ The most robust and maintainable approach for deployments is to keep an internal
 
 ### How do I restore a database backup?
 
+TODO: Someone needs to test this.
+
 1. In the AWS Management Console, click **Services**, **RDS**.
 2. In the left hand pane, click **Instances**.
 3. Checkbox your database instance.
@@ -99,9 +109,12 @@ As far as recommendations from TeamEpsilon, we recommend setting up a special ba
 1. Click on **Services** and then click **S3**.
 2. Look for the bucket with a name following this format: **\<_your account ID_\>-cloudtrail-logs**.
 3. Click into the bucket, then **AWSLogs**, then **\<_your account ID_\>**, then **CloudTrail**.
+
 ## SYSTEMS ACCESS
 
 ### How do I Access the Database?
+
+TODO: OpenEMR ships with phpMyAdmin and I've used it before. Would it be easier to point people to that instead?
 
 1. Connect to OpenVPN. For more information, see the "**Prerequisites**" section below.
 2. Assuming you have MySQL or simply a MySQL client library installed, perform your MySQL work by running `mysql -u openemr_db_user -p -h (noted RDS endpoint without port) openemr`
@@ -122,11 +135,11 @@ _Note: If you are not already connected to OpenVPN, be sure that the **OpenVPN C
 
 #### OpenVPN
 
-Using your "**your-username.ppk**" keypair, access your instance by following [these instructions](http://docs.aws.amazon.com/AWSEC2/latest/UserGuide/putty.html#putty-ssh). Note that step 1 can be skipped. Also note that "**user_name@public_dns_name**" is "**openvpnas@(your noted internal redis ip)**".
+Using your "**your-username.ppk**" keypair, access your instance by following [these instructions](http://docs.aws.amazon.com/AWSEC2/latest/UserGuide/putty.html#putty-ssh). Note that step 1 can be skipped. Also note that "**user_name@public_dns_name**" is "**openvpnas@(your noted internal OpenVPN ip)**".
 
-#### Redis Access
+#### CouchDB Access
 
-Using your "**your-username.ppk**" keypair, access your instance by following [these instructions](http://docs.aws.amazon.com/AWSEC2/latest/UserGuide/putty.html#putty-ssh). Note that step 1 can be skipped. Also note that "**user_name@public_dns_name**" is "**ubuntu@(your noted internal redis ip)**".
+Using your "**your-username.ppk**" keypair, access your instance by following [these instructions](http://docs.aws.amazon.com/AWSEC2/latest/UserGuide/putty.html#putty-ssh). Note that step 1 can be skipped. Also note that "**user_name@public_dns_name**" is "**ubuntu@(your noted internal CouchDB ip)**".
 
 #### Elastic Beanstalk Instance Access
 

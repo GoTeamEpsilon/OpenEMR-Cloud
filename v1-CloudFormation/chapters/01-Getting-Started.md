@@ -9,10 +9,10 @@ _[next chapter >](02-Application-Servers.md)_
 
 ### Select an AWS Region
 
-This guide uses services that are _only_ available in certain AWS regions. As of this writing, you will need to make sure you're in one the of five Amazon regions described below.
+This guide uses services that are _only_ available in certain AWS regions. As of this writing, you will need to make sure you're in one the of four Amazon regions described below.
 
 1. In the AWS Management Console, click **Services**, and then click **EC2**.
-2. In the region dropdown in the top right corner, select either "**Ohio**", "**N. Virginia**", "**Oregon**", "**Ireland**", or "**Sydney**". Be sure to remain in this region for the remainder of this guide.
+2. In the region dropdown in the top right corner, select either "**N. Virginia**" (least expensive), "**Oregon**", "**Ireland**", or "**Sydney**". Be sure to remain in this region for the remainder of this guide.
 
 ### Generate an AWS SSH keypair
 
@@ -24,12 +24,13 @@ This guide uses services that are _only_ available in certain AWS regions. As of
 
 ### Begin your installation
 
+_Advanced users: If you're running under an existing AWS account with preconfigured IAM, CloudFormation will require a role with unfettered AdministratorAccess._
+
 1. Pick the region you created your keypair in.
-   * [North Virginia, USA (least expensive)](https://console.aws.amazon.com/cloudformation/home?region=us-east-1#/stacks/new?stackName=OpenEMR&templateURL=https://s3.amazonaws.com/openemr-useast1/OpenEMR.004.json)
-   * [Ohio, USA](https://console.aws.amazon.com/cloudformation/home?region=us-east-2#/stacks/new?stackName=OpenEMR&templateURL=https://s3.amazonaws.com/openemr-useast2/OpenEMR.005.json)
-   * [Oregon, USA](https://console.aws.amazon.com/cloudformation/home?region=us-west-2#/stacks/new?stackName=OpenEMR&templateURL=https://s3.amazonaws.com/openemr-uswest2/OpenEMR.004.json)
-   * [Dublin, Ireland](https://console.aws.amazon.com/cloudformation/home?region=eu-west-1#/stacks/new?stackName=OpenEMR&templateURL=https://s3.amazonaws.com/openemr-euwest1/OpenEMR.004.json)   
-   * [Sydney, Australia](https://console.aws.amazon.com/cloudformation/home?region=ap-southeast-2#/stacks/new?stackName=OpenEMR&templateURL=https://s3.amazonaws.com/openemr-apsoutheast2/OpenEMR.004.json)  
+   * [North Virginia, USA](https://console.aws.amazon.com/cloudformation/home?region=us-east-1#/stacks/new?stackName=OpenEMR&templateURL=https://s3.amazonaws.com/openemr-useast1/OpenEMR.007.json)
+   * [Oregon, USA](https://console.aws.amazon.com/cloudformation/home?region=us-west-2#/stacks/new?stackName=OpenEMR&templateURL=https://s3.amazonaws.com/openemr-uswest2/OpenEMR.007.json)
+   * [Dublin, Ireland](https://console.aws.amazon.com/cloudformation/home?region=eu-west-1#/stacks/new?stackName=OpenEMR&templateURL=https://s3.amazonaws.com/openemr-euwest1/OpenEMR.007.json)   
+   * [Sydney, Australia](https://console.aws.amazon.com/cloudformation/home?region=ap-southeast-2#/stacks/new?stackName=OpenEMR&templateURL=https://s3.amazonaws.com/openemr-apsoutheast2/OpenEMR.007.json)  
 2. Click **Next**.
 3. Define the parameters of the application stack here.
    * For **Stack name**, leave it as **OpenEMR** or change it if you'd like.
@@ -38,7 +39,8 @@ This guide uses services that are _only_ available in certain AWS regions. As of
    * For **RDSPassword**, this is the administrator's password to the MySQL database we'll create for OpenEMR. Pick a secure password and store it in a safe place.
 4. Click **Next**.
 5. Click **Next** again.
-6. Click **Create** and wait ten to fifteen minutes (or more) for OpenEMR to install to your account.
+6. Click the acknowledgement near the bottom of the page, under the warning about AWS::IAM::Role.
+7. Click **Create** and wait ten to fifteen minutes for OpenEMR to fully install to your account.
 
 ### While you're waiting: Secure the account with Identity and Access Management
 

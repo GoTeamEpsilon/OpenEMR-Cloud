@@ -18,7 +18,7 @@ _[< previous chapter](03-Secure-Domain-Setup.md) | [next chapter >](05-Administr
 12. Click **Next: Configure Security Group**
 13. For **Security group name**, enter "**VPN Server**".
 14. Click **Review and Launch**.
-15. When **Boot from General Purpose** dialog appears, cleckbox "**Continue with Magnetic as the boot volume for this instance**" and then click **Next**.
+15. When **Boot from General Purpose** dialog appears, checkbox "**Continue with Magnetic as the boot volume for this instance**" and then click **Next**.
 16. When **Select an existing key pair or create a new key pair** dialog shows up, select your key pair, accept the terms, and click **Launch Instances**.
 17. Wait a few moments and then click **View Your Instances** to the bottom right.
 18. Identify the recently created instance.
@@ -50,3 +50,12 @@ _[< previous chapter](03-Secure-Domain-Setup.md) | [next chapter >](05-Administr
 15. Click **Agree** in the center of the screen.
 16. Using a web browser, navigate to **https://&lt;&lt;recently noted ip from step 4&gt;&gt;:943/?src=connect** Note that you will be presented with a untrusted certificate warning, but it is safe to proceed.
 17. Download and follow along with the OpenVPN wizard to install the connector software.
+
+### Post-install security update
+
+_Now that you can get internal access to your OpenEMR cloud resources, there's a little bit of setup left to do._
+
+1. In the AWS Management Console, click **EC2** and then click **Instances** in the left hand pane.
+2. Clickbox the running **your_practice** instance and note the **Private DNS (IPv4)** in the bottom pane.
+3. Using this IP, SSH into the server. If you aren't sure, please review [How do I SSH into Instances](../chapters/05-Administration.md#how-do-i-ssh-into-instances) section.
+4. Run `sudo /opt/elasticbeanstalk/hooks/appdeploy/post/09-post-install-setup-file-deletion.sh` to manually remove public setup files (will be ran automatically when subsequent instances are created by ElasticBeanstalk).
