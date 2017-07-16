@@ -28,8 +28,9 @@
 
     "RegionData" : {
       "us-east-1" : {
-        "ApplicationBucket": "openemr-useast1",
+        "RegionBucket": "openemr-useast1",
         "ApplicationSource": "beanstalk/openemr-5.0.0-002.zip",
+        "BackupManager": "backupmanager/backupManager.001.zip",
         "MySQLVersion": "5.6.27",
         "UbuntuAMI": "ami-d15a75c7"
       },
@@ -468,7 +469,7 @@
    "RedisCluster" : {
       "Type": "AWS::ElastiCache::CacheCluster",
       "Properties": {
-        "CacheNodeType"           : "cache.t2.medium",
+        "CacheNodeType"           : "cache.t2.small",
         "VpcSecurityGroupIds": [{"Fn::GetAtt": [ "RedisSecurityGroup", "GroupId"]}],
         "CacheSubnetGroupName"    : { "Ref": "RedisSubnetGroup"},
         "Engine"                  : "redis",
@@ -612,6 +613,94 @@
       }
     },
 
+    "LambdaBackupPolicy" : {
+      "Type" : "AWS::IAM::ManagedPolicy",
+      "Properties" : {
+        "Description" : "Policy for managing snapshot backups",
+        "Roles" : [{ "Ref": "BackupExecutionRole"}],
+        "PolicyDocument" :   {
+          "Version": "2012-10-17",
+          "Statement": [
+              {
+                  "Sid": "Stmt1500138045000",
+                  "Effect": "Allow",
+                  "Action": [
+                      "ec2:DescribeVolumeStatus",
+                      "ec2:DescribeSnapshots",
+                      "ec2:CreateSnapshot",
+                      "ec2:DeleteSnapshot"
+                  ],
+                  "Resource": [
+                      "*"
+                  ]
+              }
+          ]
+        }
+      }
+    },
+
+    "BackupExecutionRole": {
+      "Type": "AWS::IAM::Role",
+      "Properties": {
+        "AssumeRolePolicyDocument": {
+          "Version": "2012-10-17",
+          "Statement": [{ "Effect": "Allow", "Principal": {"Service": ["lambda.amazonaws.com"]}, "Action": ["sts:AssumeRole"] }]
+        },
+        "Path": "/",
+        "Policies": [{
+          "PolicyName": "root",
+          "PolicyDocument": {
+            "Version": "2012-10-17",
+            "Statement": [{ "Effect": "Allow", "Action": ["logs:*"], "Resource": "arn:aws:logs:*:*:*" }]
+          }
+        }]
+      }
+    },
+
+    "BackupManagerFunction": {
+      "Type": "AWS::Lambda::Function",
+      "Properties": {
+        "Description": "handles patient document (CouchDB) backups",
+        "Handler": "volumeBackupManager.lambda_handler",
+        "Role": { "Fn::GetAtt" : ["BackupExecutionRole", "Arn"] },
+        "Code": {
+          "S3Bucket" : { "Fn::FindInMap" : [ "RegionData", { "Ref" : "AWS::Region" }, "RegionBucket"]},
+          "S3Key" : { "Fn::FindInMap" : [ "RegionData", { "Ref" : "AWS::Region" }, "BackupManager"]}
+        },
+        "Environment": {
+          "Variables": {
+            "VOLUME_ID" : { "Ref" : "CouchDBVolume"}
+          }
+        },
+        "Runtime": "python2.7",
+        "Timeout": "15"
+      },
+      "DependsOn": "LambdaBackupPolicy"
+    },
+
+    "LambdaScheduler": {
+      "Type": "AWS::Events::Rule",
+      "Properties": {
+        "Description": "ScheduledRule",
+        "ScheduleExpression": "rate(1 day)",
+        "State": "ENABLED",
+        "Targets": [{
+          "Arn": { "Fn::GetAtt": ["BackupManagerFunction", "Arn"] },
+          "Id": "BackupManagerV1"
+        }]
+      }
+    },
+
+    "LambdaSchedulerPermission": {
+      "Type": "AWS::Lambda::Permission",
+      "Properties": {
+        "FunctionName": { "Ref": "BackupManagerFunction" },
+        "Action": "lambda:InvokeFunction",
+        "Principal": "events.amazonaws.com",
+        "SourceArn": { "Fn::GetAtt": ["LambdaScheduler", "Arn"] }
+      }
+    },
+
     "EBApplication" : {
       "Type" : "AWS::ElasticBeanstalk::Application",
       "Properties" : {
@@ -625,7 +714,7 @@
         "Description" : "Version 5.0.0",
         "ApplicationName" : { "Ref" : "EBApplication" },
         "SourceBundle" : {
-          "S3Bucket" : { "Fn::FindInMap" : [ "RegionData", { "Ref" : "AWS::Region" }, "ApplicationBucket"]},
+          "S3Bucket" : { "Fn::FindInMap" : [ "RegionData", { "Ref" : "AWS::Region" }, "RegionBucket"]},
           "S3Key" : { "Fn::FindInMap" : [ "RegionData", { "Ref" : "AWS::Region" }, "ApplicationSource"]}
         }
       }
@@ -653,7 +742,6 @@
           {"Namespace" : "aws:elasticbeanstalk:application", "OptionName": "Application Healthcheck URL", "Value": "/openemr/version.php"},
           {"Namespace" : "aws:elasticbeanstalk:application:environment", "OptionName": "TIMEZONE", "Value": {"Ref" : "TimeZone"}},
           {"Namespace" : "aws:elasticbeanstalk:application:environment", "OptionName": "REDIS_IP", "Value": { "Fn::GetAtt" : ["RedisCluster", "RedisEndpoint.Address"]}},
-          {"Namespace" : "aws:elasticbeanstalk:application:environment", "OptionName": "COUCHDB_IP", "Value": { "Fn::GetAtt" : ["CouchDBInstance", "PrivateDnsName"]}},
           {"Namespace" : "aws:elasticbeanstalk:application:environment", "OptionName": "FILE_SYSTEM_ID", "Value": {"Ref" : "ElasticFileSystem"}}
        ]
      }
@@ -666,6 +754,11 @@
     "RDS": {
       "Value" : { "Fn::GetAtt" : ["RDSInstance", "Endpoint.Address"]},
       "Description" : "RDS endpoint for OpenEMR setup process"
+    },
+
+    "CouchDB": {
+      "Value" : { "Fn::GetAtt" : ["CouchDBInstance", "PrivateDnsName"]},
+      "Description" : "CouchDB endpoint for post-install configuration"
     },
 
     "URL" : {

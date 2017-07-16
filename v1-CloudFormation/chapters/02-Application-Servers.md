@@ -6,6 +6,7 @@ _[< previous chapter](01-Getting-Started.md) | [next chapter >](03-Secure-Domain
 
 TODO 1. (Explain how to get to the stack output)
 2. Go through each step of the signup wizard using the MySQL credentials noted in previous steps. Make sure to enter a [strong password](https://www.random.org/passwords/?num=1&len=16&format=html&rnd=new) for the initial user and record it in a safe place. Note that the first step of the wizard will take a few minutes. Although the page will be white and not have any loading indicators, please do not attempt to refresh the page or resubmit the request.
+3. Don't forget to configure document storage to CouchDB!
 
 ### Post-install security update
 
