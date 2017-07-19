@@ -49,6 +49,26 @@ As of this writing, only five AWS regions support the EFS service that the Elast
 Ohio (us-east-2) has reliability problems with Elastic Beanstalk deployments from CloudFormation that have not yet been resolved. You could replace EFS with a vanilla NFS server,
 and then you'd be able to deploy in a foreign region if you updated the mappings accordingly, but doing so will introduce a single-zone point of failure that EFS doesn't share.
 
+### How much will OpenEMR cost to operate per month?
+
+Amazon's cost calculator* suggests US$135/mo for the immediately obvious resources as configured; discounts of forty to sixty percent are possible via the purchase of long-term reservations.  Assuming 25% inflation for ongoing fees like storage and IO, we have $170/mo before the cost of any Amazon support contract. This is only an estimate, and we would appreciate hearing about actual bills under production loads.
+
+_* In us-east-1. Other regions will tend to be more expensive._
+
+### How can I monitor my costs?
+
+You can always browse your monthly bill-to-date in your billing dashboard &mdash; click on your name in the upper-right corner of any AWS console page, next to the region. (You may need to [activate billing access](https://aws.amazon.com/premiumsupport/knowledge-center/iam-billing-access/) for your IAM user before you're able to see this information without your root credentials.)
+
+Alternatively, you may configure a billing alert, which will let you know if your projected expenses are higher than you expect them to be.
+
+1. Click on **Services**, then **CloudWatch**, then **Alarms**, then **Billing**, then **Create Alarm**.
+2. Click on **Billing Metrics**, then **Total Estimated Charge**. Click the check-box beside "Currency", then click **Next**.
+3. Name and describe the alarm, then set the threshold **&gt;=** to "200", or your preference.
+4. Under **Actions**, click the small link called "New List". In the box that appeared below, enter your email address, and in the box above that (currently filled with "Enter a topic name here...") enter "BillingAlerts". Click **Create Alarm**.
+5. Don't forget to click on the subscription in your email! Take a moment to do so, and then click **View Alarm**.
+
+_Note that if you're using partial-upfront reserved instances, the front-loaded first-day-of-the-month billing will skew the 'projected expenses' because the projections don't take into account the singular nature of the expense._
+
 ## DEPLOYMENTS AND MAINTENANCE
 
 ### How do I deploy custom changes to my cloud?

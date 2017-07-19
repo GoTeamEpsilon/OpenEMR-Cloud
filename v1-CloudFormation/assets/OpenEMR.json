@@ -46,28 +46,28 @@
       },
       "us-east-2" : {
         "RegionBucket": "openemr-useast2",
-        "ApplicationSource": "beanstalk/openemr-5.0.0-002.zip",
+        "ApplicationSource": "beanstalk/openemr-5.0.0-003.zip",
         "BackupManager": "backupmanager/backupManager.001.zip",
         "MySQLVersion": "5.6.35",
         "UbuntuAMI": "ami-8b92b4ee"
       },
       "us-west-2" : {
         "RegionBucket": "openemr-uswest2",
-        "ApplicationSource": "beanstalk/openemr-5.0.0-002.zip",
+        "ApplicationSource": "beanstalk/openemr-5.0.0-003.zip",
         "BackupManager": "backupmanager/backupManager.001.zip",
         "MySQLVersion": "5.6.27",
         "UbuntuAMI": "ami-835b4efa"
       },
       "eu-west-1" : {
         "RegionBucket": "openemr-euwest1",
-        "ApplicationSource": "beanstalk/openemr-5.0.0-002.zip",
+        "ApplicationSource": "beanstalk/openemr-5.0.0-003.zip",
         "BackupManager": "backupmanager/backupManager.001.zip",
         "MySQLVersion": "5.6.27",
         "UbuntuAMI": "ami-6d48500b"
       },
       "ap-southeast-2" : {
         "RegionBucket": "openemr-apsoutheast2",
-        "ApplicationSource": "beanstalk/openemr-5.0.0-002.zip",
+        "ApplicationSource": "beanstalk/openemr-5.0.0-003.zip",
         "BackupManager": "backupmanager/backupManager.001.zip",
         "MySQLVersion": "5.6.27",
         "UbuntuAMI": "ami-e94e5e8a"
