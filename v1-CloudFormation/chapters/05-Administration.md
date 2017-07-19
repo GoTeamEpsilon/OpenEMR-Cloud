@@ -110,6 +110,18 @@ As far as recommendations from TeamEpsilon, we recommend setting up a special ba
 2. Look for the bucket with a name following this format: **\<_your account ID_\>-cloudtrail-logs**.
 3. Click into the bucket, then **AWSLogs**, then **\<_your account ID_\>**, then **CloudTrail**.
 
+### What's left if I delete the CloudFormation stack?
+
+If you're just testing the stack out, please note that deleting the stack will not erase all traces of the practice deployment from Amazon. You'll need to find and delete:
+
+ * The master encryption key (in IAM).
+ * The CouchDB volume snapshot (in EC2).
+ * The database snapshot (in RDS).
+ * The NFS instance (in Elastic File System).
+ * The logging bucket (in S3).
+
+See the **Resources** tab of the stack for the IDs of these objects.
+
 ## SYSTEMS ACCESS
 
 ### How do I Access the Database?

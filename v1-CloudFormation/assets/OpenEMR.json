@@ -38,7 +38,7 @@
     "RegionData" : {
       "us-east-1" : {
         "RegionBucket": "openemr-useast1",
-        "ApplicationSource": "beanstalk/openemr-5.0.0-002.zip",
+        "ApplicationSource": "beanstalk/openemr-5.0.0-003.zip",
         "BackupManager": "backupmanager/backupManager.001.zip",
         "MySQLVersion": "5.6.27",
         "AmazonAMI": "ami-a4c7edb2",
@@ -81,6 +81,7 @@
       "Type" : "AWS::EC2::VPC",
       "Properties" : {
         "CidrBlock" : "10.0.0.0/16",
+        "EnableDnsSupport" : "true",
         "EnableDnsHostnames" : "true",
         "Tags" : [
 			{"Key" : "Name", "Value" : "OpenEMR" },
@@ -238,6 +239,20 @@
       }
     },
 
+    "DNS": {
+      "Type": "AWS::Route53::HostedZone",
+      "Properties": {
+        "HostedZoneConfig": {
+          "Comment": "private OpenEMR domain"
+        },
+        "Name": "oemr.local",
+        "VPCs": [{
+          "VPCId": { "Ref" : "VPC"},
+          "VPCRegion": { "Ref": "AWS::Region"}
+        }]
+      }
+    },
+
     "ApplicationSecurityGroup" : {
       "Type" : "AWS::EC2::SecurityGroup",
       "Properties" : {
@@ -297,6 +312,7 @@
 
     "OpenEMRKey" : {
       "Type" : "AWS::KMS::Key",
+      "DeletionPolicy": "Retain",
       "Properties" : {
         "Description" : "Encrypts Patient Records",
         "KeyPolicy" : {
@@ -350,10 +366,27 @@
 
   "ElasticFileSystem" : {
     "Type" : "AWS::EFS::FileSystem",
+    "DeletionPolicy": "Retain",
     "Properties" : {
-      "FileSystemTags" : [ { "Key" : "Name", "Value" : "PatientDocuments" } ]
+      "FileSystemTags" : [ { "Key" : "Name", "Value" : "OpenEMR Codebase" } ]
     }
   },
+
+  "DNSEFS" : {
+      "Type" : "AWS::Route53::RecordSet",
+      "Properties" : {
+         "HostedZoneId" : { "Ref" : "DNS" },
+         "Name" : "nfs.oemr.local",
+         "Type" : "CNAME",
+         "TTL" : "900",
+         "ResourceRecords" : [ { "Fn::Join" : [ "", [
+            {"Ref" : "ElasticFileSystem"},
+            ".efs.",
+            {"Ref" : "AWS::Region"},
+            ".amazonaws.com"
+            ]]}]
+      }
+   },
 
   "EFSMountPrivate1": {
     "Type": "AWS::EFS::MountTarget",
@@ -401,6 +434,7 @@
 
   "RDSInstance" : {
      "Type" : "AWS::RDS::DBInstance",
+     "DeletionPolicy": "Snapshot",
      "Properties" : {
         "DBName" : "openemr",
         "AllocatedStorage" : "10",
@@ -418,6 +452,17 @@
         "Tags" : [ { "Key" : "Name", "Value" : "Patient Records" } ]
      }
   },
+
+  "DNSRDS" : {
+      "Type" : "AWS::Route53::RecordSet",
+      "Properties" : {
+         "HostedZoneId" : { "Ref" : "DNS" },
+         "Name" : "mysql.oemr.local",
+         "Type" : "CNAME",
+         "TTL" : "900",
+         "ResourceRecords" : [ { "Fn::GetAtt" : ["RDSInstance", "Endpoint.Address" ] } ]
+      }
+   },
 
   "S3Bucket": {
     "Type": "AWS::S3::Bucket",
@@ -514,6 +559,18 @@
       }
     },
 
+    "DNSRedis" : {
+      "Type" : "AWS::Route53::RecordSet",
+      "Properties" : {
+         "HostedZoneId" : { "Ref" : "DNS" },
+         "Name" : "redis.oemr.local",
+         "Type" : "CNAME",
+         "TTL" : "900",
+         "ResourceRecords" : [{ "Fn::GetAtt" : ["RedisCluster", "RedisEndpoint.Address"]}
+ ]
+      }
+   },
+
     "CouchDBSecurityGroup" : {
       "Type" : "AWS::EC2::SecurityGroup",
       "Properties" : {
@@ -534,6 +591,7 @@
 
     "CouchDBVolume" : {
        "Type" : "AWS::EC2::Volume",
+       "DeletionPolicy": "Snapshot",
        "Properties" : {
           "Size" : "500",
           "AvailabilityZone" : { "Fn::Select": [ "0", { "Fn::GetAZs": "" } ] },
@@ -649,6 +707,17 @@
         }
       }
     },
+
+    "DNSCouchDB" : {
+      "Type" : "AWS::Route53::RecordSet",
+      "Properties" : {
+         "HostedZoneId" : { "Ref" : "DNS" },
+         "Name" : "couchdb.oemr.local",
+         "Type" : "CNAME",
+         "TTL" : "900",
+         "ResourceRecords" : [ { "Fn::GetAtt" : [ "CouchDBInstance", "PrivateDnsName" ] } ]
+      }
+   },
 
     "LambdaBackupPolicy" : {
       "Type" : "AWS::IAM::ManagedPolicy",
@@ -779,8 +848,9 @@
           },
           {"Namespace" : "aws:elasticbeanstalk:application", "OptionName": "Application Healthcheck URL", "Value": "/openemr/version.php"},
           {"Namespace" : "aws:elasticbeanstalk:application:environment", "OptionName": "TIMEZONE", "Value": {"Ref" : "TimeZone"}},
-          {"Namespace" : "aws:elasticbeanstalk:application:environment", "OptionName": "REDIS_IP", "Value": { "Fn::GetAtt" : ["RedisCluster", "RedisEndpoint.Address"]}},
-          {"Namespace" : "aws:elasticbeanstalk:application:environment", "OptionName": "FILE_SYSTEM_ID", "Value": {"Ref" : "ElasticFileSystem"}}
+          {"Namespace" : "aws:elasticbeanstalk:application:environment", "OptionName": "REDIS_IP", "Value": "redis.oemr.local"},
+          {"Namespace" : "aws:elasticbeanstalk:application:environment", "OptionName": "FILE_SYSTEM_ID", "Value": {"Ref" : "ElasticFileSystem"}},
+          {"Namespace" : "aws:elasticbeanstalk:application:environment", "OptionName": "NFS_HOSTNAME", "Value": "nfs.oemr.local"}
        ]
      }
    }
@@ -789,16 +859,6 @@
 },
 
   "Outputs" : {
-    "RDS": {
-      "Value" : { "Fn::GetAtt" : ["RDSInstance", "Endpoint.Address"]},
-      "Description" : "RDS endpoint for OpenEMR setup process"
-    },
-
-    "CouchDB": {
-      "Value" : { "Fn::GetAtt" : ["CouchDBInstance", "PrivateDnsName"]},
-      "Description" : "CouchDB endpoint for post-install configuration"
-    },
-
     "OpenEMR" : {
       "Description" : "OpenEMR Setup",
       "Value" :  { "Fn::Join" : [ "", [ "http://", { "Fn::GetAtt" : ["EBEnvironment", "EndpointURL"] }, "/openemr"]]}
