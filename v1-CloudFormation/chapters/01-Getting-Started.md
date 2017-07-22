@@ -27,10 +27,10 @@ This guide uses services that are _only_ available in certain AWS regions. As of
 _Advanced users: If you're running under an existing AWS account with preconfigured IAM, CloudFormation will require a role with unfettered AdministratorAccess._
 
 1. Pick the region you created your keypair in.
-   * [North Virginia, USA](https://console.aws.amazon.com/cloudformation/home?region=us-east-1#/stacks/new?stackName=OpenEMR&templateURL=https://s3.amazonaws.com/openemr-useast1/OpenEMR.007.json)
-   * [Oregon, USA](https://console.aws.amazon.com/cloudformation/home?region=us-west-2#/stacks/new?stackName=OpenEMR&templateURL=https://s3.amazonaws.com/openemr-uswest2/OpenEMR.007.json)
-   * [Dublin, Ireland](https://console.aws.amazon.com/cloudformation/home?region=eu-west-1#/stacks/new?stackName=OpenEMR&templateURL=https://s3.amazonaws.com/openemr-euwest1/OpenEMR.007.json)   
-   * [Sydney, Australia](https://console.aws.amazon.com/cloudformation/home?region=ap-southeast-2#/stacks/new?stackName=OpenEMR&templateURL=https://s3.amazonaws.com/openemr-apsoutheast2/OpenEMR.007.json)  
+   * [North Virginia, USA](https://console.aws.amazon.com/cloudformation/home?region=us-east-1#/stacks/new?stackName=OpenEMR&templateURL=https://s3.amazonaws.com/openemr-useast1/OpenEMR.008.json)
+   * [Oregon, USA](https://console.aws.amazon.com/cloudformation/home?region=us-west-2#/stacks/new?stackName=OpenEMR&templateURL=https://s3.amazonaws.com/openemr-uswest2/OpenEMR.008.json)
+   * [Dublin, Ireland](https://console.aws.amazon.com/cloudformation/home?region=eu-west-1#/stacks/new?stackName=OpenEMR&templateURL=https://s3.amazonaws.com/openemr-euwest1/OpenEMR.008.json)   
+   * [Sydney, Australia](https://console.aws.amazon.com/cloudformation/home?region=ap-southeast-2#/stacks/new?stackName=OpenEMR&templateURL=https://s3.amazonaws.com/openemr-apsoutheast2/OpenEMR.008.json)  
 2. Click **Next**.
 3. Define the parameters of the application stack here.
    * For **Stack name**, leave it as **OpenEMR** or change it if you'd like.
