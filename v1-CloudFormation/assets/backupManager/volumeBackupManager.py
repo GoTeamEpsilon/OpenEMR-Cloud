@@ -10,6 +10,10 @@
 # is therefore unsuitable for general purpose use where arrangements for consistency have not
 # been made.
 
+# Note: The stack is currently using a pared-down inline version of this script, but I leave this
+# here to aid testing and debugging. Zip this file and the template up to create a Lambda deployment
+# package. 
+
 import argparse
 import urllib2
 import boto3
