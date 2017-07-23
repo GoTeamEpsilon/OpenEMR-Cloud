@@ -715,6 +715,67 @@
        }
     },
 
+    "CouchDBPolicy" : {
+      "Type" : "AWS::IAM::ManagedPolicy",
+      "Properties" : {
+        "Description" : "Policy to retrieve CouchDB SSL credentials",
+        "PolicyDocument" :   {
+          "Version": "2012-10-17",
+          "Statement": [
+              {
+                  "Sid": "Stmt1500699052000",
+                  "Effect": "Allow",
+                  "Action": [
+                      "s3:GetObject"
+                  ],
+                  "Resource": [
+                      { "Fn::Join" : ["", ["arn:aws:s3:::", {"Ref":"S3Bucket"}, "/CA/certs/*"]]},
+                      { "Fn::Join" : ["", ["arn:aws:s3:::", {"Ref":"S3Bucket"}, "/CA/keys/couch.key"]]}
+                  ]
+              },
+              {
+                  "Sid": "Stmt1500612724002",
+                  "Effect": "Allow",
+                  "Action": [
+                      "kms:Decrypt"
+                  ],
+                  "Resource": [ { "Fn::GetAtt" : ["OpenEMRKey", "Arn" ] } ]
+              }
+          ]
+        }
+      }
+    },
+
+  "CouchDBRole" : {
+    "Type": "AWS::IAM::Role",
+     "Properties": {
+        "AssumeRolePolicyDocument": {
+           "Version" : "2012-10-17",
+           "Statement": [ {
+              "Effect": "Allow",
+              "Principal": {
+                 "Service": [ "ec2.amazonaws.com" ]
+              },
+              "Action": [ "sts:AssumeRole" ]
+           } ]
+        },
+        "Path": "/",
+        "ManagedPolicyArns" : [{ "Ref" : "CouchDBPolicy"}]
+        }
+  },
+
+  "CouchDBInstanceProfile": {
+      "Type": "AWS::IAM::InstanceProfile",
+      "Properties": {
+          "Path": "/",
+          "Roles": [
+              {
+                  "Ref": "CouchDBRole"
+              }
+          ]
+      }
+  },
+
     "CouchDBInstance": {
       "Type": "AWS::EC2::Instance",
       "Metadata" : {
@@ -726,9 +787,23 @@
           "Install" : {
             "files" : {
               "/tmp/ip.ini" : {
-                "content" : { "Fn::Join" : ["", [
-                  "[httpd]\n",
-                  "bind_address = 0.0.0.0\n"
+                "content" : { "Fn::Join" : ["\n", [
+                  "[httpd]",
+                  "bind_address = 0.0.0.0"
+                  ]]},
+                "mode"  : "000400",
+                "owner" : "root",
+                "group" : "root"
+              },
+              "/tmp/ssl.ini" : {
+                "content" : { "Fn::Join" : ["\n", [
+                  "[daemons]",
+                  "httpsd = {couch_httpd, start_link, [https]}",
+                  "[ssl]",
+                  "port = 6984",
+                  "key_file = /etc/couchdb/couch.key",
+                  "cert_file = /etc/couchdb/couch.crt",
+                  "cacert_file = /etc/couchdb/ca.crt"
                   ]]},
                 "mode"  : "000400",
                 "owner" : "root",
@@ -741,40 +816,41 @@
                 "mode"  : "000400",
                 "owner" : "root",
                 "group" : "root"
+              },
+              "/tmp/couchdb.setup.sh" : {
+                "content" : { "Fn::Join" : ["", [
+                  "#!/bin/bash -xe\n",
+                  "exec > /tmp/part-002.log 2>&1\n",
+                  "DEBIAN_FRONTEND=noninteractive apt-get dist-upgrade -y -o Dpkg::Options::=\"--force-confdef\" -o Dpkg::Options::=\"--force-confold\" --force-yes\n",
+                  "mkfs -t ext4 /dev/xvdd\n",
+                  "mkdir /mnt/db\n",
+                  "cat /tmp/fstab.append >> /etc/fstab\n",
+                  "mount /mnt/db\n",
+                  "apt-get -y install couchdb awscli\n",
+                  "service couchdb stop\n",
+                  "aws configure set s3.signature_version s3v4\n",
+                  "aws s3 cp s3://" , { "Ref" : "S3Bucket" }, "/CA/certs/ca.crt /etc/couchdb\n",
+                  "aws s3 cp s3://" , { "Ref" : "S3Bucket" }, "/CA/certs/couch.crt /etc/couchdb\n",
+                  "chmod 664 /etc/couchdb/*.crt\n",
+                  "aws s3 cp s3://" , { "Ref" : "S3Bucket" }, "/CA/keys/couch.key /etc/couchdb --sse aws:kms --sse-kms-key-id ", { "Ref" : "OpenEMRKey" }, "\n",
+                  "chmod 660 /etc/couchdb/couch.key\n",
+                  "chown couchdb:couchdb /etc/couchdb/*.crt /etc/couchdb/*.key\n",
+                  "mv /var/lib/couchdb /mnt/db/couchdb\n",
+                  "ln -s /mnt/db/couchdb /var/lib/couchdb\n",
+                  "cp /tmp/ip.ini /tmp/ssl.ini /etc/couchdb/local.d\n",
+                  "chown couchdb:couchdb /etc/couchdb/local.d/ip.ini /etc/couchdb/local.d/ssl.ini\n",
+                  "service couchdb restart\n"
+                  ]]},
+                "mode"  : "000500",
+                "owner" : "root",
+                "group" : "root"
               }
             },
-
             "commands" : {
               "01_security" : {
-                "command" : "DEBIAN_FRONTEND=noninteractive apt-get dist-upgrade -y -o Dpkg::Options::=\"--force-confdef\" -o Dpkg::Options::=\"--force-confold\" --force-yes"
-              },
-              "02_format_volume" : {
-                "command" : "mkfs -t ext4 /dev/xvdd"
-              },
-              "03_create_mount_point" : {
-                "command" : "mkdir /mnt/db"
-              },
-              "04_update_fstab" : {
-                "command" : "cat /tmp/fstab.append >> /etc/fstab"
-              },
-              "05_mount_db_volume" : {
-                "command" : "mount /mnt/db"
-              },
-              "06_install" : {
-                "command" : "apt-get -y install couchdb"
-              },
-              "07_sleep" : {
-                "command" : "service couchdb stop"
-              },
-              "08_rehome" : {
-                "command" : "mv /var/lib/couchdb /mnt/db/couchdb && ln -s /mnt/db/couchdb /var/lib/couchdb"
-              },
-              "09_configure" : {
-                "command" : "cp /tmp/ip.ini /etc/couchdb/local.d && chown couchdb:couchdb /etc/couchdb/local.d/ip.ini"
-              },
-              "10_wake": {
-                "command" : "service couchdb restart"
+                "command" : "/tmp/couchdb.setup.sh"
               }
+
             }
           }
         }
@@ -786,6 +862,7 @@
         "SubnetId"       : { "Ref": "SubnetPrivate1"},
         "SecurityGroupIds" : [ {"Ref" : "CouchDBSecurityGroup"} ],
         "KeyName"        : { "Ref" : "EC2KeyPair" },
+        "IamInstanceProfile": { "Ref": "CouchDBInstanceProfile" },
         "Volumes"        : [{
               "Device" : "/dev/sdd",
               "VolumeId" : { "Ref" : "CouchDBVolume" }
@@ -794,21 +871,14 @@
         "UserData"       : { "Fn::Base64" : { "Fn::Join" : ["", [
              "#!/bin/bash -xe\n",
              "exec > /tmp/part-001.log 2>&1\n",
-             "# this isn't stock on official Ubuntu instance /why/\n",
              "apt-get -y update\n",
              "apt-get -y install python-pip\n",
              "pip install https://s3.amazonaws.com/cloudformation-examples/aws-cfn-bootstrap-latest.tar.gz\n",
-             "#cp /usr/local/init/ubuntu/cfn-hup /etc/init.d/cfn-hup \n",
-             "#chmod +x /etc/init.d/cfn-hup \n",
-             "#update-rc.d cfn-hup defaults \n ",
-             "#service cfn-hup start \n",
-             "# Install the files and packages from the metadata\n",
              "cfn-init -v ",
              "         --stack ", { "Ref" : "AWS::StackName" },
              "         --resource CouchDBInstance ",
              "         --configsets Setup ",
              "         --region ", { "Ref" : "AWS::Region" }, "\n",
-             "# Signal the status from cfn-init\n",
              "cfn-signal -e $? ",
              "         --stack ", { "Ref" : "AWS::StackName" },
              "         --resource CouchDBInstance ",
