@@ -990,6 +990,73 @@
       }
     },
 
+    "BarebonesLambdaRole": {
+      "Type": "AWS::IAM::Role",
+      "Properties": {
+        "AssumeRolePolicyDocument": {
+          "Version": "2012-10-17",
+          "Statement": [{ "Effect": "Allow", "Principal": {"Service": ["lambda.amazonaws.com"]}, "Action": ["sts:AssumeRole"] }]
+        },
+        "Path": "/",
+        "Policies": [{
+          "PolicyName": "root",
+          "PolicyDocument": {
+            "Version": "2012-10-17",
+            "Statement": [
+              { "Effect": "Allow", "Action": ["logs:*"], "Resource": "arn:aws:logs:*:*:*" }
+            ]
+          }
+        }]
+      }
+    },
+
+    "URLGrabberFunction": {
+      "Type": "AWS::Lambda::Function",
+      "Properties": {
+        "Description": "gets files where CFN can find them",
+        "Handler": "index.lambda_handler",
+        "Role": { "Fn::GetAtt" : ["BarebonesLambdaRole", "Arn"] },
+        "Code": {
+          "ZipFile" : { "Fn::Join" : ["\n", [
+            "import urllib2",
+            "import json",
+            "def lambda_handler(event, context):",
+            "  if (event['RequestType'] == 'Delete'):",
+            "    sendResponse(event, context, 'SUCCESS', None)",
+            "    return",
+            "  sendResponse(event, context, 'SUCCESS', urllib2.urlopen(event['ResourceProperties']['Url']).read())",
+            "def sendResponse(event, context, responseStatus, responseData):",
+            "  opener = urllib2.build_opener(urllib2.HTTPHandler)",
+            "  o = {}",
+            "  o['Status'] = responseStatus",
+            "  o['Reason'] = 'log ' + context.log_stream_name",
+            "  o['PhysicalResourceId'] = context.log_stream_name",
+            "  o['StackId'] = event['StackId']",
+            "  o['RequestId'] = event['RequestId']",
+            "  o['LogicalResourceId'] = event['LogicalResourceId']",
+            "  o['Data'] = {'FileContent': responseData}",
+            "  r = json.dumps(o)",
+            "  request = urllib2.Request(event['ResponseURL'], data=r)",
+            "  request.add_header('Content-Type', '')",
+            "  request.add_header('Content-Length', len(r))",
+            "  request.get_method = lambda: 'PUT'",
+            "  url = opener.open(request)"
+          ]]}
+        },
+        "Runtime": "python2.7",
+        "Timeout": "5"
+      }
+    },
+
+    "PublicBeanstalkKey" : {
+      "Type" : "Custom::PublicBeanstalkKey",
+      "DependsOn": "CertWriterInstance",
+      "Properties": {
+        "ServiceToken": { "Fn::GetAtt" : ["URLGrabberFunction", "Arn"] },
+        "Url" : { "Fn::Join" : ["", ["https://s3.amazonaws.com/", {"Ref" : "S3Bucket"}, "/CA/certs/beanstalk.crt" ] ] }
+      }
+    },
+
     "EBApplication" : {
       "Type" : "AWS::ElasticBeanstalk::Application",
       "Properties" : {
@@ -1046,6 +1113,10 @@
     "OpenEMR" : {
       "Description" : "OpenEMR Setup",
       "Value" :  { "Fn::Join" : [ "", [ "http://", { "Fn::GetAtt" : ["EBEnvironment", "EndpointURL"] }, "/openemr"]]}
+    },
+    "BeanstalkCert" : {
+      "Description" : "Lambda Output",
+      "Value": { "Fn::GetAtt": [ "PublicBeanstalkKey", "FileContent" ] }
     }
   }
 }
