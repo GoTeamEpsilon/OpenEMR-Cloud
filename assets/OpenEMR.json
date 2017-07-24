@@ -1,7 +1,7 @@
 {
   "AWSTemplateFormatVersion" : "2010-09-09",
 
-  "Description" : "Automated OpenEMR 5.0.0 Configuration [in progress]",
+  "Description" : "Automated OpenEMR 5.0.0 Configuration",
 
   "Parameters" : {
     "EC2KeyPair" : {
@@ -245,7 +245,7 @@
         "HostedZoneConfig": {
           "Comment": "private OpenEMR domain"
         },
-        "Name": "oemr.local",
+        "Name": "openemr.local",
         "VPCs": [{
           "VPCId": { "Ref" : "VPC"},
           "VPCRegion": { "Ref": "AWS::Region"}
@@ -478,9 +478,9 @@
           "cd CA\n",
           "openssl genrsa -out keys/ca.key 8192\n",
           "openssl req -new -x509 -extensions v3_ca -key keys/ca.key -out certs/ca.crt -days 3650 -subj '/CN=OpenEMR Backend CA'\n",
-          "openssl req -new -nodes -newkey rsa:2048 -keyout keys/beanstalk.key -out work/beanstalk.csr -days 3648 -subj /CN=beanstalk.oemr.local\n",
+          "openssl req -new -nodes -newkey rsa:2048 -keyout keys/beanstalk.key -out work/beanstalk.csr -days 3648 -subj /CN=beanstalk.openemr.local\n",
           "openssl x509 -req -in work/beanstalk.csr -out certs/beanstalk.crt -CA certs/ca.crt -CAkey keys/ca.key -CAcreateserial\n",
-          "openssl req -new -nodes -newkey rsa:2048 -keyout keys/couch.key -out work/couch.csr -days 3648 -subj /CN=couchdb.oemr.local\n",
+          "openssl req -new -nodes -newkey rsa:2048 -keyout keys/couch.key -out work/couch.csr -days 3648 -subj /CN=couchdb.openemr.local\n",
           "openssl x509 -req -in work/couch.csr -out certs/couch.crt -CA certs/ca.crt -CAkey keys/ca.key\n",
           "aws s3 sync keys s3://", { "Ref" : "S3Bucket" }, "/CA/keys --sse aws:kms --sse-kms-key-id ", { "Ref" : "OpenEMRKey" }, " --acl private\n",
           "aws s3 sync certs s3://", { "Ref" : "S3Bucket" }, "/CA/certs --acl public-read\n",
@@ -529,7 +529,7 @@
       "Type" : "AWS::Route53::RecordSet",
       "Properties" : {
          "HostedZoneId" : { "Ref" : "DNS" },
-         "Name" : "nfs.oemr.local",
+         "Name" : "nfs.openemr.local",
          "Type" : "CNAME",
          "TTL" : "900",
          "ResourceRecords" : [ { "Fn::Join" : [ "", [
@@ -610,7 +610,7 @@
       "Type" : "AWS::Route53::RecordSet",
       "Properties" : {
          "HostedZoneId" : { "Ref" : "DNS" },
-         "Name" : "mysql.oemr.local",
+         "Name" : "mysql.openemr.local",
          "Type" : "CNAME",
          "TTL" : "900",
          "ResourceRecords" : [ { "Fn::GetAtt" : ["RDSInstance", "Endpoint.Address" ] } ]
@@ -676,7 +676,7 @@
       "Type" : "AWS::Route53::RecordSet",
       "Properties" : {
          "HostedZoneId" : { "Ref" : "DNS" },
-         "Name" : "redis.oemr.local",
+         "Name" : "redis.openemr.local",
          "Type" : "CNAME",
          "TTL" : "900",
          "ResourceRecords" : [{ "Fn::GetAtt" : ["RedisCluster", "RedisEndpoint.Address"]}
@@ -896,7 +896,7 @@
       "Type" : "AWS::Route53::RecordSet",
       "Properties" : {
          "HostedZoneId" : { "Ref" : "DNS" },
-         "Name" : "couchdb.oemr.local",
+         "Name" : "couchdb.openemr.local",
          "Type" : "CNAME",
          "TTL" : "900",
          "ResourceRecords" : [ { "Fn::GetAtt" : [ "CouchDBInstance", "PrivateDnsName" ] } ]
@@ -1099,9 +1099,9 @@
           },
           {"Namespace" : "aws:elasticbeanstalk:application", "OptionName": "Application Healthcheck URL", "Value": "/openemr/version.php"},
           {"Namespace" : "aws:elasticbeanstalk:application:environment", "OptionName": "TIMEZONE", "Value": {"Ref" : "TimeZone"}},
-          {"Namespace" : "aws:elasticbeanstalk:application:environment", "OptionName": "REDIS_IP", "Value": "redis.oemr.local"},
+          {"Namespace" : "aws:elasticbeanstalk:application:environment", "OptionName": "REDIS_IP", "Value": "redis.openemr.local"},
           {"Namespace" : "aws:elasticbeanstalk:application:environment", "OptionName": "FILE_SYSTEM_ID", "Value": {"Ref" : "ElasticFileSystem"}},
-          {"Namespace" : "aws:elasticbeanstalk:application:environment", "OptionName": "NFS_HOSTNAME", "Value": "nfs.oemr.local"}
+          {"Namespace" : "aws:elasticbeanstalk:application:environment", "OptionName": "NFS_HOSTNAME", "Value": "nfs.openemr.local"}
        ]
      }
    }
