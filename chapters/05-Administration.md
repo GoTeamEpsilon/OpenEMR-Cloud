@@ -103,7 +103,7 @@ EFS is a "managed service" in that it is unlikely that it will experience downti
 
 ### Can I backup the CouchDB patient documents?
 
-An AWS Lambda function is provided that performs a daily backup of the patient documents to S3. In addition, the CouchDB volumes are regularly snapshotted.
+An AWS Lambda function creates and manages daily backups of EBS volume housing the CouchDB document store.
 
 ### How Do I Access CloudTrail Audit Logs?
 
@@ -116,10 +116,10 @@ An AWS Lambda function is provided that performs a daily backup of the patient d
 If you're just testing the stack out, please note that deleting the stack will not erase all traces of the deployment from Amazon. You'll need to find and delete:
 
  * The master encryption key (in IAM).
- * The CouchDB volume snapshot (in EC2).
- * The database snapshot (in RDS).
+ * The CouchDB volume snapshots (in EC2).
+ * The final database snapshot (in RDS).
  * The NFS instance (in Elastic File System).
- * The logging bucket (in S3).
+ * The administrative bucket (in S3).
 
 See the **Resources** tab of the stack for the IDs of these objects.
 

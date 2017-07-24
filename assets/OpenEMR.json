@@ -21,16 +21,22 @@
       "MaxLength": "41",
       "Description" : "The timezone OpenEMR will run in"
     },
-    "DeveloperMode": {
-      "Type" : "String",
-      "Default" : "yes",
-      "AllowedValues" : ["yes", "no"],
-      "Description" : "won't be in the final release"
+    "PatientRecords": {
+      "Type": "Number",
+      "Default": "10",
+      "MinValue": "10",
+      "Description": "Storage for patient records {in GB)"
+    },
+    "DocumentStorage": {
+      "Type": "Number",
+      "Default": "500",
+      "MinValue": "500",
+      "Description": "Storage for patient documents {in GB)"
     }
   },
 
   "Conditions" : {
-    "DevOnly" : {"Fn::Equals" : [{"Ref" : "DeveloperMode"}, "yes"]}
+    "DevOnly" : {"Fn::Equals" : ["false", "yes"]}
   },
 
   "Mappings" : {
@@ -39,37 +45,29 @@
       "us-east-1" : {
         "RegionBucket": "openemr-useast1",
         "ApplicationSource": "beanstalk/openemr-5.0.0-003.zip",
-        "BackupManager": "backupmanager/backupManager.001.zip",
         "MySQLVersion": "5.6.27",
         "AmazonAMI": "ami-a4c7edb2",
         "UbuntuAMI": "ami-d15a75c7"
       },
-      "us-east-2" : {
-        "RegionBucket": "openemr-useast2",
-        "ApplicationSource": "beanstalk/openemr-5.0.0-003.zip",
-        "BackupManager": "backupmanager/backupManager.001.zip",
-        "MySQLVersion": "5.6.35",
-        "UbuntuAMI": "ami-8b92b4ee"
-      },
       "us-west-2" : {
         "RegionBucket": "openemr-uswest2",
         "ApplicationSource": "beanstalk/openemr-5.0.0-003.zip",
-        "BackupManager": "backupmanager/backupManager.001.zip",
         "MySQLVersion": "5.6.27",
+        "AmazonAMI": "ami-6df1e514",
         "UbuntuAMI": "ami-835b4efa"
       },
       "eu-west-1" : {
         "RegionBucket": "openemr-euwest1",
         "ApplicationSource": "beanstalk/openemr-5.0.0-003.zip",
-        "BackupManager": "backupmanager/backupManager.001.zip",
         "MySQLVersion": "5.6.27",
+        "AmazonAMI": "ami-d7b9a2b1",
         "UbuntuAMI": "ami-6d48500b"
       },
       "ap-southeast-2" : {
         "RegionBucket": "openemr-apsoutheast2",
         "ApplicationSource": "beanstalk/openemr-5.0.0-003.zip",
-        "BackupManager": "backupmanager/backupManager.001.zip",
         "MySQLVersion": "5.6.27",
+        "AmazonAMI": "ami-10918173",
         "UbuntuAMI": "ami-e94e5e8a"
       }
     }
@@ -590,7 +588,7 @@
      "DeletionPolicy": "Snapshot",
      "Properties" : {
         "DBName" : "openemr",
-        "AllocatedStorage" : "10",
+        "AllocatedStorage" : {"Ref": "PatientRecords"},
         "DBInstanceClass" : "db.t2.small",
         "Engine" : "MySQL",
         "EngineVersion" : { "Fn::FindInMap" : [ "RegionData", { "Ref" : "AWS::Region" }, "MySQLVersion"]},
@@ -706,7 +704,7 @@
        "Type" : "AWS::EC2::Volume",
        "DeletionPolicy": "Snapshot",
        "Properties" : {
-          "Size" : "500",
+          "Size" : {"Ref": "DocumentStorage"},
           "AvailabilityZone" : { "Fn::Select": [ "0", { "Fn::GetAZs": "" } ] },
           "VolumeType" : "sc1",
           "Encrypted": "true",
@@ -967,7 +965,7 @@
       }
     },
 
-    "LambdaScheduler": {
+    "BackupScheduler": {
       "Type": "AWS::Events::Rule",
       "Properties": {
         "Description": "ScheduledRule",
@@ -980,13 +978,13 @@
       }
     },
 
-    "LambdaSchedulerPermission": {
+    "BackupSchedulerPermission": {
       "Type": "AWS::Lambda::Permission",
       "Properties": {
         "FunctionName": { "Ref": "BackupManagerFunction" },
         "Action": "lambda:InvokeFunction",
         "Principal": "events.amazonaws.com",
-        "SourceArn": { "Fn::GetAtt": ["LambdaScheduler", "Arn"] }
+        "SourceArn": { "Fn::GetAtt": ["BackupScheduler", "Arn"] }
       }
     },
 
@@ -1010,10 +1008,10 @@
       }
     },
 
-    "URLGrabberFunction": {
+    "CertGrabberFunction": {
       "Type": "AWS::Lambda::Function",
       "Properties": {
-        "Description": "gets files where CFN can find them",
+        "Description": "gets a certificate's embedded key",
         "Handler": "index.lambda_handler",
         "Role": { "Fn::GetAtt" : ["BarebonesLambdaRole", "Arn"] },
         "Code": {
@@ -1024,7 +1022,7 @@
             "  if (event['RequestType'] == 'Delete'):",
             "    sendResponse(event, context, 'SUCCESS', None)",
             "    return",
-            "  sendResponse(event, context, 'SUCCESS', urllib2.urlopen(event['ResourceProperties']['Url']).read())",
+            "  sendResponse(event, context, 'SUCCESS', urllib2.urlopen(event['ResourceProperties']['Url']).read()[28:-27])",
             "def sendResponse(event, context, responseStatus, responseData):",
             "  opener = urllib2.build_opener(urllib2.HTTPHandler)",
             "  o = {}",
@@ -1034,7 +1032,7 @@
             "  o['StackId'] = event['StackId']",
             "  o['RequestId'] = event['RequestId']",
             "  o['LogicalResourceId'] = event['LogicalResourceId']",
-            "  o['Data'] = {'FileContent': responseData}",
+            "  o['Data'] = {'PublicKey': responseData}",
             "  r = json.dumps(o)",
             "  request = urllib2.Request(event['ResponseURL'], data=r)",
             "  request.add_header('Content-Type', '')",
@@ -1048,11 +1046,11 @@
       }
     },
 
-    "PublicBeanstalkKey" : {
-      "Type" : "Custom::PublicBeanstalkKey",
+    "EBCert" : {
+      "Type" : "Custom::FetchPublicKey",
       "DependsOn": "CertWriterInstance",
       "Properties": {
-        "ServiceToken": { "Fn::GetAtt" : ["URLGrabberFunction", "Arn"] },
+        "ServiceToken": { "Fn::GetAtt" : ["CertGrabberFunction", "Arn"] },
         "Url" : { "Fn::Join" : ["", ["https://s3.amazonaws.com/", {"Ref" : "S3Bucket"}, "/CA/certs/beanstalk.crt" ] ] }
       }
     },
@@ -1113,10 +1111,6 @@
     "OpenEMR" : {
       "Description" : "OpenEMR Setup",
       "Value" :  { "Fn::Join" : [ "", [ "http://", { "Fn::GetAtt" : ["EBEnvironment", "EndpointURL"] }, "/openemr"]]}
-    },
-    "BeanstalkCert" : {
-      "Description" : "Lambda Output",
-      "Value": { "Fn::GetAtt": [ "PublicBeanstalkKey", "FileContent" ] }
     }
   }
 }

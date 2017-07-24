@@ -37,7 +37,7 @@ _[< previous chapter](02-Application-Servers.md) | [next chapter >](04-VPN-Acces
 2. Click **Request a certificate** to the top left.
 3. Under **Domain name**, enter your domain without a **www.** prefix.
 4. Click **Add another name to this certificate**.
-5. Enter another domain entry with a ***.** prefix.
+5. Enter another domain entry with a **\*.** prefix.
 6. Click **Review and request**.
 7. Click **Confirm and request**.
 8. Wait around 10 minutes for multiple AWS emails to be sent to you. Follow the instructions that are sent in said emails.
@@ -55,9 +55,9 @@ _[< previous chapter](02-Application-Servers.md) | [next chapter >](04-VPN-Acces
 9. Login into OpenEMR using your new administrative credentials.
 10. At the top, hover over **Administration** and then click **Globals**.
 11. Now with the settings area in view, click the **Notifications** tab.
-12. For the **Email Transport Method** field, select **SMTP**.
-13. For the **SMTP Server Hostname** field, enter the recently noted value from step 6.
-14. For the **SMTP Server Port Number** field, enter **587**.
-15. For the **SMTP User for Authentication** field, enter the recently noted value from step 8.
-16. For the **SMTP Security Protocol** field, select **TLS**.
-17. Click **Save** near the bottom left.
+ * For the **Email Transport Method** field, select **SMTP**.
+ * For the **SMTP Server Hostname** field, enter the recently noted value from step 6.
+ * For the **SMTP Server Port Number** field, enter **587**.
+ * For the **SMTP User for Authentication** field, enter the recently noted value from step 8.
+ * For the **SMTP Security Protocol** field, select **TLS**.
+12. Click **Save** near the bottom left.
