@@ -44,7 +44,7 @@
     "RegionData" : {
       "us-east-1" : {
         "RegionBucket": "openemr-useast1",
-        "ApplicationSource": "beanstalk/openemr-5.0.0-003.zip",
+        "ApplicationSource": "beanstalk/openemr-5.0.0-004.zip",
         "MySQLVersion": "5.6.27",
         "AmazonAMI": "ami-a4c7edb2",
         "UbuntuAMI": "ami-d15a75c7"
@@ -1055,6 +1055,97 @@
       }
     },
 
+    "BeanstalkInstanceRole": {
+      "Type": "AWS::IAM::Role",
+      "Properties": {
+        "AssumeRolePolicyDocument": {
+          "Version": "2012-10-17",
+          "Statement": [{ "Effect": "Allow", "Principal": {"Service": ["ec2.amazonaws.com"]}, "Action": ["sts:AssumeRole"] }]
+        },
+        "Path": "/",
+        "Policies": [{
+          "PolicyName": "rootBeanstalk",
+          "PolicyDocument": {
+            "Version": "2012-10-17",
+            "Statement": [
+              {
+                "Sid": "BucketAccess",
+                "Action": [
+                  "s3:Get*",
+                  "s3:List*",
+                  "s3:PutObject"
+                ],
+                "Effect": "Allow",
+                "Resource": [
+                  "arn:aws:s3:::elasticbeanstalk-*",
+                  "arn:aws:s3:::elasticbeanstalk-*/*"
+                ]
+              },
+              {
+                "Sid": "XRayAccess",
+                "Action":[
+                  "xray:PutTraceSegments",
+                  "xray:PutTelemetryRecords"
+                ],
+                "Effect": "Allow",
+                "Resource": "*"
+              },
+              {
+                "Sid": "CloudWatchLogsAccess",
+                "Action": [
+                  "logs:PutLogEvents",
+                  "logs:CreateLogStream"
+                ],
+                "Effect": "Allow",
+                "Resource": [
+                  "arn:aws:logs:*:*:log-group:/aws/elasticbeanstalk*"
+                ]
+              }
+            ]
+          }
+        },
+        {
+          "PolicyName": "certGrabber",
+          "PolicyDocument": {
+            "Version": "2012-10-17",
+            "Statement": [
+              {
+                  "Sid": "Stmt1500699052000",
+                  "Effect": "Allow",
+                  "Action": [
+                      "s3:GetObject"
+                  ],
+                  "Resource": [
+                      { "Fn::Join" : ["", ["arn:aws:s3:::", {"Ref":"S3Bucket"}, "/CA/certs/*"]]},
+                      { "Fn::Join" : ["", ["arn:aws:s3:::", {"Ref":"S3Bucket"}, "/CA/keys/beanstalk.key"]]}
+                  ]
+              },
+              {
+                  "Sid": "Stmt1500612724002",
+                  "Effect": "Allow",
+                  "Action": [
+                      "kms:Decrypt"
+                  ],
+                  "Resource": [ { "Fn::GetAtt" : ["OpenEMRKey", "Arn" ] } ]
+              }
+            ]
+          }
+        }]
+      }
+    },
+
+    "BeanstalkInstanceProfile": {
+        "Type": "AWS::IAM::InstanceProfile",
+        "Properties": {
+            "Path": "/",
+            "Roles": [
+                {
+                    "Ref": "BeanstalkInstanceRole"
+                }
+            ]
+        }
+    },
+
     "EBApplication" : {
       "Type" : "AWS::ElasticBeanstalk::Application",
       "Properties" : {
@@ -1085,6 +1176,7 @@
         "OptionSettings" : [
           {"Namespace" : "aws:autoscaling:launchconfiguration", "OptionName" : "SecurityGroups", "Value" : { "Ref" : "ApplicationSecurityGroup" }},
           {"Namespace" : "aws:autoscaling:launchconfiguration", "OptionName" : "EC2KeyName", "Value" : { "Ref" : "EC2KeyPair" }},
+          {"Namespace" : "aws:autoscaling:launchconfiguration", "OptionName" : "IamInstanceProfile", "Value" :  {"Fn::GetAtt" : ["BeanstalkInstanceProfile", "Arn"] } },
           {"Namespace" : "aws:autoscaling:launchconfiguration", "OptionName" : "InstanceType", "Value" : "t2.micro" },
           {"Namespace" : "aws:elb:policies", "OptionName" : "ConnectionDrainingEnabled", "Value" : "true"},
           {"Namespace" : "aws:elb:policies", "OptionName" : "ConnectionSettingIdleTimeout", "Value" : "3600"},
@@ -1099,7 +1191,9 @@
           {"Namespace" : "aws:elasticbeanstalk:application:environment", "OptionName": "TIMEZONE", "Value": {"Ref" : "TimeZone"}},
           {"Namespace" : "aws:elasticbeanstalk:application:environment", "OptionName": "REDIS_IP", "Value": "redis.openemr.local"},
           {"Namespace" : "aws:elasticbeanstalk:application:environment", "OptionName": "FILE_SYSTEM_ID", "Value": {"Ref" : "ElasticFileSystem"}},
-          {"Namespace" : "aws:elasticbeanstalk:application:environment", "OptionName": "NFS_HOSTNAME", "Value": "nfs.openemr.local"}
+          {"Namespace" : "aws:elasticbeanstalk:application:environment", "OptionName": "NFS_HOSTNAME", "Value": "nfs.openemr.local"},
+          {"Namespace" : "aws:elasticbeanstalk:application:environment", "OptionName": "S3BUCKET", "Value": {"Ref" : "S3Bucket"}},
+          {"Namespace" : "aws:elasticbeanstalk:application:environment", "OptionName": "KMSKEY", "Value": {"Ref" : "OpenEMRKey"}}
        ]
      }
    }
