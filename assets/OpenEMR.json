@@ -1178,8 +1178,13 @@
           {"Namespace" : "aws:autoscaling:launchconfiguration", "OptionName" : "EC2KeyName", "Value" : { "Ref" : "EC2KeyPair" }},
           {"Namespace" : "aws:autoscaling:launchconfiguration", "OptionName" : "IamInstanceProfile", "Value" :  {"Fn::GetAtt" : ["BeanstalkInstanceProfile", "Arn"] } },
           {"Namespace" : "aws:autoscaling:launchconfiguration", "OptionName" : "InstanceType", "Value" : "t2.micro" },
+          {"Namespace" : "aws:elb:listener", "OptionName" : "InstanceProtocol", "Value" : "HTTPS"},
+          {"Namespace" : "aws:elb:listener", "OptionName" : "InstancePort", "Value" : "443"},
           {"Namespace" : "aws:elb:policies", "OptionName" : "ConnectionDrainingEnabled", "Value" : "true"},
           {"Namespace" : "aws:elb:policies", "OptionName" : "ConnectionSettingIdleTimeout", "Value" : "3600"},
+          {"Namespace" : "aws:elb:policies:backendencryption", "OptionName" : "PublicKeyPolicyNames", "Value" : "backendkey"},
+          {"Namespace" : "aws:elb:policies:backendencryption", "OptionName" : "InstancePorts", "Value" : "443"},          
+          {"Namespace" : "aws:elb:policies:backendkey", "OptionName" : "PublicKey", "Value" : { "Fn::GetAtt" : ["EBCert", "PublicKey"] }},
           {"Namespace" : "aws:ec2:vpc", "OptionName" : "VPCId", "Value" : { "Ref" : "VPC" }},
           {"Namespace" : "aws:ec2:vpc", "OptionName" : "Subnets", "Value" :
             { "Fn::Join" : [ ",", [ {"Ref": "SubnetPrivate1"}, {"Ref": "SubnetPrivate2"} ] ] }
@@ -1187,7 +1192,7 @@
           {"Namespace" : "aws:ec2:vpc", "OptionName" : "ELBSubnets", "Value" :
             { "Fn::Join" : [ ",", [ {"Ref": "SubnetPublic1"}, {"Ref": "SubnetPublic2"} ] ] }
           },
-          {"Namespace" : "aws:elasticbeanstalk:application", "OptionName": "Application Healthcheck URL", "Value": "/openemr/version.php"},
+          {"Namespace" : "aws:elasticbeanstalk:application", "OptionName": "Application Healthcheck URL", "Value": "HTTPS:443/openemr/version.php"},
           {"Namespace" : "aws:elasticbeanstalk:application:environment", "OptionName": "TIMEZONE", "Value": {"Ref" : "TimeZone"}},
           {"Namespace" : "aws:elasticbeanstalk:application:environment", "OptionName": "REDIS_IP", "Value": "redis.openemr.local"},
           {"Namespace" : "aws:elasticbeanstalk:application:environment", "OptionName": "FILE_SYSTEM_ID", "Value": {"Ref" : "ElasticFileSystem"}},
