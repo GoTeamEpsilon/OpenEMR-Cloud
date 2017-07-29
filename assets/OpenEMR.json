@@ -501,7 +501,7 @@
     "Type" : "AWS::EC2::SecurityGroup",
     "Properties" : {
        "GroupDescription" : "EFS Access",
-       "Tags" :  [ { "Key" : "Name", "Value" : "PatientDocumentAccess" } ],
+       "Tags" :  [ { "Key" : "Name", "Value" : "BeanstalkAccess" } ],
        "VpcId" : {"Ref" : "VPC"}
     }
   },
@@ -525,6 +525,7 @@
 
   "DNSEFS" : {
       "Type" : "AWS::Route53::RecordSet",
+      "DependsOn" : ["EFSMountPrivate1", "EFSMountPrivate2"],
       "Properties" : {
          "HostedZoneId" : { "Ref" : "DNS" },
          "Name" : "nfs.openemr.local",
@@ -554,6 +555,196 @@
       "FileSystemId": { "Ref": "ElasticFileSystem" },
       "SubnetId": { "Ref": "SubnetPrivate2" },
       "SecurityGroups": [ { "Ref": "EFSSecurityGroup" } ]
+    }
+  },
+
+  "EFSBackupSecurityGroup" : {
+    "Type" : "AWS::EC2::SecurityGroup",
+    "Properties" : {
+       "GroupDescription" : "EFS Backup Access",
+       "Tags" :  [ { "Key" : "Name", "Value" : "BeanstalkBackupAccess" } ],
+       "VpcId" : {"Ref" : "VPC"}
+    }
+  },
+
+  "EFSBackupSGIngress": {
+    "Type": "AWS::EC2::SecurityGroupIngress",
+    "Properties": {
+        "GroupId": { "Ref": "EFSSecurityGroup" },
+        "IpProtocol": "-1",
+        "SourceSecurityGroupId" : { "Ref": "EFSBackupSecurityGroup"}
+    }
+  },
+
+  "NFSBackupPolicy" : {
+    "Type" : "AWS::IAM::ManagedPolicy",
+    "Properties" : {
+      "Description" : "Policy to operate backups",
+      "PolicyDocument" :   {
+        "Version": "2012-10-17",
+        "Statement": [
+            {
+              "Sid": "Stmt1500699052003",
+              "Effect": "Allow",
+              "Action": ["s3:ListBucket"],
+              "Resource": { "Fn::Join" : ["", ["arn:aws:s3:::", {"Ref":"S3Bucket"}]]}
+            },
+            {
+                "Sid": "Stmt1500699052000",
+                "Effect": "Allow",
+                "Action": [
+                  "s3:PutObject",
+                  "s3:GetObject",
+                  "s3:DeleteObject"
+                ],
+                "Resource": [
+                    { "Fn::Join" : ["", ["arn:aws:s3:::", {"Ref":"S3Bucket"}, "/Backup/*"]]}
+                ]
+            },
+            {
+                "Sid": "Stmt1500612724002",
+                "Effect": "Allow",
+                "Action": [
+                  "kms:Encrypt",
+                  "kms:Decrypt",
+                  "kms:GenerateDataKey*"
+                ],
+                "Resource": [ { "Fn::GetAtt" : ["OpenEMRKey", "Arn" ] } ]
+            }
+        ]
+      }
+    }
+  },
+
+  "NFSBackupRole" : {
+    "Type": "AWS::IAM::Role",
+     "Properties": {
+        "AssumeRolePolicyDocument": {
+           "Version" : "2012-10-17",
+           "Statement": [ {
+              "Effect": "Allow",
+              "Principal": {
+                 "Service": [ "ec2.amazonaws.com" ]
+              },
+              "Action": [ "sts:AssumeRole" ]
+           } ]
+        },
+        "Path": "/",
+        "ManagedPolicyArns" : [{ "Ref" : "NFSBackupPolicy"}]
+        }
+  },
+
+  "NFSBackupInstanceProfile": {
+      "Type": "AWS::IAM::InstanceProfile",
+      "Properties": {
+          "Path": "/",
+          "Roles": [
+              {
+                  "Ref": "NFSBackupRole"
+              }
+          ]
+      }
+  },
+
+  "NFSBackupInstance": {
+    "Type": "AWS::EC2::Instance",
+    "Metadata" : {
+      "AWS::CloudFormation::Init" : {
+        "configSets" : {
+          "Setup" : [ "Install" ]
+        },
+
+        "Install" : {
+          "files" : {
+            "/root/setup.sh" : {
+              "content" : { "Fn::Join" : ["", [
+                "#!/bin/bash\n",
+                "EFS=nfs.openemr.local\n",
+                "S3=", { "Ref" : "S3Bucket" }, "\n",
+                "KMS=", { "Ref" : "OpenEMRKey" }, "\n",
+                "apt-get -y update\n",
+                "DEBIAN_FRONTEND=noninteractive apt-get dist-upgrade -y -o Dpkg::Options::=\"--force-confdef\" -o Dpkg::Options::=\"--force-confold\" --force-yes\n",
+                "apt-get -y install duplicity python-boto nfs-common awscli\n",
+                "mkdir /mnt/efs\n",
+                "echo \"$EFS:/ /mnt/efs nfs4 nfsvers=4.1,rsize=1048576,wsize=1048576,hard,timeo=600,retrans=2 0 0\" >> /etc/fstab\n",
+                "mount /mnt/efs\n",
+                "touch /tmp/mypass\n",
+                "chmod 500 /tmp/mypass\n",
+                "openssl rand -base64 32 >> /tmp/mypass\n",
+                "aws s3 cp /tmp/mypass s3://$S3/Backup/passphrase.txt --sse aws:kms --sse-kms-key-id $KMS\n",
+                "rm /tmp/mypass\n"
+                ]]},
+              "mode"  : "000500",
+              "owner" : "root",
+              "group" : "root"
+            },
+            "/etc/cron.daily/backup.sh" : {
+              "content" : { "Fn::Join" : ["", [
+                "#!/bin/bash\n",
+                "S3=", { "Ref" : "S3Bucket" }, "\n",
+                "KMS=", { "Ref" : "OpenEMRKey" }, "\n",
+                "PASSPHRASE=`aws s3 cp s3://$S3/Backup/passphrase.txt - --sse aws:kms --sse-kms-key-id $KMS`\n",
+                "export PASSPHRASE\n",
+                "duplicity --full-if-older-than 1M /mnt/efs s3://s3.amazonaws.com/$S3/Backup\n",
+                "duplicity remove-all-but-n-full 2 --force s3://s3.amazonaws.com/$S3/Backup\n"
+                ]]},
+              "mode"  : "000500",
+              "owner" : "root",
+              "group" : "root"
+            },
+            "/root/recovery.sh" : {
+              "content" : { "Fn::Join" : ["", [
+                "#!/bin/bash\n",
+                "S3=", { "Ref" : "S3Bucket" }, "\n",
+                "KMS=", { "Ref" : "OpenEMRKey" }, "\n",
+                "PASSPHRASE=`aws s3 cp s3://$S3/Backup/passphrase.txt - --sse aws:kms --sse-kms-key-id $KMS`\n",
+                "export PASSPHRASE\n",
+                "duplicity --force s3://s3.amazonaws.com/$S3/Backup /mnt/efs\n"
+                ]]},
+              "mode"  : "000500",
+              "owner" : "root",
+              "group" : "root"
+            }
+          },
+          "commands" : {
+            "01_setup" : {
+              "command" : "/root/setup.sh"
+            }
+
+          }
+        }
+      }
+    },
+    "DependsOn" : "DNSEFS",
+    "Properties": {
+      "ImageId" : { "Fn::FindInMap" : [ "RegionData", { "Ref" : "AWS::Region" }, "UbuntuAMI"] },
+      "InstanceType"   : "t2.micro",
+      "SubnetId"       : { "Ref": "SubnetPrivate2"},
+      "SecurityGroupIds" : [ {"Ref" : "EFSBackupSecurityGroup"} ],
+      "KeyName"        : { "Ref" : "EC2KeyPair" },
+      "IamInstanceProfile": { "Ref": "NFSBackupInstanceProfile" },
+      "Tags" : [ { "Key" : "Name", "Value" : "EFS Backup Server" } ],
+      "UserData"       : { "Fn::Base64" : { "Fn::Join" : ["", [
+           "#!/bin/bash -xe\n",
+           "exec > /tmp/part-001.log 2>&1\n",
+           "apt-get -y update\n",
+           "apt-get -y install python-pip\n",
+           "pip install https://s3.amazonaws.com/cloudformation-examples/aws-cfn-bootstrap-latest.tar.gz\n",
+           "cfn-init -v ",
+           "         --stack ", { "Ref" : "AWS::StackName" },
+           "         --resource NFSBackupInstance ",
+           "         --configsets Setup ",
+           "         --region ", { "Ref" : "AWS::Region" }, "\n",
+           "cfn-signal -e $? ",
+           "         --stack ", { "Ref" : "AWS::StackName" },
+           "         --resource NFSBackupInstance ",
+           "         --region ", { "Ref" : "AWS::Region" }, "\n"
+      ]]}}
+    },
+    "CreationPolicy" : {
+      "ResourceSignal" : {
+        "Timeout" : "PT5M"
+      }
     }
   },
 
@@ -901,7 +1092,7 @@
       }
    },
 
-    "BackupExecutionRole": {
+    "DocumentBackupExecutionRole": {
       "Type": "AWS::IAM::Role",
       "Properties": {
         "AssumeRolePolicyDocument": {
@@ -933,12 +1124,12 @@
       }
     },
 
-    "BackupManagerFunction": {
+    "DocumentBackupManagerFunction": {
       "Type": "AWS::Lambda::Function",
       "Properties": {
         "Description": "handles patient document (CouchDB) backups",
         "Handler": "index.lambda_handler",
-        "Role": { "Fn::GetAtt" : ["BackupExecutionRole", "Arn"] },
+        "Role": { "Fn::GetAtt" : ["DocumentBackupExecutionRole", "Arn"] },
         "Code": {
           "ZipFile" : { "Fn::Join" : ["\n", [
             "import boto3",
@@ -965,26 +1156,26 @@
       }
     },
 
-    "BackupScheduler": {
+    "DocumentBackupScheduler": {
       "Type": "AWS::Events::Rule",
       "Properties": {
         "Description": "ScheduledRule",
         "ScheduleExpression": "rate(1 day)",
         "State": "ENABLED",
         "Targets": [{
-          "Arn": { "Fn::GetAtt": ["BackupManagerFunction", "Arn"] },
+          "Arn": { "Fn::GetAtt": ["DocumentBackupManagerFunction", "Arn"] },
           "Id": "BackupManagerV1"
         }]
       }
     },
 
-    "BackupSchedulerPermission": {
+    "DocumentBackupSchedulerPermission": {
       "Type": "AWS::Lambda::Permission",
       "Properties": {
-        "FunctionName": { "Ref": "BackupManagerFunction" },
+        "FunctionName": { "Ref": "DocumentBackupManagerFunction" },
         "Action": "lambda:InvokeFunction",
         "Principal": "events.amazonaws.com",
-        "SourceArn": { "Fn::GetAtt": ["BackupScheduler", "Arn"] }
+        "SourceArn": { "Fn::GetAtt": ["DocumentBackupScheduler", "Arn"] }
       }
     },
 
