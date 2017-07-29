@@ -1167,11 +1167,11 @@
 
     "EBEnvironment" : {
      "Type" : "AWS::ElasticBeanstalk::Environment",
-     "DependsOn" : "CertWriterInstance",
+     "DependsOn" : ["CertWriterInstance", "DNSEFS", "DNSRedis"],
      "Properties" : {
        "ApplicationName" : { "Ref" : "EBApplication" },
-        "Description" :  "OpenEMR v5.0.0, cloud deployment 001",
-        "SolutionStackName" : "64bit Amazon Linux 2017.03 v2.4.1 running PHP 7.0",
+        "Description" :  "OpenEMR v5.0.0 cloud deployment",
+        "SolutionStackName" : "64bit Amazon Linux 2017.03 v2.4.2 running PHP 7.0",
         "VersionLabel" : { "Ref" : "EBApplicationVersion" },
         "OptionSettings" : [
           {"Namespace" : "aws:autoscaling:launchconfiguration", "OptionName" : "SecurityGroups", "Value" : { "Ref" : "ApplicationSecurityGroup" }},
@@ -1183,7 +1183,7 @@
           {"Namespace" : "aws:elb:policies", "OptionName" : "ConnectionDrainingEnabled", "Value" : "true"},
           {"Namespace" : "aws:elb:policies", "OptionName" : "ConnectionSettingIdleTimeout", "Value" : "3600"},
           {"Namespace" : "aws:elb:policies:backendencryption", "OptionName" : "PublicKeyPolicyNames", "Value" : "backendkey"},
-          {"Namespace" : "aws:elb:policies:backendencryption", "OptionName" : "InstancePorts", "Value" : "443"},          
+          {"Namespace" : "aws:elb:policies:backendencryption", "OptionName" : "InstancePorts", "Value" : "443"},
           {"Namespace" : "aws:elb:policies:backendkey", "OptionName" : "PublicKey", "Value" : { "Fn::GetAtt" : ["EBCert", "PublicKey"] }},
           {"Namespace" : "aws:ec2:vpc", "OptionName" : "VPCId", "Value" : { "Ref" : "VPC" }},
           {"Namespace" : "aws:ec2:vpc", "OptionName" : "Subnets", "Value" :
