@@ -44,28 +44,28 @@
     "RegionData" : {
       "us-east-1" : {
         "RegionBucket": "openemr-useast1",
-        "ApplicationSource": "beanstalk/openemr-5.0.0-004.zip",
+        "ApplicationSource": "beanstalk/openemr-5.0.0-005.zip",
         "MySQLVersion": "5.6.27",
         "AmazonAMI": "ami-a4c7edb2",
         "UbuntuAMI": "ami-d15a75c7"
       },
       "us-west-2" : {
         "RegionBucket": "openemr-uswest2",
-        "ApplicationSource": "beanstalk/openemr-5.0.0-003.zip",
+        "ApplicationSource": "beanstalk/openemr-5.0.0-005.zip",
         "MySQLVersion": "5.6.27",
         "AmazonAMI": "ami-6df1e514",
         "UbuntuAMI": "ami-835b4efa"
       },
       "eu-west-1" : {
         "RegionBucket": "openemr-euwest1",
-        "ApplicationSource": "beanstalk/openemr-5.0.0-003.zip",
+        "ApplicationSource": "beanstalk/openemr-5.0.0-005.zip",
         "MySQLVersion": "5.6.27",
         "AmazonAMI": "ami-d7b9a2b1",
         "UbuntuAMI": "ami-6d48500b"
       },
       "ap-southeast-2" : {
         "RegionBucket": "openemr-apsoutheast2",
-        "ApplicationSource": "beanstalk/openemr-5.0.0-003.zip",
+        "ApplicationSource": "beanstalk/openemr-5.0.0-005.zip",
         "MySQLVersion": "5.6.27",
         "AmazonAMI": "ami-10918173",
         "UbuntuAMI": "ami-e94e5e8a"
@@ -659,14 +659,13 @@
             "/root/setup.sh" : {
               "content" : { "Fn::Join" : ["", [
                 "#!/bin/bash\n",
-                "EFS=nfs.openemr.local\n",
                 "S3=", { "Ref" : "S3Bucket" }, "\n",
                 "KMS=", { "Ref" : "OpenEMRKey" }, "\n",
                 "apt-get -y update\n",
                 "DEBIAN_FRONTEND=noninteractive apt-get dist-upgrade -y -o Dpkg::Options::=\"--force-confdef\" -o Dpkg::Options::=\"--force-confold\" --force-yes\n",
                 "apt-get -y install duplicity python-boto nfs-common awscli\n",
                 "mkdir /mnt/efs\n",
-                "echo \"$EFS:/ /mnt/efs nfs4 nfsvers=4.1,rsize=1048576,wsize=1048576,hard,timeo=600,retrans=2 0 0\" >> /etc/fstab\n",
+                "echo \"nfs.openemr.local:/ /mnt/efs nfs4 nfsvers=4.1,rsize=1048576,wsize=1048576,hard,timeo=600,retrans=2 0 0\" >> /etc/fstab\n",
                 "mount /mnt/efs\n",
                 "touch /tmp/mypass\n",
                 "chmod 500 /tmp/mypass\n",
@@ -735,7 +734,7 @@
            "         --resource NFSBackupInstance ",
            "         --configsets Setup ",
            "         --region ", { "Ref" : "AWS::Region" }, "\n",
-           "cfn-signal -e $? ",
+           "cfn-signal -e 0 ",
            "         --stack ", { "Ref" : "AWS::StackName" },
            "         --resource NFSBackupInstance ",
            "         --region ", { "Ref" : "AWS::Region" }, "\n"
