@@ -1241,7 +1241,7 @@
       "DependsOn": "CertWriterInstance",
       "Properties": {
         "ServiceToken": { "Fn::GetAtt" : ["CertGrabberFunction", "Arn"] },
-        "Url" : { "Fn::Join" : ["", ["https://s3.amazonaws.com/", {"Ref" : "S3Bucket"}, "/CA/certs/beanstalk.crt" ] ] }
+        "Url" : { "Fn::Join" : ["", ["https://", {"Ref" : "S3Bucket"}, ".s3.amazonaws.com/CA/certs/beanstalk.crt" ] ] }
       }
     },
 
