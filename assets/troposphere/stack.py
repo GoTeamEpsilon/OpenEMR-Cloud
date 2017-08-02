@@ -3,13 +3,14 @@
 
 from troposphere import Base64, FindInMap, GetAtt, GetAZs, Join, Select, Output
 from troposphere import Parameter, Ref, Tags, Template
-from troposphere import ec2, route53
+from troposphere import ec2, route53, kms
 
 import argparse
 
 ref_stack_id = Ref('AWS::StackId')
 ref_region = Ref('AWS::Region')
 ref_stack_name = Ref('AWS::StackName')
+ref_account = Ref('AWS::AccountId')
 
 t = Template()
 
@@ -241,6 +242,10 @@ def buildVPC(t, dualAZ):
             )
         )
 
+    return t
+
+def buildFoundation(t):
+
     t.add_resource(
         route53.HostedZone(
             'DNS',
@@ -252,8 +257,27 @@ def buildVPC(t, dualAZ):
         )
     )
 
+    t.add_resource(
+        kms.Key(
+            'OpenEMRKey',
+            DeletionPolicy = 'Retain',
+            KeyPolicy = {
+                "Sid": "1",
+                "Effect": "Allow",
+                "Principal": {
+                    "AWS": [
+                        Join(':', ['arn:aws:iam:', Ref('AWS::AccountId'), 'root'])
+                    ]
+                },
+                "Action": "kms:*",
+                "Resource": "*"
+            }
+        )
+    )
+
     return t
 
 t = buildVPC(t, args.dualAZ)
+t = buildFoundation(t)
 
 print(t.to_json())
