@@ -1212,7 +1212,9 @@
             "  if (event['RequestType'] == 'Delete'):",
             "    sendResponse(event, context, 'SUCCESS', None)",
             "    return",
-            "  sendResponse(event, context, 'SUCCESS', urllib2.urlopen(event['ResourceProperties']['Url']).read()[28:-27])",
+            "  print('key: ', event['ResourceProperties']['Url'])",
+            "  publicKey=urllib2.urlopen(event['ResourceProperties']['Url']).read()[28:-27]",
+            "  sendResponse(event, context, 'SUCCESS', publicKey)",
             "def sendResponse(event, context, responseStatus, responseData):",
             "  opener = urllib2.build_opener(urllib2.HTTPHandler)",
             "  o = {}",
@@ -1241,7 +1243,7 @@
       "DependsOn": "CertWriterInstance",
       "Properties": {
         "ServiceToken": { "Fn::GetAtt" : ["CertGrabberFunction", "Arn"] },
-        "Url" : { "Fn::Join" : ["", ["https://s3.amazonaws.com/", {"Ref" : "S3Bucket"}, "/CA/certs/beanstalk.crt" ] ] }
+          "Url" : { "Fn::Join" : ["", ["https://", {"Ref" : "S3Bucket"}, ".s3.amazonaws.com/CA/certs/beanstalk.crt" ] ] }
       }
     },
 
