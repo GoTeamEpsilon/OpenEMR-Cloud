@@ -38,7 +38,7 @@ _[< previous chapter](03-Secure-Domain-Setup.md) | [next chapter >](05-Administr
 3. Wait for the **Status Checks** column value to read **2/2**.
 4. In the bottom pane, note the **IPv4 Public IP** in a safe place.
 5. To the top, click **Actions** and select **Networking**, **Change Security Groups**.
-6. Checkbox the **default** security group row.
+6. Checkbox the **Application** security group row, and the one named "**awseb...**" that is described "**VPC Security Group**". Make sure to leave the existing security group checked!
 7. Click **Assign Security Groups**.
 8. Using the IP noted from step 4, SSH into the server as **openvpnas**. If you aren't sure, please review [How do I SSH into Instances](../chapters/05-Administration.md#how-do-i-ssh-into-instances) section.
 9. Agree with the license, and press enter to all other answers to choose the defaults.
