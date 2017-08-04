@@ -260,7 +260,7 @@ def buildFoundation(t):
     t.add_resource(
         kms.Key(
             'OpenEMRKey',
-            DeletionPolicy = 'Retain',
+            DeletionPolicy = 'Delete' if args.dev else 'Retain',
             KeyPolicy = {
                 "Sid": "1",
                 "Effect": "Allow",
