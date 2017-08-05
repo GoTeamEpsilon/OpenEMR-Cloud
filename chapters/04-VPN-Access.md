@@ -2,6 +2,8 @@ _[< previous chapter](03-Secure-Domain-Setup.md) | [next chapter >](05-Administr
 
 # ☁ VPN Access
 
+You can use a VPN, or virtual private network, to tunnel into the Amazon VPC and connect directly to protected resources like the database and the application servers. However, you won't need to do so when you first create your stack &mdash; feel free to skip this for now and come back to it only after you need to explore or troubleshoot your OpenEMR installation.
+
 ### Establish a VPN Server for Private Cloud Access
 
 1. Click **Services**, **EC2**, and then **Launch Instance** in the center of the screen.
@@ -28,7 +30,7 @@ _[< previous chapter](03-Secure-Domain-Setup.md) | [next chapter >](05-Administr
 22. When **A New address request succeeded** appears, note the Elastic IP in a safe place.
 23. Click **Close**.
 24. With the new address row checkboxed, click **Actions** and **Associate address**.
-25. For **Instance**, select the only entry in the list.
+25. For **Instance**, select the OpenVPN instance.
 26. Click **Associate** and then click **Close**.
 
 ### Configure VPN Server
@@ -50,10 +52,3 @@ _[< previous chapter](03-Secure-Domain-Setup.md) | [next chapter >](05-Administr
 15. Click **Agree** in the center of the screen.
 16. Using a web browser, navigate to **https://&lt;&lt;recently noted ip from step 4&gt;&gt;:943/?src=connect** Note that you will be presented with a untrusted certificate warning, but it is safe to proceed.
 17. Download and follow along with the OpenVPN wizard to install the connector software.
-
-### Post-install Security Update
-
-1. In the AWS Management Console, click **EC2** and then click **Instances** in the left pane.
-2. Checkbox the instance with a name similar to the format **Open-EBEn-EDQ2JSVVZGYD** and note the **Private DNS (IPv4)** found in the bottom pane.
-3. Using this IP, SSH into the server. If you aren't sure, please review [How do I SSH into Instances](../chapters/05-Administration.md#how-do-i-ssh-into-instances) section.
-4. Run `sudo /opt/elasticbeanstalk/hooks/appdeploy/post/09-post-install-setup-file-deletion.sh` to manually remove public setup files (will be ran automatically when subsequent instances are created by ElasticBeanstalk).
