@@ -4,7 +4,7 @@ _[next chapter >](02-Application-Servers.md)_
 
 ### Create an AWS Account
 
-1. Navigate to [https://aws.amazon.com/](https://aws.amazon.com/), and then click **Create an AWS Account**.
+1. Navigate to [https://aws.amazon.com/](https://aws.amazon.com/), and then click **Create an AWS Account**. If you already have an account, feel free to continue to the next section.
 2. Follow along with the signup wizard.
 
 ### Select a Region
@@ -35,7 +35,7 @@ This guide uses services that are _only_ available in certain AWS regions. As of
    * For **PatientRecords**, enter the size of your patient records database in gigabytes.
    * For **RDSPassword**, enter a [strong password](https://www.random.org/passwords/?num=1&len=16&format=html&rnd=new) and note it in a safe place. Note that this is the administrator's password to the MySQL database.
    * For **TimeZone**, select the appropriate value from [this list](http://php.net/manual/en/timezones.php). Note that this value must be exact and spaces should not be entered (e.g.: **America/New_York** is valid while **America/New York** is not).
-   
+
 3. Click **Next**, then **Next** again.
 4. Checkbox the acknowledgement at the bottom of the page.
 5. Click **Create** and wait around 15-30 minutes for your OpenEMR cloud to be installed. Note that you can proceed to the next section while this install is in progress.
