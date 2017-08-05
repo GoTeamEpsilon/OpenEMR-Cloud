@@ -21,14 +21,14 @@ _[< previous chapter](03-Secure-Domain-Setup.md) | [next chapter >](05-Administr
 15. When **Boot from General Purpose** dialog appears, checkbox **Continue with Magnetic as the boot volume for this instance** and then click **Next**.
 16. When **Select an existing key pair or create a new key pair** dialog shows up, select your key pair, accept the terms, and click **Launch Instances**.
 17. Wait a few moments and then click **View Your Instances** to the bottom right.
-18. Identify the recently created instance.
+18. Identify the recently created instance, which will not have a name.
 19. Click the icon in the **Name** column and name the instance "**openemr-vpn**".
 20. In the left pane, click **Elastic IPs**.
 21. Click **Allocate new address** to the top and then click **Allocate**.
 22. When **A New address request succeeded** appears, note the Elastic IP in a safe place.
 23. Click **Close**.
 24. With the new address row checkboxed, click **Actions** and **Associate address**.
-25. For **Instance**, select the only entry in the list.
+25. For **Instance**, select the **openemr-vpn** instance.
 26. Click **Associate** and then click **Close**.
 
 ### Configure VPN Server

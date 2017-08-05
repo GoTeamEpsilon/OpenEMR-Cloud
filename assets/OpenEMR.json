@@ -31,7 +31,7 @@
       "Type": "Number",
       "Default": "500",
       "MinValue": "500",
-      "Description": "Network filesystem storage for patient documents (minimum is 500 in GB)"
+      "Description": "Document database for patient documents (minimum is 500 in GB)"
     }
   },
 
