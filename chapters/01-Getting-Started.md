@@ -20,7 +20,7 @@ This guide uses services that are _only_ available in certain AWS regions. As of
 2. In the left pane, under **Network & Security**, click **Key Pairs**.
 3. Click **Create Key Pair**.
 4. When the **"Create Key Pair"** dialog appears, enter your username for the **Key pair name** field and click **Create**.
-5. When the **Save As** dialog appears, save the .pem keyfile to a safe place. This file will be referred to in later chapters.
+5. When the **Save As** dialog appears, save the .pem keyfile to a safe place. This file will be referred to in later chapters. _IMPORTANT: This will only be available once for download and is needed for future systems access._
 
 ### Launch your Cloud
 
