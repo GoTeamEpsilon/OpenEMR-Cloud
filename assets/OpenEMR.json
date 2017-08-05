@@ -25,13 +25,13 @@
       "Type": "Number",
       "Default": "10",
       "MinValue": "10",
-      "Description": "Storage for patient records {in GB)"
+      "Description": "Database storage for patient records (minimum is 10 in GB)"
     },
     "DocumentStorage": {
       "Type": "Number",
       "Default": "500",
       "MinValue": "500",
-      "Description": "Storage for patient documents {in GB)"
+      "Description": "Document database for patient documents (minimum is 500 in GB)"
     }
   },
 
@@ -44,28 +44,28 @@
     "RegionData" : {
       "us-east-1" : {
         "RegionBucket": "openemr-useast1",
-        "ApplicationSource": "beanstalk/openemr-5.0.0-005.zip",
+        "ApplicationSource": "beanstalk/openemr-5.0.0-006.zip",
         "MySQLVersion": "5.6.27",
         "AmazonAMI": "ami-a4c7edb2",
         "UbuntuAMI": "ami-d15a75c7"
       },
       "us-west-2" : {
         "RegionBucket": "openemr-uswest2",
-        "ApplicationSource": "beanstalk/openemr-5.0.0-005.zip",
+        "ApplicationSource": "beanstalk/openemr-5.0.0-006.zip",
         "MySQLVersion": "5.6.27",
         "AmazonAMI": "ami-6df1e514",
         "UbuntuAMI": "ami-835b4efa"
       },
       "eu-west-1" : {
         "RegionBucket": "openemr-euwest1",
-        "ApplicationSource": "beanstalk/openemr-5.0.0-005.zip",
+        "ApplicationSource": "beanstalk/openemr-5.0.0-006.zip",
         "MySQLVersion": "5.6.27",
         "AmazonAMI": "ami-d7b9a2b1",
         "UbuntuAMI": "ami-6d48500b"
       },
       "ap-southeast-2" : {
         "RegionBucket": "openemr-apsoutheast2",
-        "ApplicationSource": "beanstalk/openemr-5.0.0-005.zip",
+        "ApplicationSource": "beanstalk/openemr-5.0.0-006.zip",
         "MySQLVersion": "5.6.27",
         "AmazonAMI": "ami-10918173",
         "UbuntuAMI": "ami-e94e5e8a"
@@ -1243,7 +1243,11 @@
       "DependsOn": "CertWriterInstance",
       "Properties": {
         "ServiceToken": { "Fn::GetAtt" : ["CertGrabberFunction", "Arn"] },
+<<<<<<< HEAD
           "Url" : { "Fn::Join" : ["", ["https://", {"Ref" : "S3Bucket"}, ".s3.amazonaws.com/CA/certs/beanstalk.crt" ] ] }
+=======
+        "Url" : { "Fn::Join" : ["", ["https://", {"Ref" : "S3Bucket"}, ".s3.amazonaws.com/CA/certs/beanstalk.crt" ] ] }
+>>>>>>> master
       }
     },
 

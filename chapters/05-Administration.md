@@ -99,13 +99,13 @@ RDS does this for you and this solution has great defaults for its configuration
 
 ### Can I backup the EFS NFS drive?
 
-EFS is a "managed service" in that it is unlikely that it will experience downtime, "go away", or experience errors that you, the administrator, will have to deal with. With this said, backups may not be essential because the NFS drive only stores cache and the sqlconf.php file. However, you can set up a special backup EC2 instance (e.g.: Ubuntu AMI) with a cron job that executes something like `aws s3 sync /nfs s3://bucket`. S3 is good for backups because it allows an unlimited amount of storage and is secure.
+The **EFS Backup Server** instance makes automated daily backups of that filesystem via Duplicity and the S3 bucket we allocate for the solution. If you ssh into that Ubuntu server, you can see backup and restore scripts available in /root.
 
 ### Can I backup the CouchDB patient documents?
 
 An AWS Lambda function creates and manages daily backups of EBS volume housing the CouchDB document store.
 
-### How Do I Access CloudTrail Audit Logs?
+### How do I access CloudTrail audit logs?
 
 1. Click on **Services** and then click **S3**.
 2. Look for the bucket with a name following this format: **\<_your account ID_\>-cloudtrail-logs**.
