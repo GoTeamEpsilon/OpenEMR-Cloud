@@ -1,9 +1,9 @@
 #!/usr/bin/python
 # -*- coding: utf-8 -*-
 
-from troposphere import Base64, FindInMap, GetAtt, GetAZs, Join, Select, Output
+from troposphere import Base64, FindInMap, GetAtt, GetAZs, Join, Select, Split, Output
 from troposphere import Parameter, Ref, Tags, Template
-from troposphere import ec2, route53, kms
+from troposphere import ec2, route53, kms, s3
 
 import argparse
 
@@ -12,16 +12,88 @@ ref_region = Ref('AWS::Region')
 ref_stack_name = Ref('AWS::StackName')
 ref_account = Ref('AWS::AccountId')
 
-t = Template()
-
-t.add_version('2010-09-09')
-
-t.add_description("""OpenEMR v5.0.0 cloud deployment""")
-
 parser = argparse.ArgumentParser(description="OpenEMR stack builder")
 parser.add_argument("--dev", help="build [security breaching!] development resources", action="store_true")
 parser.add_argument("--dualAZ", help="build AZ-hardened stack", action="store_true")
 args = parser.parse_args()
+
+t = Template()
+
+t.add_version('2010-09-09')
+t.add_description("""OpenEMR v5.0.0 cloud deployment""")
+
+def setInputs(t, args):
+    t.add_parameter(Parameter(
+        'EC2KeyPair',
+        Description = 'Amazon EC2 Key Pair',
+        Type = 'AWS::EC2::KeyPair::KeyName'
+    ))
+
+    t.add_parameter(Parameter(
+        'RDSPassword',
+        NoEcho = True,
+        Description = 'The database admin account password',
+        Type = 'String',
+        MinLength = '8',
+        MaxLength = '41'
+    ))
+
+    t.add_parameter(Parameter(
+        'TimeZone',
+        Description = 'The timezone OpenEMR will run in',
+        Default = 'America/Chicago',
+        Type = 'String',
+        MaxLength = '41'
+    ))
+
+    t.add_parameter(Parameter(
+        'PatientRecords',
+        Description = 'Database storage for patient records (minimum 10 GB)',
+        Default = '10',
+        Type = 'Number',
+        MinValue = '10'
+    ))
+
+    t.add_parameter(Parameter(
+        'DocumentStorage',
+        Description = 'Document database for patient documents (minimum 500 GB)',
+        Default = '500',
+        Type = 'Number',
+        MinValue = '10'
+    ))
+
+def setMappings(t):
+    t.add_mapping('RegionData', {
+        "us-east-1" : {
+            "RegionBucket": "openemr-useast1",
+            "ApplicationSource": "beanstalk/openemr-5.0.0-005.zip",
+            "MySQLVersion": "5.6.27",
+            "AmazonAMI": "ami-a4c7edb2",
+            "UbuntuAMI": "ami-d15a75c7"
+        },
+        "us-west-2" : {
+            "RegionBucket": "openemr-uswest2",
+            "ApplicationSource": "beanstalk/openemr-5.0.0-005.zip",
+            "MySQLVersion": "5.6.27",
+            "AmazonAMI": "ami-6df1e514",
+            "UbuntuAMI": "ami-835b4efa"
+        },
+        "eu-west-1" : {
+            "RegionBucket": "openemr-euwest1",
+            "ApplicationSource": "beanstalk/openemr-5.0.0-005.zip",
+            "MySQLVersion": "5.6.27",
+            "AmazonAMI": "ami-d7b9a2b1",
+            "UbuntuAMI": "ami-6d48500b"
+        },
+        "ap-southeast-2" : {
+            "RegionBucket": "openemr-apsoutheast2",
+            "ApplicationSource": "beanstalk/openemr-5.0.0-005.zip",
+            "MySQLVersion": "5.6.27",
+            "AmazonAMI": "ami-10918173",
+            "UbuntuAMI": "ami-e94e5e8a"
+        }
+    })
+    return t
 
 def buildVPC(t, dualAZ):
     t.add_resource(
@@ -135,7 +207,7 @@ def buildVPC(t, dualAZ):
             ec2.NatGateway(
                 'nat1',
                 AllocationId = GetAtt('natIp1', 'AllocationId'),
-                SubnetId = Ref('SubnetPublic1')
+                SubnetId = Ref('PublicSubnet1')
             )
         )
 
@@ -174,7 +246,7 @@ def buildVPC(t, dualAZ):
             ec2.NatGateway(
                 'nat2',
                 AllocationId = GetAtt('natIp2', 'AllocationId'),
-                SubnetId = Ref('SubnetPublic2')
+                SubnetId = Ref('PublicSubnet2')
             )
         )
 
@@ -213,7 +285,7 @@ def buildVPC(t, dualAZ):
             ec2.NatGateway(
                 'nat',
                 AllocationId = GetAtt('natIp', 'AllocationId'),
-                SubnetId = Ref('SubnetPublic1')
+                SubnetId = Ref('PublicSubnet1')
             )
         )
 
@@ -244,7 +316,7 @@ def buildVPC(t, dualAZ):
 
     return t
 
-def buildFoundation(t):
+def buildFoundation(t, dev):
 
     t.add_resource(
         route53.HostedZone(
@@ -260,13 +332,13 @@ def buildFoundation(t):
     t.add_resource(
         kms.Key(
             'OpenEMRKey',
-            DeletionPolicy = 'Delete' if args.dev else 'Retain',
+            DeletionPolicy = 'Delete' if dev else 'Retain',
             KeyPolicy = {
                 "Sid": "1",
                 "Effect": "Allow",
                 "Principal": {
                     "AWS": [
-                        Join(':', ['arn:aws:iam:', Ref('AWS::AccountId'), 'root'])
+                        Join(':', ['arn:aws:iam:', ref_account, 'root'])
                     ]
                 },
                 "Action": "kms:*",
@@ -275,9 +347,118 @@ def buildFoundation(t):
         )
     )
 
+    t.add_resource(
+        s3.Bucket(
+            'S3Bucket',
+            DeletionPolicy = 'Retain',
+            BucketName = Join('-', ['openemr', Select('2', Split('/', ref_stack_id))])
+        )
+    )
+
+    t.add_resource(
+        s3.BucketPolicy(
+            'BucketPolicy',
+            Bucket = Ref('S3Bucket'),
+            PolicyDocument = {
+                "Version": "2012-10-17",
+                "Statement": [
+                    {
+                      "Sid": "AWSCloudTrailAclCheck",
+                      "Effect": "Allow",
+                      "Principal": { "Service":"cloudtrail.amazonaws.com"},
+                      "Action": "s3:GetBucketAcl",
+                      "Resource": { "Fn::Join" : ["", ["arn:aws:s3:::", {"Ref":"S3Bucket"}]]}
+                    },
+                    {
+                      "Sid": "AWSCloudTrailWrite",
+                      "Effect": "Allow",
+                      "Principal": { "Service":"cloudtrail.amazonaws.com"},
+                      "Action": "s3:PutObject",
+                      "Resource": { "Fn::Join" : ["", ["arn:aws:s3:::", {"Ref":"S3Bucket"}, "/AWSLogs/", {"Ref":"AWS::AccountId"}, "/*"]]},
+                      "Condition": {
+                        "StringEquals": {
+                          "s3:x-amz-acl": "bucket-owner-full-control"
+                        }
+                      }
+                    }
+                ]
+            }
+        )
+    )
+
+    t.add_resource(
+        ec2.SecurityGroup(
+            'ApplicationSecurityGroup',
+            GroupDescription = 'Application Security Group',
+            VpcId = Ref('VPC'),
+            Tags = [ { "Key" : "Name", "Value" : "Application" } ]
+        )
+    )
+
+    t.add_resource(
+        ec2.SecurityGroupIngress(
+            'AppSGIngress',
+            GroupId = Ref('ApplicationSecurityGroup'),
+            IpProtocol = '-1',
+            SourceSecurityGroupId = Ref('ApplicationSecurityGroup')
+        )
+    )
+
     return t
 
-t = buildVPC(t, args.dualAZ)
-t = buildFoundation(t)
+def buildDeveloperBastion(t):
+
+    t.add_resource(
+        ec2.SecurityGroup(
+            'SSHSecurityGroup',
+            GroupDescription = 'insecure worldwide SSH access',
+            VpcId = Ref('VPC'),
+            Tags = [ { "Key" : "Name", "Value" : "Global SSH" } ]
+        )
+    )
+
+    t.add_resource(
+        ec2.SecurityGroupIngress(
+            'SSHSGIngress',
+            GroupId = Ref('SSHSecurityGroup'),
+            IpProtocol = 'tcp',
+            CidrIp = '0.0.0.0/0',
+            FromPort = '22',
+            ToPort = '22'
+        )
+    )
+
+    t.add_resource(
+        ec2.Instance(
+            'DeveloperBastion',
+            ImageId = FindInMap('RegionData', ref_region, 'AmazonAMI'),
+            InstanceType = 't2.nano',
+            KeyName = Ref('EC2KeyPair'),
+            NetworkInterfaces = [ec2.NetworkInterfaceProperty(
+                AssociatePublicIpAddress = True,
+                DeviceIndex = "0",
+                GroupSet = [ Ref('SSHSecurityGroup'), Ref('ApplicationSecurityGroup') ],
+                SubnetId = Ref('PublicSubnet2')
+            )]
+        )
+    )
+
+    t.add_output(
+        Output(
+            'DeveloperKeyhole',
+            Description='direct stack access',
+            Value=GetAtt('DeveloperBastion', 'PublicIp')
+        )
+    )
+
+    return t
+
+setInputs(t,args)
+setMappings(t)
+buildVPC(t, args.dualAZ)
+buildFoundation(t, args.dev)
+if (args.dev):
+    buildDeveloperBastion(t)
+
 
 print(t.to_json())
