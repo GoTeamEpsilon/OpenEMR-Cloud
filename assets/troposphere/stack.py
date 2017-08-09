@@ -3,7 +3,7 @@
 
 from troposphere import Base64, FindInMap, GetAtt, GetAZs, Join, Select, Split, Output
 from troposphere import Parameter, Ref, Tags, Template
-from troposphere import ec2, route53, kms, s3
+from troposphere import ec2, route53, kms, s3, efs, elasticache, cloudtrail, rds, iam
 
 import argparse
 
@@ -300,7 +300,7 @@ def buildVPC(t, dualAZ):
 
         t.add_resource(
             ec2.SubnetRouteTableAssociation(
-                'rtPrivate1',
+                'rtPrivate1Attach',
                 SubnetId = Ref('PrivateSubnet1'),
                 RouteTableId = Ref('rtTablePrivate')
             )
@@ -308,7 +308,7 @@ def buildVPC(t, dualAZ):
 
         t.add_resource(
             ec2.SubnetRouteTableAssociation(
-                'rtPrivate2',
+                'rtPrivate2Attach',
                 SubnetId = Ref('PrivateSubnet2'),
                 RouteTableId = Ref('rtTablePrivate')
             )
@@ -334,15 +334,19 @@ def buildFoundation(t, dev):
             'OpenEMRKey',
             DeletionPolicy = 'Delete' if dev else 'Retain',
             KeyPolicy = {
-                "Sid": "1",
-                "Effect": "Allow",
-                "Principal": {
-                    "AWS": [
-                        Join(':', ['arn:aws:iam:', ref_account, 'root'])
-                    ]
-                },
-                "Action": "kms:*",
-                "Resource": "*"
+                "Version": "2012-10-17",
+                "Id": "key-default-1",
+                "Statement": [{
+                    "Sid": "1",
+                    "Effect": "Allow",
+                    "Principal": {
+                        "AWS": [
+                            Join(':', ['arn:aws:iam:', ref_account, 'root'])
+                        ]
+                    },
+                    "Action": "kms:*",
+                    "Resource": "*"
+                }]
             }
         )
     )
@@ -383,6 +387,17 @@ def buildFoundation(t, dev):
                     }
                 ]
             }
+        )
+    )
+
+    t.add_resource(
+        cloudtrail.Trail(
+            'CloudTrail',
+            DependsOn = 'BucketPolicy',
+            IsLogging = True,
+            IncludeGlobalServiceEvents = True,
+            IsMultiRegionTrail = True,
+            S3BucketName = Ref('S3Bucket')
         )
     )
 
@@ -453,12 +468,299 @@ def buildDeveloperBastion(t):
 
     return t
 
+def buildEFS(t, dev):
+    t.add_resource(
+        ec2.SecurityGroup(
+            'EFSSecurityGroup',
+            GroupDescription = 'Webworker NFS Access',
+            VpcId = Ref('VPC'),
+            Tags = Tags(Name='NFS Access')
+        )
+    )
+
+    t.add_resource(
+        ec2.SecurityGroupIngress(
+            'EFSSGIngress',
+            GroupId = Ref('EFSSecurityGroup'),
+            IpProtocol = '-1',
+            SourceSecurityGroupId = Ref('ApplicationSecurityGroup')
+        )
+    )
+
+    t.add_resource(
+        efs.FileSystem(
+            'ElasticFileSystem',
+            DeletionPolicy = 'Delete' if dev else 'Retain',
+            FileSystemTags = Tags(Name='OpenEMR Codebase')
+        )
+    )
+
+    t.add_resource(
+        efs.MountTarget(
+            'EFSMountPrivate1',
+            FileSystemId = Ref('ElasticFileSystem'),
+            SubnetId = Ref('PrivateSubnet1'),
+            SecurityGroups = [Ref('EFSSecurityGroup')]
+        )
+    )
+
+    t.add_resource(
+        efs.MountTarget(
+            'EFSMountPrivate2',
+            FileSystemId = Ref('ElasticFileSystem'),
+            SubnetId = Ref('PrivateSubnet2'),
+            SecurityGroups = [Ref('EFSSecurityGroup')]
+        )
+    )
+
+    t.add_resource(
+        route53.RecordSetType(
+            'DNSEFS',
+            DependsOn = ['EFSMountPrivate1', 'EFSMountPrivate2'],
+            HostedZoneId = Ref('DNS'),
+            Name = 'nfs.openemr.local',
+            Type = 'CNAME',
+            TTL = '900',
+            ResourceRecords = [Join("", [Ref('ElasticFileSystem'), '.efs.', ref_region, ".amazonaws.com"])]
+        )
+    )
+
+    return t
+
+def buildRedis(t, dualAZ):
+    t.add_resource(
+        ec2.SecurityGroup(
+            'RedisSecurityGroup',
+            GroupDescription = 'Webworker Session Store',
+            VpcId = Ref('VPC'),
+            Tags = Tags(Name='Redis Access')
+        )
+    )
+
+    t.add_resource(
+        ec2.SecurityGroupIngress(
+            'RedisSGIngress',
+            GroupId = Ref('RedisSecurityGroup'),
+            IpProtocol = '-1',
+            SourceSecurityGroupId = Ref('ApplicationSecurityGroup')
+        )
+    )
+
+    t.add_resource(
+        elasticache.SubnetGroup(
+            'RedisSubnets',
+            Description = 'Redis node locations',
+            SubnetIds = [Ref('PrivateSubnet1'), Ref('PrivateSubnet2')]
+        )
+    )
+
+    t.add_resource(
+        elasticache.CacheCluster(
+            'RedisCluster',
+            CacheNodeType = 'cache.t2.small',
+            VpcSecurityGroupIds = [GetAtt('RedisSecurityGroup', 'GroupId')],
+            CacheSubnetGroupName = Ref('RedisSubnets'),
+            Engine = 'redis',
+            NumCacheNodes = '2' if dualAZ else '1'
+        )
+    )
+
+    t.add_resource(
+        route53.RecordSetType(
+            'DNSRedis',
+            HostedZoneId = Ref('DNS'),
+            Name = 'redis.openemr.local',
+            Type = 'CNAME',
+            TTL = '900',
+            ResourceRecords = [GetAtt('RedisCluster', 'RedisEndpoint.Address')]
+        )
+    )
+
+    return t
+
+def buildMySQL(t, args):
+    # TODO: verify dual-AZ
+    t.add_resource(
+        ec2.SecurityGroup(
+            'DBSecurityGroup',
+            GroupDescription = 'Patient Records',
+            VpcId = Ref('VPC'),
+            Tags = Tags(Name='MySQL Access')
+        )
+    )
+
+    t.add_resource(
+        ec2.SecurityGroupIngress(
+            'DBSGIngress',
+            GroupId = Ref('DBSecurityGroup'),
+            IpProtocol = '-1',
+            SourceSecurityGroupId = Ref('ApplicationSecurityGroup')
+        )
+    )
+
+    t.add_resource(
+        rds.DBSubnetGroup(
+            'RDSSubnetGroup',
+            DBSubnetGroupDescription = 'MySQL node locations',
+            SubnetIds = [Ref('PrivateSubnet1'), Ref('PrivateSubnet2')]
+        )
+    )
+
+    ### RDSInstance
+    t.add_resource(
+        rds.DBInstance(
+            'RDSInstance',
+            DeletionPolicy = 'Delete' if args.dev else 'Snapshot',
+            DBName = 'openemr',
+            AllocatedStorage = Ref('PatientRecords'),
+            DBInstanceClass = 'db.t2.small',
+            Engine = 'MySQL',
+            EngineVersion = FindInMap('RegionData', ref_region, 'MySQLVersion'),
+            MasterUsername = 'openemr',
+            MasterUserPassword = Ref('RDSPassword'),
+            PubliclyAccessible = False,
+            DBSubnetGroupName = Ref('RDSSubnetGroup'),
+            VPCSecurityGroups = [Ref('DBSecurityGroup')],
+            KmsKeyId = Ref('OpenEMRKey'),
+            StorageEncrypted = True,
+            MultiAZ = args.dualAZ,
+            Tags = Tags(Name='Patient Records')
+        )
+    )
+
+    t.add_resource(
+        route53.RecordSetType(
+            'DNSMySQL',
+            HostedZoneId = Ref('DNS'),
+            Name = 'mysql.openemr.local',
+            Type = 'CNAME',
+            TTL = '900',
+            ResourceRecords = [GetAtt('RDSInstance', 'Endpoint.Address')]
+        )
+    )
+
+    return t
+
+def buildCertWriter(t, dev):
+    t.add_resource(
+        iam.ManagedPolicy(
+            'CertWriterPolicy',
+            Description='Policy for initial CA writer',
+            PolicyDocument = {
+                "Version": "2012-10-17",
+                "Statement": [
+                {
+                  "Sid": "Stmt1500612724000",
+                  "Effect": "Allow",
+                  "Action": [
+                      "s3:*"
+                  ],
+                  "Resource": [
+                    Join('', ['arn:aws:s3:::', Ref('S3Bucket'), "/CA/*"])
+                  ]
+                },
+                {
+                  "Sid": "Stmt1500612724001",
+                  "Effect": "Allow",
+                  "Action": [
+                      "s3:ListBucket"
+                  ],
+                  "Resource": [
+                      Join('', ['arn:aws:s3:::', Ref('S3Bucket')])
+                  ]
+                },
+                {
+                  "Sid": "Stmt1500612724002",
+                  "Effect": "Allow",
+                  "Action": [
+                      "kms:GenerateDataKey*"
+                  ],
+                  "Resource": [
+                    GetAtt("OpenEMRKey", "Arn")
+                  ]
+                }
+                ]
+            }
+        )
+    )
+
+    t.add_resource(
+        iam.Role(
+            'CertWriterRole',
+            AssumeRolePolicyDocument = {
+               "Version" : "2012-10-17",
+               "Statement": [ {
+                  "Effect": "Allow",
+                  "Principal": {
+                     "Service": [ "ec2.amazonaws.com" ]
+                  },
+                  "Action": [ "sts:AssumeRole" ]
+               } ]
+            },
+            Path='/',
+            ManagedPolicyArns= [Ref('CertWriterPolicy')]
+        )
+    )
+
+    t.add_resource(
+        iam.InstanceProfile(
+            'CertWriterInstanceProfile',
+            Path = '/',
+            Roles = [Ref('CertWriterRole')]
+        )
+    )
+
+    instanceScript = [
+        "#!/bin/bash -xe\n",
+        "cd /root\n",
+        "mkdir -m 700 CA CA/certs CA/keys CA/work\n",
+        "cd CA\n",
+        "openssl genrsa -out keys/ca.key 8192\n",
+        "openssl req -new -x509 -extensions v3_ca -key keys/ca.key -out certs/ca.crt -days 3650 -subj '/CN=OpenEMR Backend CA'\n",
+        "openssl req -new -nodes -newkey rsa:2048 -keyout keys/beanstalk.key -out work/beanstalk.csr -days 3648 -subj /CN=beanstalk.openemr.local\n",
+        "openssl x509 -req -in work/beanstalk.csr -out certs/beanstalk.crt -CA certs/ca.crt -CAkey keys/ca.key -CAcreateserial\n",
+        "openssl req -new -nodes -newkey rsa:2048 -keyout keys/couch.key -out work/couch.csr -days 3648 -subj /CN=couchdb.openemr.local\n",
+        "openssl x509 -req -in work/couch.csr -out certs/couch.crt -CA certs/ca.crt -CAkey keys/ca.key\n",
+        "aws s3 sync keys s3://", Ref('S3Bucket'), "/CA/keys --sse aws:kms --sse-kms-key-id ", Ref('OpenEMRKey'), " --acl private\n",
+        "aws s3 sync certs s3://", Ref('S3Bucket'), "/CA/certs --acl public-read\n",
+        "/opt/aws/bin/cfn-signal -e 0 ",
+        "         --stack ", ref_stack_name,
+        "         --resource CertWriterInstance ",
+        "         --region ", ref_region, "\n",
+        "shutdown -h now", "\n"
+    ]
+
+    t.add_resource(
+        ec2.Instance(
+            'CertWriterInstance',
+            DependsOn = 'rtPrivate1Attach',
+            ImageId = FindInMap('RegionData', ref_region, 'AmazonAMI'),
+            InstanceType = 't2.nano',
+            SubnetId = Ref('PrivateSubnet1'),
+            KeyName = Ref('EC2KeyPair'),
+            IamInstanceProfile = Ref('CertWriterInstanceProfile'),
+            Tags = Tags(Name='Backend CA Processor'),
+            InstanceInitiatedShutdownBehavior = 'stop' if args.dev else 'terminate',
+            UserData = Base64(Join('', instanceScript)),
+            CreationPolicy = {
+              "ResourceSignal" : {
+                "Timeout" : "PT5M"
+              }
+            }
+        )
+    )
+
+    return t
+
 setInputs(t,args)
 setMappings(t)
-buildVPC(t, args.dualAZ)
+buildVPC(t, args.dualAZ
 buildFoundation(t, args.dev)
 if (args.dev):
     buildDeveloperBastion(t)
-
+buildEFS(t, args.dev)
+buildRedis(t, args.dualAZ)
+buildMySQL(t, args)
+buildCertWriter(t, args.dev)
 
 print(t.to_json())
