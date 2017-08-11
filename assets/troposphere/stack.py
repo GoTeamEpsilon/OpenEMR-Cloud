@@ -5,7 +5,7 @@
 
 from troposphere import Base64, FindInMap, GetAtt, GetAZs, Join, Select, Split, Output
 from troposphere import Parameter, Ref, Tags, Template
-from troposphere import ec2, route53, kms, s3, efs, elasticache, cloudtrail, rds, iam, cloudformation
+from troposphere import ec2, route53, kms, s3, efs, elasticache, cloudtrail, rds, iam, cloudformation, awslambda, events
 
 import argparse
 
@@ -757,6 +757,81 @@ def buildCertWriter(t, dev):
         )
     )
 
+    t.add_resource(
+        iam.Role(
+            'BarebonesLambdaRole',
+            AssumeRolePolicyDocument = {
+               "Version" : "2012-10-17",
+               "Statement": [ {
+                  "Effect": "Allow",
+                  "Principal": {
+                     "Service": [ "lambda.amazonaws.com" ]
+                  },
+                  "Action": [ "sts:AssumeRole" ]
+               } ]
+            },
+            Path='/',
+            Policies=[iam.Policy(
+                PolicyName="root",
+                PolicyDocument= {
+                    "Version": "2012-10-17",
+                    "Statement": [
+                      { "Effect": "Allow", "Action": ["logs:*"], "Resource": "arn:aws:logs:*:*:*" },
+                    ]
+                }
+            )]
+        )
+    )
+
+    certGrabberScript = [
+        "import urllib2",
+        "import json",
+        "def lambda_handler(event, context):",
+        "  if (event['RequestType'] == 'Delete'):",
+        "    sendResponse(event, context, 'SUCCESS', None)",
+        "    return",
+        "  sendResponse(event, context, 'SUCCESS', urllib2.urlopen(event['ResourceProperties']['Url']).read()[28:-27])",
+        "def sendResponse(event, context, responseStatus, responseData):",
+        "  opener = urllib2.build_opener(urllib2.HTTPHandler)",
+        "  o = {}",
+        "  o['Status'] = responseStatus",
+        "  o['Reason'] = 'log ' + context.log_stream_name",
+        "  o['PhysicalResourceId'] = context.log_stream_name",
+        "  o['StackId'] = event['StackId']",
+        "  o['RequestId'] = event['RequestId']",
+        "  o['LogicalResourceId'] = event['LogicalResourceId']",
+        "  o['Data'] = {'PublicKey': responseData}",
+        "  r = json.dumps(o)",
+        "  request = urllib2.Request(event['ResponseURL'], data=r)",
+        "  request.add_header('Content-Type', '')",
+        "  request.add_header('Content-Length', len(r))",
+        "  request.get_method = lambda: 'PUT'",
+        "  url = opener.open(request)"
+    ]
+
+    t.add_resource(
+        awslambda.Function(
+            'CertGrabberFunction',
+            Description='gets a certificate''s embedded key',
+            Handler='index.lambda_handler',
+            Role=GetAtt('BarebonesLambdaRole','Arn'),
+            Code=awslambda.Code(
+                ZipFile=Join('\n', certGrabberScript)
+            ),
+            Runtime="python2.7",
+            Timeout="5"
+        )
+    )
+
+    t.add_resource(
+        cloudformation.CustomResource(
+            'EBCert',
+            DependsOn='CertWriterInstance',
+            ServiceToken = GetAtt('CertGrabberFunction', 'Arn'),
+            Url=Join('', ['https://', Ref('S3Bucket'), '.s3.amazonaws.com/CA/certs/beanstalk.crt'])
+        )
+    )
+
     return t
 
 def buildNFSBackup(t):
@@ -1188,6 +1263,106 @@ def buildDocumentStore(t, args):
 
     return t
 
+def buildDocumentBackups(t):
+    t.add_resource(
+        iam.Role(
+            'DocumentBackupExecutionRole',
+            AssumeRolePolicyDocument = {
+               "Version" : "2012-10-17",
+               "Statement": [ {
+                  "Effect": "Allow",
+                  "Principal": {
+                     "Service": [ "lambda.amazonaws.com" ]
+                  },
+                  "Action": [ "sts:AssumeRole" ]
+               } ]
+            },
+            Path='/',
+            Policies=[iam.Policy(
+                PolicyName="root",
+                PolicyDocument= {
+                    "Version": "2012-10-17",
+                    "Statement": [
+                      { "Effect": "Allow", "Action": ["logs:*"], "Resource": "arn:aws:logs:*:*:*" },
+                      {
+                          "Effect": "Allow",
+                          "Action": [
+                              "ec2:DescribeVolumeStatus",
+                              "ec2:DescribeSnapshots",
+                              "ec2:CreateSnapshot",
+                              "ec2:DeleteSnapshot"
+                          ],
+                          "Resource": [
+                              "*"
+                          ]
+                      }
+                    ]
+                }
+            )]
+        )
+    )
+
+    lambdaScript = [
+        "import boto3",
+        "import os",
+        "def lambda_handler(event, context):",
+        "  volume = boto3.session.Session(region_name = os.environ['AWS_DEFAULT_REGION']).resource('ec2').Volume(os.environ['VOLUME_ID'])",
+        "  volume.create_snapshot(os.environ['DESCRIPTION'])",
+        "  snapshots = sorted(volume.snapshots.all(), key=lambda x: x.start_time)",
+        "  if len(snapshots) > os.environ['COUNTRETAINED']:",
+        "    for i in range(0,len(snapshots)-os.environ['COUNTRETAINED']):",
+        "      snapshots[i].delete()",
+        "  return 'all OK'"
+    ]
+
+    t.add_resource(
+        awslambda.Function(
+            'DocumentBackupManagerFunction',
+            Description='handles patient document (CouchDB) backups',
+            Handler='index.lambda_handler',
+            Role=GetAtt('DocumentBackupExecutionRole','Arn'),
+            Code=awslambda.Code(
+                ZipFile=Join('\n', lambdaScript)
+            ),
+            Environment=awslambda.Environment(
+                Variables={
+                    "VOLUME_ID" : Ref("CouchDBVolume"),
+                    "DESCRIPTION" : "OpenEMR document backup",
+                    "COUNTRETAINED" : 3
+                }
+            ),
+            Runtime="python2.7",
+            Timeout="15"
+        )
+    )
+
+    t.add_resource(
+        events.Rule(
+            'DocumentBackupScheduler',
+            Description='BackupRule',
+            ScheduleExpression='rate(1 day)',
+            State='ENABLED',
+            Targets=[events.Target(
+                Arn=GetAtt('DocumentBackupManagerFunction', 'Arn'),
+                Id='BackupManagerV1'
+            )]
+        )
+    )
+
+    t.add_resource(
+        awslambda.Permission(
+            'DocumentBackupSchedulerPermission',
+            FunctionName=Ref('DocumentBackupManagerFunction'),
+            Action='lambda:InvokeFunction',
+            Principal='events.amazonaws.com',
+            SourceArn=GetAtt('DocumentBackupScheduler', 'Arn')
+        )
+    )
+    return t
+
+def builtApplication(t):
+    return t
+
 setInputs(t,args)
 setMappings(t)
 buildVPC(t, args.dualAZ)
@@ -1200,5 +1375,7 @@ buildMySQL(t, args)
 buildCertWriter(t, args.dev)
 buildNFSBackup(t)
 buildDocumentStore(t, args)
+buildDocumentBackups(t)
+buildApplication(t)
 
 print(t.to_json())
