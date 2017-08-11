@@ -1,6 +1,8 @@
 #!/usr/bin/python
 # -*- coding: utf-8 -*-
 
+# https://github.com/cloudtools/troposphere
+
 from troposphere import Base64, FindInMap, GetAtt, GetAZs, Join, Select, Split, Output
 from troposphere import Parameter, Ref, Tags, Template
 from troposphere import ec2, route53, kms, s3, efs, elasticache, cloudtrail, rds, iam, cloudformation
@@ -20,7 +22,12 @@ args = parser.parse_args()
 t = Template()
 
 t.add_version('2010-09-09')
-t.add_description("""OpenEMR v5.0.0 cloud deployment""")
+descString='OpenEMR v5.0.0 cloud deployment'
+if (args.dev):
+    descString+=' [developer]'
+if (args.dualAZ):
+    descString+=' [dual-AZ]'
+t.add_description(descString)
 
 def setInputs(t, args):
     t.add_parameter(Parameter(
@@ -936,6 +943,7 @@ def buildNFSBackup(t):
             InstanceType = 't2.nano',
             SubnetId = Ref('PrivateSubnet2'),
             KeyName = Ref('EC2KeyPair'),
+            SecurityGroupIds = [Ref('NFSBackupSecurityGroup')],
             IamInstanceProfile = Ref('NFSInstanceProfile'),
             Tags = Tags(Name='NFS Backup Agent'),
             InstanceInitiatedShutdownBehavior = 'stop',
@@ -949,6 +957,237 @@ def buildNFSBackup(t):
     )
     return t
 
+def buildDocumentStore(t, args):
+    t.add_resource(
+        ec2.SecurityGroup(
+            'CouchDBSecurityGroup',
+            GroupDescription = 'Patient Document Access',
+            VpcId = Ref('VPC'),
+            Tags = Tags(Name='Patient Documents')
+        )
+    )
+
+    t.add_resource(
+        ec2.SecurityGroupIngress(
+            'CouchDBSGIngress',
+            GroupId = Ref('CouchDBSecurityGroup'),
+            IpProtocol = '-1',
+            SourceSecurityGroupId = Ref('ApplicationSecurityGroup')
+        )
+    )
+
+    t.add_resource(
+        ec2.Volume(
+            'CouchDBVolume',
+            DeletionPolicy = 'Delete' if args.dev else 'Snapshot',
+            Size=Ref('DocumentStorage'),
+            AvailabilityZone = Select("0", GetAZs("")),
+            VolumeType = 'sc1',
+            Encrypted = True,
+            KmsKeyId = Ref('OpenEMRKey'),
+            Tags=Tags(Name="Patient Documents")
+        )
+    )
+
+    t.add_resource(
+        iam.ManagedPolicy(
+            'CouchDBPolicy',
+            Description='Policy to retrieve CouchDB SSL credentials',
+            PolicyDocument = {
+                "Version": "2012-10-17",
+                "Statement": [
+                    {
+                      "Sid": "Stmt1500699052000",
+                      "Effect": "Allow",
+                      "Action": [
+                          "s3:GetObject"
+                      ],
+                      "Resource": [
+                          { "Fn::Join" : ["", ["arn:aws:s3:::", Ref('S3Bucket'), "/CA/certs/*"]]},
+                          { "Fn::Join" : ["", ["arn:aws:s3:::", Ref('S3Bucket'), "/CA/keys/couch.key"]]}
+                      ]
+                    },
+                    {
+                      "Sid": "Stmt1500612724002",
+                      "Effect": "Allow",
+                      "Action": [
+                          "kms:Decrypt"
+                      ],
+                      "Resource": [ GetAtt("OpenEMRKey", "Arn") ]
+                    }
+                ]
+            }
+        )
+    )
+
+    t.add_resource(
+        iam.Role(
+            'CouchDBRole',
+            AssumeRolePolicyDocument = {
+               "Version" : "2012-10-17",
+               "Statement": [ {
+                  "Effect": "Allow",
+                  "Principal": {
+                     "Service": [ "ec2.amazonaws.com" ]
+                  },
+                  "Action": [ "sts:AssumeRole" ]
+               } ]
+            },
+            Path='/',
+            ManagedPolicyArns= [Ref('CouchDBPolicy')]
+        )
+    )
+
+    t.add_resource(
+        iam.InstanceProfile(
+            'CouchDBInstanceProfile',
+            Path = '/',
+            Roles = [Ref('CouchDBRole')]
+        )
+    )
+
+    bootstrapScript = [
+        "#!/bin/bash -xe\n",
+        "exec > /tmp/part-001.log 2>&1\n",
+        "apt-get -y update\n",
+        "apt-get -y install python-pip\n",
+        "pip install https://s3.amazonaws.com/cloudformation-examples/aws-cfn-bootstrap-latest.tar.gz\n",
+        "cfn-init -v ",
+        "         --stack ", ref_stack_name,
+        "         --resource CouchDBInstance ",
+        "         --configsets Setup ",
+        "         --region ", ref_region, "\n",
+        "cfn-signal -e 0 ",
+        "         --stack ", ref_stack_name,
+        "         --resource CouchDBInstance ",
+        "         --region ", ref_region, "\n"
+    ]
+
+    ipIniFile = [
+        "[httpd]\n",
+        "bind_address = 0.0.0.0\n"
+    ]
+
+    sslIniFile = [
+        "[daemons]\n",
+        "httpsd = {couch_httpd, start_link, [https]}\n",
+        "[ssl]\n",
+        "port = 6984\n",
+        "key_file = /etc/couchdb/couch.key\n",
+        "cert_file = /etc/couchdb/couch.crt\n",
+        "cacert_file = /etc/couchdb/ca.crt\n"
+    ]
+
+    fstabFile = [
+        "/dev/xvdd /mnt/db ext4 defaults,nofail 0 0\n"
+    ]
+
+    setupScript = [
+        "#!/bin/bash -xe\n",
+        "exec > /tmp/part-002.log 2>&1\n",
+        "DEBIAN_FRONTEND=noninteractive apt-get dist-upgrade -y -o Dpkg::Options::=\"--force-confdef\" -o Dpkg::Options::=\"--force-confold\" --force-yes\n",
+        "mkfs -t ext4 /dev/xvdd\n",
+        "mkdir /mnt/db\n",
+        "cat /root/fstab.append >> /etc/fstab\n",
+        "mount /mnt/db\n",
+        "apt-get -y install couchdb awscli\n",
+        "service couchdb stop\n",
+        "aws configure set s3.signature_version s3v4\n",
+        "aws s3 cp s3://", Ref('S3Bucket'), "/CA/certs/ca.crt /etc/couchdb\n",
+        "aws s3 cp s3://", Ref('S3Bucket'), "/CA/certs/couch.crt /etc/couchdb\n",
+        "chmod 664 /etc/couchdb/*.crt\n",
+        "aws s3 cp s3://", Ref('S3Bucket'), "/CA/keys/couch.key /etc/couchdb --sse aws:kms --sse-kms-key-id ", Ref('OpenEMRKey'), "\n",
+        "chmod 660 /etc/couchdb/couch.key\n",
+        "chown couchdb:couchdb /etc/couchdb/*.crt /etc/couchdb/*.key\n",
+        "mv /var/lib/couchdb /mnt/db/couchdb\n",
+        "ln -s /mnt/db/couchdb /var/lib/couchdb\n",
+        "cp /root/ip.ini /root/ssl.ini /etc/couchdb/local.d\n",
+        "chown couchdb:couchdb /etc/couchdb/local.d/ip.ini /etc/couchdb/local.d/ssl.ini\n",
+        "service couchdb restart\n"
+    ]
+
+    bootstrapInstall = cloudformation.InitConfig(
+        files = {
+            "/root/couchdb.setup.sh" : {
+                "content" : Join("", setupScript),
+                "mode"  : "000500",
+                "owner" : "root",
+                "group" : "root"
+            },
+            "/root/ip.ini" : {
+                "content" : Join("", ipIniFile),
+                "mode"  : "000400",
+                "owner" : "root",
+                "group" : "root"
+            },
+            "/root/ssl.ini" : {
+                "content" : Join("", sslIniFile),
+                "mode"  : "000400",
+                "owner" : "root",
+                "group" : "root"
+            },
+            "/root/fstab.append" : {
+                "content" : Join("", fstabFile),
+                "mode"  : "000400",
+                "owner" : "root",
+                "group" : "root"
+            }
+        },
+        commands = {
+            "01_setup" : {
+              "command" : "/root/couchdb.setup.sh"
+            }
+        }
+    )
+
+    bootstrapMetadata = cloudformation.Metadata(
+        cloudformation.Init(
+            cloudformation.InitConfigSets(
+                Setup = ['Install']
+            ),
+            Install=bootstrapInstall
+        )
+    )
+
+    t.add_resource(
+        ec2.Instance(
+            'CouchDBInstance',
+            DependsOn = ['CertWriterInstance'],
+            Metadata = bootstrapMetadata,
+            ImageId = FindInMap('RegionData', ref_region, 'UbuntuAMI'),
+            InstanceType = 't2.micro',
+            SubnetId = Ref('PrivateSubnet1'),
+            KeyName = Ref('EC2KeyPair'),
+            SecurityGroupIds = [Ref('CouchDBSecurityGroup')],
+            IamInstanceProfile = Ref('CouchDBInstanceProfile'),
+            Volumes = [{
+                "Device" : "/dev/sdd",
+                "VolumeId" : Ref('CouchDBVolume')
+            }],
+            Tags = Tags(Name='Patient Document Store'),
+            InstanceInitiatedShutdownBehavior = 'stop',
+            UserData = Base64(Join('', bootstrapScript)),
+            CreationPolicy = {
+              "ResourceSignal" : {
+                "Timeout" : "PT5M"
+              }
+            }
+        )
+    )
+
+    t.add_resource(
+        route53.RecordSetType(
+            'DNSCouchDB',
+            HostedZoneId = Ref('DNS'),
+            Name = 'couchdb.openemr.local',
+            Type = 'CNAME',
+            TTL = '900',
+            ResourceRecords = [GetAtt('CouchDBInstance', 'PrivateDnsName')]
+        )
+    )
+
+    return t
+
 setInputs(t,args)
 setMappings(t)
 buildVPC(t, args.dualAZ)
@@ -960,5 +1199,6 @@ buildRedis(t, args.dualAZ)
 buildMySQL(t, args)
 buildCertWriter(t, args.dev)
 buildNFSBackup(t)
+buildDocumentStore(t, args)
 
 print(t.to_json())
