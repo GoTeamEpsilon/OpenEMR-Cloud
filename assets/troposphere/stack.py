@@ -3,7 +3,7 @@
 
 from troposphere import Base64, FindInMap, GetAtt, GetAZs, Join, Select, Split, Output
 from troposphere import Parameter, Ref, Tags, Template
-from troposphere import ec2, route53, kms, s3, efs, elasticache, cloudtrail, rds, iam
+from troposphere import ec2, route53, kms, s3, efs, elasticache, cloudtrail, rds, iam, cloudformation
 
 import argparse
 
@@ -752,9 +752,206 @@ def buildCertWriter(t, dev):
 
     return t
 
+def buildNFSBackup(t):
+    t.add_resource(
+        ec2.SecurityGroup(
+            'NFSBackupSecurityGroup',
+            GroupDescription = 'NFS Backup Access',
+            VpcId = Ref('VPC'),
+            Tags = Tags(Name='NFS Backup Access')
+        )
+    )
+
+    t.add_resource(
+        ec2.SecurityGroupIngress(
+            'NFSSGIngress',
+            GroupId = Ref('EFSSecurityGroup'),
+            IpProtocol = '-1',
+            SourceSecurityGroupId = Ref('NFSBackupSecurityGroup')
+        )
+    )
+
+    t.add_resource(
+        iam.ManagedPolicy(
+            'NFSBackupPolicy',
+            Description='Policy for ongoing NFS backup instance',
+            PolicyDocument = {
+                "Version": "2012-10-17",
+                "Statement": [
+                    {
+                      "Sid": "Stmt1500699052003",
+                      "Effect": "Allow",
+                      "Action": ["s3:ListBucket"],
+                      "Resource" : Join("", ["arn:aws:s3:::", Ref('S3Bucket')])
+                    },
+                    {
+                        "Sid": "Stmt1500699052000",
+                        "Effect": "Allow",
+                        "Action": [
+                          "s3:PutObject",
+                          "s3:GetObject",
+                          "s3:DeleteObject"
+                        ],
+                        "Resource": [
+                            Join("", ["arn:aws:s3:::", Ref('S3Bucket'), '/Backup/*'])
+                        ]
+                    },
+                    {
+                        "Sid": "Stmt1500612724002",
+                        "Effect": "Allow",
+                        "Action": [
+                          "kms:Encrypt",
+                          "kms:Decrypt",
+                          "kms:GenerateDataKey*"
+                        ],
+                        "Resource": [ GetAtt("OpenEMRKey", "Arn") ]
+                    }
+                ]
+            }
+        )
+    )
+
+    t.add_resource(
+        iam.Role(
+            'NFSBackupRole',
+            AssumeRolePolicyDocument = {
+               "Version" : "2012-10-17",
+               "Statement": [ {
+                  "Effect": "Allow",
+                  "Principal": {
+                     "Service": [ "ec2.amazonaws.com" ]
+                  },
+                  "Action": [ "sts:AssumeRole" ]
+               } ]
+            },
+            Path='/',
+            ManagedPolicyArns= [Ref('NFSBackupPolicy')]
+        )
+    )
+
+    t.add_resource(
+        iam.InstanceProfile(
+            'NFSInstanceProfile',
+            Path = '/',
+            Roles = [Ref('NFSBackupRole')]
+        )
+    )
+
+    bootstrapScript = [
+        "#!/bin/bash -xe\n",
+        "exec > /tmp/part-001.log 2>&1\n",
+        "apt-get -y update\n",
+        "apt-get -y install python-pip\n",
+        "pip install https://s3.amazonaws.com/cloudformation-examples/aws-cfn-bootstrap-latest.tar.gz\n",
+        "cfn-init -v ",
+        "         --stack ", ref_stack_name,
+        "         --resource NFSBackupInstance ",
+        "         --configsets Setup ",
+        "         --region ", ref_region, "\n",
+        "cfn-signal -e 0 ",
+        "         --stack ", ref_stack_name,
+        "         --resource NFSBackupInstance ",
+        "         --region ", ref_region, "\n"
+    ]
+
+    setupScript = [
+        "#!/bin/bash\n",
+        "S3=", Ref('S3Bucket'), "\n",
+        "KMS=", Ref('OpenEMRKey'), "\n",
+        "apt-get -y update\n",
+        "DEBIAN_FRONTEND=noninteractive apt-get dist-upgrade -y -o Dpkg::Options::=\"--force-confdef\" -o Dpkg::Options::=\"--force-confold\" --force-yes\n",
+        "apt-get -y install duplicity python-boto nfs-common awscli\n",
+        "mkdir /mnt/efs\n",
+        "echo \"nfs.openemr.local:/ /mnt/efs nfs4 nfsvers=4.1,rsize=1048576,wsize=1048576,hard,timeo=600,retrans=2 0 0\" >> /etc/fstab\n",
+        "mount /mnt/efs\n",
+        "touch /tmp/mypass\n",
+        "chmod 500 /tmp/mypass\n",
+        "openssl rand -base64 32 >> /tmp/mypass\n",
+        "aws s3 cp /tmp/mypass s3://$S3/Backup/passphrase.txt --sse aws:kms --sse-kms-key-id $KMS\n",
+        "rm /tmp/mypass\n"
+    ]
+
+    backupScript = [
+        "#!/bin/bash\n",
+        "S3=", Ref('S3Bucket'), "\n",
+        "KMS=", Ref('OpenEMRKey'), "\n",
+        "PASSPHRASE=`aws s3 cp s3://$S3/Backup/passphrase.txt - --sse aws:kms --sse-kms-key-id $KMS`\n",
+        "export PASSPHRASE\n",
+        "duplicity --full-if-older-than 1M /mnt/efs s3://s3.amazonaws.com/$S3/Backup\n",
+        "duplicity remove-all-but-n-full 2 --force s3://s3.amazonaws.com/$S3/Backup\n"
+    ]
+
+    recoveryScript = [
+        "#!/bin/bash\n",
+        "S3=", Ref('S3Bucket'), "\n",
+        "KMS=", Ref('OpenEMRKey'), "\n",
+        "PASSPHRASE=`aws s3 cp s3://$S3/Backup/passphrase.txt - --sse aws:kms --sse-kms-key-id $KMS`\n",
+        "export PASSPHRASE\n",
+        "duplicity --force s3://s3.amazonaws.com/$S3/Backup /mnt/efs\n"
+    ]
+
+    bootstrapInstall = cloudformation.InitConfig(
+        files = {
+            "/root/setup.sh" : {
+                "content" : Join("", setupScript),
+                "mode"  : "000500",
+                "owner" : "root",
+                "group" : "root"
+            },
+            "/etc/cron.daily/backup.sh" : {
+                "content" : Join("", backupScript),
+                "mode"  : "000500",
+                "owner" : "root",
+                "group" : "root"
+            },
+            "/root/recovery.sh" : {
+                "content" : Join("", recoveryScript),
+                "mode"  : "000500",
+                "owner" : "root",
+                "group" : "root"
+            }
+        },
+        commands = {
+            "01_setup" : {
+              "command" : "/root/setup.sh"
+            }
+        }
+    )
+
+    bootstrapMetadata = cloudformation.Metadata(
+        cloudformation.Init(
+            cloudformation.InitConfigSets(
+                Setup = ['Install']
+            ),
+            Install=bootstrapInstall
+        )
+    )
+
+    t.add_resource(
+        ec2.Instance(
+            'NFSBackupInstance',
+            DependsOn = ['rtPrivate2Attach', 'DNSEFS'],
+            Metadata = bootstrapMetadata,
+            ImageId = FindInMap('RegionData', ref_region, 'UbuntuAMI'),
+            InstanceType = 't2.nano',
+            SubnetId = Ref('PrivateSubnet2'),
+            KeyName = Ref('EC2KeyPair'),
+            IamInstanceProfile = Ref('NFSInstanceProfile'),
+            Tags = Tags(Name='NFS Backup Agent'),
+            InstanceInitiatedShutdownBehavior = 'stop',
+            UserData = Base64(Join('', bootstrapScript)),
+            CreationPolicy = {
+              "ResourceSignal" : {
+                "Timeout" : "PT5M"
+              }
+            }
+        )
+    )
+    return t
+
 setInputs(t,args)
 setMappings(t)
-buildVPC(t, args.dualAZ
+buildVPC(t, args.dualAZ)
 buildFoundation(t, args.dev)
 if (args.dev):
     buildDeveloperBastion(t)
@@ -762,5 +959,6 @@ buildEFS(t, args.dev)
 buildRedis(t, args.dualAZ)
 buildMySQL(t, args)
 buildCertWriter(t, args.dev)
+buildNFSBackup(t)
 
 print(t.to_json())
