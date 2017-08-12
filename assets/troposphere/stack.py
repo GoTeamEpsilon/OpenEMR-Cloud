@@ -5,7 +5,7 @@
 
 from troposphere import Base64, FindInMap, GetAtt, GetAZs, Join, Select, Split, Output
 from troposphere import Parameter, Ref, Tags, Template
-from troposphere import ec2, route53, kms, s3, efs, elasticache, cloudtrail, rds, iam, cloudformation, awslambda, events
+from troposphere import ec2, route53, kms, s3, efs, elasticache, cloudtrail, rds, iam, cloudformation, awslambda, events, elasticbeanstalk
 
 import argparse
 
@@ -13,21 +13,6 @@ ref_stack_id = Ref('AWS::StackId')
 ref_region = Ref('AWS::Region')
 ref_stack_name = Ref('AWS::StackName')
 ref_account = Ref('AWS::AccountId')
-
-parser = argparse.ArgumentParser(description="OpenEMR stack builder")
-parser.add_argument("--dev", help="build [security breaching!] development resources", action="store_true")
-parser.add_argument("--dualAZ", help="build AZ-hardened stack", action="store_true")
-args = parser.parse_args()
-
-t = Template()
-
-t.add_version('2010-09-09')
-descString='OpenEMR v5.0.0 cloud deployment'
-if (args.dev):
-    descString+=' [developer]'
-if (args.dualAZ):
-    descString+=' [dual-AZ]'
-t.add_description(descString)
 
 def setInputs(t, args):
     t.add_parameter(Parameter(
@@ -73,28 +58,28 @@ def setMappings(t):
     t.add_mapping('RegionData', {
         "us-east-1" : {
             "RegionBucket": "openemr-useast1",
-            "ApplicationSource": "beanstalk/openemr-5.0.0-005.zip",
+            "ApplicationSource": "beanstalk/openemr-5.0.0-006.zip",
             "MySQLVersion": "5.6.27",
             "AmazonAMI": "ami-a4c7edb2",
             "UbuntuAMI": "ami-d15a75c7"
         },
         "us-west-2" : {
             "RegionBucket": "openemr-uswest2",
-            "ApplicationSource": "beanstalk/openemr-5.0.0-005.zip",
+            "ApplicationSource": "beanstalk/openemr-5.0.0-006.zip",
             "MySQLVersion": "5.6.27",
             "AmazonAMI": "ami-6df1e514",
             "UbuntuAMI": "ami-835b4efa"
         },
         "eu-west-1" : {
             "RegionBucket": "openemr-euwest1",
-            "ApplicationSource": "beanstalk/openemr-5.0.0-005.zip",
+            "ApplicationSource": "beanstalk/openemr-5.0.0-006.zip",
             "MySQLVersion": "5.6.27",
             "AmazonAMI": "ami-d7b9a2b1",
             "UbuntuAMI": "ami-6d48500b"
         },
         "ap-southeast-2" : {
             "RegionBucket": "openemr-apsoutheast2",
-            "ApplicationSource": "beanstalk/openemr-5.0.0-005.zip",
+            "ApplicationSource": "beanstalk/openemr-5.0.0-006.zip",
             "MySQLVersion": "5.6.27",
             "AmazonAMI": "ami-10918173",
             "UbuntuAMI": "ami-e94e5e8a"
@@ -456,6 +441,7 @@ def buildDeveloperBastion(t):
             ImageId = FindInMap('RegionData', ref_region, 'AmazonAMI'),
             InstanceType = 't2.nano',
             KeyName = Ref('EC2KeyPair'),
+            Tags=Tags(Name="Developer Bastion"),
             NetworkInterfaces = [ec2.NetworkInterfaceProperty(
                 AssociatePublicIpAddress = True,
                 DeviceIndex = "0",
@@ -613,7 +599,6 @@ def buildMySQL(t, args):
         )
     )
 
-    ### RDSInstance
     t.add_resource(
         rds.DBInstance(
             'RDSInstance',
@@ -1360,8 +1345,252 @@ def buildDocumentBackups(t):
     )
     return t
 
-def builtApplication(t):
+def buildApplication(t):
+
+    t.add_resource(
+        iam.Role(
+            'BeanstalkInstanceRole',
+            AssumeRolePolicyDocument = {
+               "Version" : "2012-10-17",
+               "Statement": [ {
+                  "Effect": "Allow",
+                  "Principal": {
+                     "Service": [ "ec2.amazonaws.com" ]
+                  },
+                  "Action": [ "sts:AssumeRole" ]
+               } ]
+            },
+            Path='/',
+            Policies=[iam.Policy(
+                PolicyName="root",
+                PolicyDocument= {
+                    "Version": "2012-10-17",
+                    "Statement": [
+                        {
+                            "Sid": "BucketAccess",
+                            "Action": [
+                            "s3:Get*",
+                            "s3:List*",
+                            "s3:PutObject"
+                            ],
+                            "Effect": "Allow",
+                            "Resource": [
+                            "arn:aws:s3:::elasticbeanstalk-*",
+                            "arn:aws:s3:::elasticbeanstalk-*/*"
+                            ]
+                        },
+                        {
+                            "Sid": "XRayAccess",
+                            "Action":[
+                                "xray:PutTraceSegments",
+                                "xray:PutTelemetryRecords"
+                            ],
+                            "Effect": "Allow",
+                            "Resource": "*"
+                        },
+                        {
+                            "Sid": "CloudWatchLogsAccess",
+                            "Action": [
+                                "logs:PutLogEvents",
+                                "logs:CreateLogStream"
+                            ],
+                            "Effect": "Allow",
+                            "Resource": [ "arn:aws:logs:*:*:log-group:/aws/elasticbeanstalk*" ]
+                        },
+                        {
+                            "Sid": "Stmt1500699052000",
+                            "Effect": "Allow",
+                            "Action": [
+                              "s3:GetObject"
+                            ],
+                            "Resource": [
+                                Join("", ["arn:aws:s3:::", Ref('S3Bucket'), "/CA/certs/*"]),
+                                Join("", ["arn:aws:s3:::", Ref('S3Bucket'), "/CA/keys/beanstalk.key"])
+                            ]
+                        },
+                        {
+                          "Sid": "Stmt1500612724002",
+                          "Effect": "Allow",
+                          "Action": [
+                              "kms:Decrypt"
+                          ],
+                          "Resource": [ GetAtt('OpenEMRKey', 'Arn') ]
+                        }
+                    ]
+                }
+            )]
+        )
+    )
+
+    t.add_resource(
+        iam.InstanceProfile(
+            'BeanstalkInstanceProfile',
+            Path = '/',
+            Roles = [Ref('BeanstalkInstanceRole')]
+        )
+    )
+
+    t.add_resource(elasticbeanstalk.Application(
+        "EBApplication",
+        Description="OpenEMR Application Stack"
+    ))
+
+    t.add_resource(elasticbeanstalk.ApplicationVersion(
+        "EBApplicationVersion",
+        Description="Version 1.0",
+        ApplicationName=Ref("EBApplication"),
+        SourceBundle=elasticbeanstalk.SourceBundle(
+            S3Bucket=FindInMap("RegionData", ref_region, "RegionBucket"),
+            S3Key=FindInMap("RegionData", ref_region, "ApplicationSource")
+        )
+    ))
+
+    options = [
+        elasticbeanstalk.OptionSettings(
+            Namespace='aws:autoscaling:launchconfiguration',
+            OptionName='SecurityGroups',
+            Value=Ref('ApplicationSecurityGroup')
+        ),
+        elasticbeanstalk.OptionSettings(
+            Namespace='aws:autoscaling:launchconfiguration',
+            OptionName='EC2KeyName',
+            Value=Ref('EC2KeyPair')
+        ),
+        elasticbeanstalk.OptionSettings(
+            Namespace='aws:autoscaling:launchconfiguration',
+            OptionName='IamInstanceProfile',
+            Value=GetAtt('BeanstalkInstanceProfile', 'Arn')
+        ),
+        elasticbeanstalk.OptionSettings(
+            Namespace='aws:autoscaling:launchconfiguration',
+            OptionName='InstanceType',
+            Value='t2.micro'
+        ),
+        elasticbeanstalk.OptionSettings(
+            Namespace='aws:elb:listener',
+            OptionName='InstanceProtocol',
+            Value='HTTPS'
+        ),
+        elasticbeanstalk.OptionSettings(
+            Namespace='aws:elb:listener',
+            OptionName='InstancePort',
+            Value='443'
+        ),
+        elasticbeanstalk.OptionSettings(
+            Namespace='aws:elb:policies',
+            OptionName='ConnectionDrainingEnabled',
+            Value="true"
+        ),
+        elasticbeanstalk.OptionSettings(
+            Namespace='aws:elb:policies',
+            OptionName='ConnectionSettingIdleTimeout',
+            Value='3600'
+        ),
+        elasticbeanstalk.OptionSettings(
+            Namespace='aws:elb:policies:backendencryption',
+            OptionName='PublicKeyPolicyNames',
+            Value='backendkey'
+        ),
+        elasticbeanstalk.OptionSettings(
+            Namespace='aws:elb:policies:backendencryption',
+            OptionName='InstancePorts',
+            Value='443'
+        ),
+        elasticbeanstalk.OptionSettings(
+            Namespace='aws:elb:policies:backendkey',
+            OptionName='PublicKey',
+            Value=GetAtt('EBCert','PublicKey')
+        ),
+        elasticbeanstalk.OptionSettings(
+            Namespace='aws:ec2:vpc',
+            OptionName='VPCId',
+            Value=Ref('VPC')
+        ),
+        elasticbeanstalk.OptionSettings(
+            Namespace='aws:ec2:vpc',
+            OptionName='Subnets',
+            Value=Join(',', [Ref('PrivateSubnet1'), Ref('PrivateSubnet2')])
+        ),
+        elasticbeanstalk.OptionSettings(
+            Namespace='aws:ec2:vpc',
+            OptionName='ELBSubnets',
+            Value=Join(',', [Ref('PublicSubnet1'), Ref('PublicSubnet2')])
+        ),
+        elasticbeanstalk.OptionSettings(
+            Namespace='aws:elasticbeanstalk:application',
+            OptionName='Application Healthcheck URL',
+            Value='HTTPS:443/openemr/version.php'
+        ),
+        elasticbeanstalk.OptionSettings(
+            Namespace='aws:elasticbeanstalk:application:environment',
+            OptionName='TIMEZONE',
+            Value=Ref('TimeZone')
+        ),
+        elasticbeanstalk.OptionSettings(
+            Namespace='aws:elasticbeanstalk:application:environment',
+            OptionName='REDIS_IP',
+            Value='redis.openemr.local'
+        ),
+        elasticbeanstalk.OptionSettings(
+            Namespace='aws:elasticbeanstalk:application:environment',
+            OptionName='FILE_SYSTEM_ID',
+            Value=Ref('ElasticFileSystem')
+        ),
+        elasticbeanstalk.OptionSettings(
+            Namespace='aws:elasticbeanstalk:application:environment',
+            OptionName='NFS_HOSTNAME',
+            Value='nfs.openemr.local'
+        ),
+        elasticbeanstalk.OptionSettings(
+            Namespace='aws:elasticbeanstalk:application:environment',
+            OptionName='S3BUCKET',
+            Value=Ref('S3Bucket')
+        ),
+        elasticbeanstalk.OptionSettings(
+            Namespace='aws:elasticbeanstalk:application:environment',
+            OptionName='KMSKEY',
+            Value=Ref('OpenEMRKey')
+        )
+    ]
+
+    t.add_resource(
+        elasticbeanstalk.Environment(
+            'EBEnvironment',
+            DependsOn = ["DNSEFS", "DNSRedis", "DNSCouchDB", "DNSMySQL"],
+            ApplicationName = Ref('EBApplication'),
+            Description = 'OpenEMR v5.0.0 cloud deployment',
+            SolutionStackName = '64bit Amazon Linux 2017.03 v2.4.2 running PHP 7.0',
+            VersionLabel = Ref('EBApplicationVersion'),
+            OptionSettings = options
+        )
+    )
+
     return t
+
+def setOutputs(t):
+    t.add_output(
+        Output(
+            'OpenEMR',
+            Description='OpenEMR Setup',
+            Value=Join('', ['http://', GetAtt('EBEnvironment', 'EndpointURL'), '/openemr'])
+        )
+    )
+    return t
+
+parser = argparse.ArgumentParser(description="OpenEMR stack builder")
+parser.add_argument("--dev", help="build [security breaching!] development resources", action="store_true")
+parser.add_argument("--dualAZ", help="build AZ-hardened stack", action="store_true")
+args = parser.parse_args()
+
+t = Template()
+
+t.add_version('2010-09-09')
+descString='OpenEMR v5.0.0 cloud deployment'
+if (args.dev):
+    descString+=' [developer]'
+if (args.dualAZ):
+    descString+=' [dual-AZ]'
+t.add_description(descString)
 
 setInputs(t,args)
 setMappings(t)
@@ -1377,5 +1606,6 @@ buildNFSBackup(t)
 buildDocumentStore(t, args)
 buildDocumentBackups(t)
 buildApplication(t)
+setOutputs(t)
 
 print(t.to_json())
