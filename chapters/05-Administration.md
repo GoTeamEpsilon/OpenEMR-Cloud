@@ -36,7 +36,7 @@ _Note that if you're using partial-upfront reserved instances, the front-loaded 
 
 ### What are the recommendations for tracking custom code changes?
 
-You'll want to have an _exact copy of what is running on the cloud_. The initial setup uses this slightly customized OpenEMR codebase that you'll want to [download here](https://sourceforge.net/projects/openemr/files/OpenEMR%20Cloud/5.0.0/openemr-v5-0-0-2-cloud.tar.gz/download). Note that you must base your changes off of this codebase and not any other source.
+You'll want to have an _exact copy of what is running on the cloud_. The initial setup uses this slightly customized OpenEMR codebase that you'll want to [download here](https://sourceforge.net/projects/openemr/files/OpenEMR%20Cloud/5.0.0/openemr-v5-0-0-4-cloud.tar.gz/download). Note that you must base your changes off of this codebase and not any other source.
 
 It is very important to hold this local copy of OpenEMR. If you are planning on making a lot of code customizations, it is best to use [Git with a centralized cloud setup](https://www.sitepoint.com/git-for-beginners/). This approach makes certain that no changes are lost and multiple team members can access the code.
 
