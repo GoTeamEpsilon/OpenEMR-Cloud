@@ -22,15 +22,6 @@ def setInputs(t, args):
     ))
 
     t.add_parameter(Parameter(
-        'RDSPassword',
-        NoEcho = True,
-        Description = 'The database admin account password',
-        Type = 'String',
-        MinLength = '8',
-        MaxLength = '41'
-    ))
-
-    t.add_parameter(Parameter(
         'TimeZone',
         Description = 'The timezone OpenEMR will run in',
         Default = 'America/Chicago',
@@ -38,21 +29,53 @@ def setInputs(t, args):
         MaxLength = '41'
     ))
 
-    t.add_parameter(Parameter(
-        'PatientRecords',
-        Description = 'Database storage for patient records (minimum 10 GB)',
-        Default = '10',
-        Type = 'Number',
-        MinValue = '10'
-    ))
+    if (args.recovery):
+        t.add_parameter(Parameter(
+            'RecoveryKMSKey',
+            Description = 'The KMS key ARN for the previous stack (expressed as ''arn:aws:kms...'')',
+            Type = 'String'
+        ))
+        t.add_parameter(Parameter(
+            'RecoveryRDSSnapshotARN',
+            Description = 'The database snapshot ARN for the previous stack',
+            Type = 'String'
+        ))
+        t.add_parameter(Parameter(
+            'RecoveryCouchDBSnapshot',
+            Description = 'The document store snapshot ID for the previous stack',
+            Type = 'String'
+        ))
+        t.add_parameter(Parameter(
+            'RecoveryS3Bucket',
+            Description = 'The S3 bucket for the previous stack',
+            Type = 'String'
+        ))
+    else:
+        t.add_parameter(Parameter(
+            'RDSPassword',
+            NoEcho = True,
+            Description = 'The database admin account password',
+            Type = 'String',
+            MinLength = '8',
+            MaxLength = '41'
+        ))
 
-    t.add_parameter(Parameter(
-        'DocumentStorage',
-        Description = 'Document database for patient documents (minimum 500 GB)',
-        Default = '500',
-        Type = 'Number',
-        MinValue = '10'
-    ))
+        t.add_parameter(Parameter(
+            'PatientRecords',
+            Description = 'Database storage for patient records (minimum 10 GB)',
+            Default = '10',
+            Type = 'Number',
+            MinValue = '10'
+        ))
+
+        t.add_parameter(Parameter(
+            'DocumentStorage',
+            Description = 'Document database for patient documents (minimum 500 GB)',
+            Default = '500',
+            Type = 'Number',
+            MinValue = '10'
+        ))
+    return t
 
 def setMappings(t):
     t.add_mapping('RegionData', {
@@ -308,7 +331,7 @@ def buildVPC(t, dualAZ):
 
     return t
 
-def buildFoundation(t, dev):
+def buildFoundation(t, args):
 
     t.add_resource(
         route53.HostedZone(
@@ -321,27 +344,28 @@ def buildFoundation(t, dev):
         )
     )
 
-    t.add_resource(
-        kms.Key(
-            'OpenEMRKey',
-            DeletionPolicy = 'Delete' if dev else 'Retain',
-            KeyPolicy = {
-                "Version": "2012-10-17",
-                "Id": "key-default-1",
-                "Statement": [{
-                    "Sid": "1",
-                    "Effect": "Allow",
-                    "Principal": {
-                        "AWS": [
-                            Join(':', ['arn:aws:iam:', ref_account, 'root'])
-                        ]
-                    },
-                    "Action": "kms:*",
-                    "Resource": "*"
-                }]
-            }
+    if (not args.recovery):
+        t.add_resource(
+            kms.Key(
+                'OpenEMRKey',
+                DeletionPolicy = 'Delete' if args.dev else 'Retain',
+                KeyPolicy = {
+                    "Version": "2012-10-17",
+                    "Id": "key-default-1",
+                    "Statement": [{
+                        "Sid": "1",
+                        "Effect": "Allow",
+                        "Principal": {
+                            "AWS": [
+                                Join(':', ['arn:aws:iam:', ref_account, 'root'])
+                            ]
+                        },
+                        "Action": "kms:*",
+                        "Resource": "*"
+                    }]
+                }
+            )
         )
-    )
 
     t.add_resource(
         s3.Bucket(
@@ -599,26 +623,42 @@ def buildMySQL(t, args):
         )
     )
 
-    t.add_resource(
-        rds.DBInstance(
-            'RDSInstance',
-            DeletionPolicy = 'Delete' if args.dev else 'Snapshot',
-            DBName = 'openemr',
-            AllocatedStorage = Ref('PatientRecords'),
-            DBInstanceClass = 'db.t2.small',
-            Engine = 'MySQL',
-            EngineVersion = FindInMap('RegionData', ref_region, 'MySQLVersion'),
-            MasterUsername = 'openemr',
-            MasterUserPassword = Ref('RDSPassword'),
-            PubliclyAccessible = False,
-            DBSubnetGroupName = Ref('RDSSubnetGroup'),
-            VPCSecurityGroups = [Ref('DBSecurityGroup')],
-            KmsKeyId = Ref('OpenEMRKey'),
-            StorageEncrypted = True,
-            MultiAZ = args.dualAZ,
-            Tags = Tags(Name='Patient Records')
+    if (args.recovery):
+        #TODO: this comes up with the old key, not the new one! wrong, needs migration
+        t.add_resource(
+            rds.DBInstance(
+                'RDSInstance',
+                DeletionPolicy = 'Delete' if args.dev else 'Snapshot',
+                DBSnapshotIdentifier = Ref('RecoveryRDSSnapshotARN'),
+                DBInstanceClass = 'db.t2.small',
+                PubliclyAccessible = False,
+                DBSubnetGroupName = Ref('RDSSubnetGroup'),
+                VPCSecurityGroups = [Ref('DBSecurityGroup')],
+                MultiAZ = args.dualAZ,
+                Tags = Tags(Name='Patient Records')
+            )
         )
-    )
+    else:
+        t.add_resource(
+            rds.DBInstance(
+                'RDSInstance',
+                DeletionPolicy = 'Delete' if args.dev else 'Snapshot',
+                DBName = 'openemr',
+                AllocatedStorage = Ref('PatientRecords'),
+                DBInstanceClass = 'db.t2.small',
+                Engine = 'MySQL',
+                EngineVersion = FindInMap('RegionData', ref_region, 'MySQLVersion'),
+                MasterUsername = 'openemr',
+                MasterUserPassword = Ref('RDSPassword'),
+                PubliclyAccessible = False,
+                DBSubnetGroupName = Ref('RDSSubnetGroup'),
+                VPCSecurityGroups = [Ref('DBSecurityGroup')],
+                KmsKeyId = OpenEMRKeyID,
+                StorageEncrypted = True,
+                MultiAZ = args.dualAZ,
+                Tags = Tags(Name='Patient Records')
+            )
+        )
 
     t.add_resource(
         route53.RecordSetType(
@@ -668,7 +708,7 @@ def buildCertWriter(t, dev):
                       "kms:GenerateDataKey*"
                   ],
                   "Resource": [
-                    GetAtt("OpenEMRKey", "Arn")
+                    OpenEMRKeyARN
                   ]
                 }
                 ]
@@ -713,7 +753,7 @@ def buildCertWriter(t, dev):
         "openssl x509 -req -in work/beanstalk.csr -out certs/beanstalk.crt -CA certs/ca.crt -CAkey keys/ca.key -CAcreateserial\n",
         "openssl req -new -nodes -newkey rsa:2048 -keyout keys/couch.key -out work/couch.csr -days 3648 -subj /CN=couchdb.openemr.local\n",
         "openssl x509 -req -in work/couch.csr -out certs/couch.crt -CA certs/ca.crt -CAkey keys/ca.key\n",
-        "aws s3 sync keys s3://", Ref('S3Bucket'), "/CA/keys --sse aws:kms --sse-kms-key-id ", Ref('OpenEMRKey'), " --acl private\n",
+        "aws s3 sync keys s3://", Ref('S3Bucket'), "/CA/keys --sse aws:kms --sse-kms-key-id ", OpenEMRKeyID, " --acl private\n",
         "aws s3 sync certs s3://", Ref('S3Bucket'), "/CA/certs --acl public-read\n",
         "/opt/aws/bin/cfn-signal -e 0 ",
         "         --stack ", ref_stack_name,
@@ -819,7 +859,7 @@ def buildCertWriter(t, dev):
 
     return t
 
-def buildNFSBackup(t):
+def buildNFSBackup(t, args):
     t.add_resource(
         ec2.SecurityGroup(
             'NFSBackupSecurityGroup',
@@ -838,42 +878,60 @@ def buildNFSBackup(t):
         )
     )
 
+    rolePolicyStatements = [
+        {
+          "Sid": "Stmt1500699052003",
+          "Effect": "Allow",
+          "Action": ["s3:ListBucket"],
+          "Resource" : [Join("", ["arn:aws:s3:::", Ref('S3Bucket')])]
+        },
+        {
+            "Sid": "Stmt1500699052000",
+            "Effect": "Allow",
+            "Action": [
+              "s3:PutObject",
+              "s3:GetObject",
+              "s3:DeleteObject"
+            ],
+            "Resource": [Join("", ["arn:aws:s3:::", Ref('S3Bucket'), '/Backup/*'])]
+        },
+        {
+            "Sid": "Stmt1500612724002",
+            "Effect": "Allow",
+            "Action": [
+              "kms:Encrypt",
+              "kms:Decrypt",
+              "kms:GenerateDataKey*"
+            ],
+            "Resource": [ OpenEMRKeyARN ]
+        }
+    ]
+
+    if (args.recovery):
+        rolePolicyStatements.extend([
+            {
+                "Sid": "Stmt1500699052004",
+                "Effect": "Allow",
+                "Action": ["s3:ListBucket"],
+                "Resource" : [Join("", ["arn:aws:s3:::", Ref('RecoveryS3Bucket')])]
+            },
+            {
+                "Sid": "Stmt1500699052005",
+                "Effect": "Allow",
+                "Action": [
+                  "s3:GetObject",
+                ],
+                "Resource": [Join("", ["arn:aws:s3:::", Ref('RecoveryS3Bucket'), '/Backup/*'])]
+            },
+        ])
+
     t.add_resource(
         iam.ManagedPolicy(
             'NFSBackupPolicy',
             Description='Policy for ongoing NFS backup instance',
             PolicyDocument = {
                 "Version": "2012-10-17",
-                "Statement": [
-                    {
-                      "Sid": "Stmt1500699052003",
-                      "Effect": "Allow",
-                      "Action": ["s3:ListBucket"],
-                      "Resource" : Join("", ["arn:aws:s3:::", Ref('S3Bucket')])
-                    },
-                    {
-                        "Sid": "Stmt1500699052000",
-                        "Effect": "Allow",
-                        "Action": [
-                          "s3:PutObject",
-                          "s3:GetObject",
-                          "s3:DeleteObject"
-                        ],
-                        "Resource": [
-                            Join("", ["arn:aws:s3:::", Ref('S3Bucket'), '/Backup/*'])
-                        ]
-                    },
-                    {
-                        "Sid": "Stmt1500612724002",
-                        "Effect": "Allow",
-                        "Action": [
-                          "kms:Encrypt",
-                          "kms:Decrypt",
-                          "kms:GenerateDataKey*"
-                        ],
-                        "Resource": [ GetAtt("OpenEMRKey", "Arn") ]
-                    }
-                ]
+                "Statement": rolePolicyStatements
             }
         )
     )
@@ -924,7 +982,7 @@ def buildNFSBackup(t):
     setupScript = [
         "#!/bin/bash\n",
         "S3=", Ref('S3Bucket'), "\n",
-        "KMS=", Ref('OpenEMRKey'), "\n",
+        "KMS=", OpenEMRKeyID, "\n",
         "apt-get -y update\n",
         "DEBIAN_FRONTEND=noninteractive apt-get dist-upgrade -y -o Dpkg::Options::=\"--force-confdef\" -o Dpkg::Options::=\"--force-confold\" --force-yes\n",
         "apt-get -y install duplicity python-boto nfs-common awscli\n",
@@ -941,17 +999,17 @@ def buildNFSBackup(t):
     backupScript = [
         "#!/bin/bash\n",
         "S3=", Ref('S3Bucket'), "\n",
-        "KMS=", Ref('OpenEMRKey'), "\n",
+        "KMS=", OpenEMRKeyID, "\n",
         "PASSPHRASE=`aws s3 cp s3://$S3/Backup/passphrase.txt - --sse aws:kms --sse-kms-key-id $KMS`\n",
         "export PASSPHRASE\n",
         "duplicity --full-if-older-than 1M /mnt/efs s3://s3.amazonaws.com/$S3/Backup\n",
         "duplicity remove-all-but-n-full 2 --force s3://s3.amazonaws.com/$S3/Backup\n"
     ]
 
-    recoveryScript = [
+    generalRecoveryScript = [
         "#!/bin/bash\n",
         "S3=", Ref('S3Bucket'), "\n",
-        "KMS=", Ref('OpenEMRKey'), "\n",
+        "KMS=", OpenEMRKeyID, "\n",
         "PASSPHRASE=`aws s3 cp s3://$S3/Backup/passphrase.txt - --sse aws:kms --sse-kms-key-id $KMS`\n",
         "export PASSPHRASE\n",
         "duplicity --force s3://s3.amazonaws.com/$S3/Backup /mnt/efs\n"
@@ -972,7 +1030,7 @@ def buildNFSBackup(t):
                 "group" : "root"
             },
             "/root/recovery.sh" : {
-                "content" : Join("", recoveryScript),
+                "content" : Join("", generalRecoveryScript),
                 "mode"  : "000500",
                 "owner" : "root",
                 "group" : "root"
@@ -985,14 +1043,51 @@ def buildNFSBackup(t):
         }
     )
 
-    bootstrapMetadata = cloudformation.Metadata(
-        cloudformation.Init(
-            cloudformation.InitConfigSets(
-                Setup = ['Install']
-            ),
-            Install=bootstrapInstall
+    if (args.recovery):
+
+        stackRecoveryScript = [
+            "#!/bin/bash\n",
+            "S3=", Ref('RecoveryS3Bucket'), "\n",
+            "KMS=", OpenEMRKeyID, "\n",
+            "PASSPHRASE=`aws s3 cp s3://$S3/Backup/passphrase.txt - --sse aws:kms --sse-kms-key-id $KMS`\n",
+            "export PASSPHRASE\n",
+            "duplicity --force s3://s3.amazonaws.com/$S3/Backup /mnt/efs\n"
+        ]
+
+        bootstrapRecovery = cloudformation.InitConfig(
+            files = {
+                "/root/stackRestore.sh" : {
+                    "content" : Join("", stackRecoveryScript),
+                    "mode"  : "000500",
+                    "owner" : "root",
+                    "group" : "root"
+                }
+            },
+            commands = {
+                "02_recover" : {
+                  "command" : "/root/stackRestore.sh"
+                }
+            }
         )
-    )
+
+        bootstrapMetadata = cloudformation.Metadata(
+            cloudformation.Init(
+                cloudformation.InitConfigSets(
+                    Setup = ['Install','Recover']
+                ),
+                Install=bootstrapInstall,
+                Recover=bootstrapRecovery
+            )
+        )
+    else:
+        bootstrapMetadata = cloudformation.Metadata(
+            cloudformation.Init(
+                cloudformation.InitConfigSets(
+                    Setup = ['Install']
+                ),
+                Install=bootstrapInstall
+            )
+        )
 
     t.add_resource(
         ec2.Instance(
@@ -1015,6 +1110,18 @@ def buildNFSBackup(t):
             }
         )
     )
+
+    t.add_resource(
+        route53.RecordSetType(
+            'DNSBackupAgent',
+            HostedZoneId = Ref('DNS'),
+            Name = 'nfsbackups.openemr.local',
+            Type = 'CNAME',
+            TTL = '900',
+            ResourceRecords = [GetAtt('NFSBackupInstance', 'PrivateDnsName')]
+        )
+    )
+
     return t
 
 def buildDocumentStore(t, args):
@@ -1036,18 +1143,30 @@ def buildDocumentStore(t, args):
         )
     )
 
-    t.add_resource(
-        ec2.Volume(
-            'CouchDBVolume',
-            DeletionPolicy = 'Delete' if args.dev else 'Snapshot',
-            Size=Ref('DocumentStorage'),
-            AvailabilityZone = Select("0", GetAZs("")),
-            VolumeType = 'sc1',
-            Encrypted = True,
-            KmsKeyId = Ref('OpenEMRKey'),
-            Tags=Tags(Name="Patient Documents")
+    if (args.recovery):
+        t.add_resource(
+            ec2.Volume(
+                'CouchDBVolume',
+                DeletionPolicy = 'Delete' if args.dev else 'Snapshot',
+                AvailabilityZone = Select("0", GetAZs("")),
+                VolumeType = 'sc1',
+                SnapshotId = Ref('RecoveryCouchDBSnapshot'),
+                Tags=Tags(Name="Patient Documents")
+            )
         )
-    )
+    else:
+        t.add_resource(
+            ec2.Volume(
+                'CouchDBVolume',
+                DeletionPolicy = 'Delete' if args.dev else 'Snapshot',
+                Size=Ref('DocumentStorage'),
+                AvailabilityZone = Select("0", GetAZs("")),
+                VolumeType = 'sc1',
+                Encrypted = True,
+                KmsKeyId = OpenEMRKeyID,
+                Tags=Tags(Name="Patient Documents")
+            )
+        )
 
     t.add_resource(
         iam.ManagedPolicy(
@@ -1073,7 +1192,7 @@ def buildDocumentStore(t, args):
                       "Action": [
                           "kms:Decrypt"
                       ],
-                      "Resource": [ GetAtt("OpenEMRKey", "Arn") ]
+                      "Resource": [ OpenEMRKeyARN ]
                     }
                 ]
             }
@@ -1142,29 +1261,53 @@ def buildDocumentStore(t, args):
         "/dev/xvdd /mnt/db ext4 defaults,nofail 0 0\n"
     ]
 
-    setupScript = [
-        "#!/bin/bash -xe\n",
-        "exec > /tmp/part-002.log 2>&1\n",
-        "DEBIAN_FRONTEND=noninteractive apt-get dist-upgrade -y -o Dpkg::Options::=\"--force-confdef\" -o Dpkg::Options::=\"--force-confold\" --force-yes\n",
-        "mkfs -t ext4 /dev/xvdd\n",
-        "mkdir /mnt/db\n",
-        "cat /root/fstab.append >> /etc/fstab\n",
-        "mount /mnt/db\n",
-        "apt-get -y install couchdb awscli\n",
-        "service couchdb stop\n",
-        "aws configure set s3.signature_version s3v4\n",
-        "aws s3 cp s3://", Ref('S3Bucket'), "/CA/certs/ca.crt /etc/couchdb\n",
-        "aws s3 cp s3://", Ref('S3Bucket'), "/CA/certs/couch.crt /etc/couchdb\n",
-        "chmod 664 /etc/couchdb/*.crt\n",
-        "aws s3 cp s3://", Ref('S3Bucket'), "/CA/keys/couch.key /etc/couchdb --sse aws:kms --sse-kms-key-id ", Ref('OpenEMRKey'), "\n",
-        "chmod 660 /etc/couchdb/couch.key\n",
-        "chown couchdb:couchdb /etc/couchdb/*.crt /etc/couchdb/*.key\n",
-        "mv /var/lib/couchdb /mnt/db/couchdb\n",
-        "ln -s /mnt/db/couchdb /var/lib/couchdb\n",
-        "cp /root/ip.ini /root/ssl.ini /etc/couchdb/local.d\n",
-        "chown couchdb:couchdb /etc/couchdb/local.d/ip.ini /etc/couchdb/local.d/ssl.ini\n",
-        "service couchdb restart\n"
-    ]
+    if (args.recovery):
+        setupScript = [
+            "#!/bin/bash -xe\n",
+            "exec > /tmp/part-002.log 2>&1\n",
+            "DEBIAN_FRONTEND=noninteractive apt-get dist-upgrade -y -o Dpkg::Options::=\"--force-confdef\" -o Dpkg::Options::=\"--force-confold\" --force-yes\n",
+            "mkdir /mnt/db\n",
+            "cat /root/fstab.append >> /etc/fstab\n",
+            "mount /mnt/db\n",
+            "apt-get -y install couchdb awscli\n",
+            "service couchdb stop\n",
+            "aws configure set s3.signature_version s3v4\n",
+            "aws s3 cp s3://", Ref('S3Bucket'), "/CA/certs/ca.crt /etc/couchdb\n",
+            "aws s3 cp s3://", Ref('S3Bucket'), "/CA/certs/couch.crt /etc/couchdb\n",
+            "chmod 664 /etc/couchdb/*.crt\n",
+            "aws s3 cp s3://", Ref('S3Bucket'), "/CA/keys/couch.key /etc/couchdb --sse aws:kms --sse-kms-key-id ", OpenEMRKeyID, "\n",
+            "chmod 660 /etc/couchdb/couch.key\n",
+            "chown couchdb:couchdb /etc/couchdb/*.crt /etc/couchdb/*.key\n",
+            "rm -rf /var/lib/couchdb\n",
+            "ln -s /mnt/db/couchdb /var/lib/couchdb\n",
+            "cp /root/ip.ini /root/ssl.ini /etc/couchdb/local.d\n",
+            "chown couchdb:couchdb /etc/couchdb/local.d/ip.ini /etc/couchdb/local.d/ssl.ini\n",
+            "service couchdb start\n"
+        ]
+    else:
+        setupScript = [
+            "#!/bin/bash -xe\n",
+            "exec > /tmp/part-002.log 2>&1\n",
+            "DEBIAN_FRONTEND=noninteractive apt-get dist-upgrade -y -o Dpkg::Options::=\"--force-confdef\" -o Dpkg::Options::=\"--force-confold\" --force-yes\n",
+            "mkfs -t ext4 /dev/xvdd\n",
+            "mkdir /mnt/db\n",
+            "cat /root/fstab.append >> /etc/fstab\n",
+            "mount /mnt/db\n",
+            "apt-get -y install couchdb awscli\n",
+            "service couchdb stop\n",
+            "aws configure set s3.signature_version s3v4\n",
+            "aws s3 cp s3://", Ref('S3Bucket'), "/CA/certs/ca.crt /etc/couchdb\n",
+            "aws s3 cp s3://", Ref('S3Bucket'), "/CA/certs/couch.crt /etc/couchdb\n",
+            "chmod 664 /etc/couchdb/*.crt\n",
+            "aws s3 cp s3://", Ref('S3Bucket'), "/CA/keys/couch.key /etc/couchdb --sse aws:kms --sse-kms-key-id ", OpenEMRKeyID, "\n",
+            "chmod 660 /etc/couchdb/couch.key\n",
+            "chown couchdb:couchdb /etc/couchdb/*.crt /etc/couchdb/*.key\n",
+            "mv /var/lib/couchdb /mnt/db/couchdb\n",
+            "ln -s /mnt/db/couchdb /var/lib/couchdb\n",
+            "cp /root/ip.ini /root/ssl.ini /etc/couchdb/local.d\n",
+            "chown couchdb:couchdb /etc/couchdb/local.d/ip.ini /etc/couchdb/local.d/ssl.ini\n",
+            "service couchdb start\n"
+        ]
 
     bootstrapInstall = cloudformation.InitConfig(
         files = {
@@ -1414,7 +1557,7 @@ def buildApplication(t):
                           "Action": [
                               "kms:Decrypt"
                           ],
-                          "Resource": [ GetAtt('OpenEMRKey', 'Arn') ]
+                          "Resource": [ OpenEMRKeyARN ]
                         }
                     ]
                 }
@@ -1549,7 +1692,7 @@ def buildApplication(t):
         elasticbeanstalk.OptionSettings(
             Namespace='aws:elasticbeanstalk:application:environment',
             OptionName='KMSKEY',
-            Value=Ref('OpenEMRKey')
+            Value=OpenEMRKeyID
         )
     ]
 
@@ -1567,11 +1710,11 @@ def buildApplication(t):
 
     return t
 
-def setOutputs(t):
+def setOutputs(t, args):
     t.add_output(
         Output(
             'OpenEMR',
-            Description='OpenEMR Setup',
+            Description='OpenEMR Recovery' if args.recovery else 'OpenEMR Setup',
             Value=Join('', ['http://', GetAtt('EBEnvironment', 'EndpointURL'), '/openemr'])
         )
     )
@@ -1579,33 +1722,47 @@ def setOutputs(t):
 
 parser = argparse.ArgumentParser(description="OpenEMR stack builder")
 parser.add_argument("--dev", help="build [security breaching!] development resources", action="store_true")
+parser.add_argument("--force-bastion", help="force developer bastion outside of development", action="store_true")
 parser.add_argument("--dualAZ", help="build AZ-hardened stack", action="store_true")
+parser.add_argument("--recovery", help="load OpenEMR stack from backups", action="store_true")
 args = parser.parse_args()
 
 t = Template()
 
 t.add_version('2010-09-09')
-descString='OpenEMR v5.0.0 cloud deployment'
+descString='OpenEMR v5.0.0.4 cloud deployment'
 if (args.dev):
     descString+=' [developer]'
+if (args.force_bastion):
+    descString+=' [keyhole]'
 if (args.dualAZ):
     descString+=' [dual-AZ]'
+if (args.recovery):
+    descString+=' [recovery]'
 t.add_description(descString)
+
+# reduce to consistent names
+if (args.recovery):
+    OpenEMRKeyID = Select('1', Split('/', Ref('RecoveryKMSKey')))
+    OpenEMRKeyARN = Ref('RecoveryKMSKey')
+else:
+    OpenEMRKeyID = Ref('OpenEMRKey')
+    OpenEMRKeyARN = GetAtt('OpenEMRKey', 'Arn')
 
 setInputs(t,args)
 setMappings(t)
 buildVPC(t, args.dualAZ)
-buildFoundation(t, args.dev)
-if (args.dev):
+buildFoundation(t, args)
+if (args.dev or args.force_bastion):
     buildDeveloperBastion(t)
 buildEFS(t, args.dev)
 buildRedis(t, args.dualAZ)
 buildMySQL(t, args)
 buildCertWriter(t, args.dev)
-buildNFSBackup(t)
+buildNFSBackup(t, args)
 buildDocumentStore(t, args)
 buildDocumentBackups(t)
 buildApplication(t)
-setOutputs(t)
+setOutputs(t, args)
 
 print(t.to_json())
