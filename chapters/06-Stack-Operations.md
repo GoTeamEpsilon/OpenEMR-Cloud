@@ -9,8 +9,8 @@ Up until now, we've only discussed the basic form of the OpenEMR stack, a single
 The CloudFormation template is constructed from ``/cloud/assets/troposphere/stack.py`` via the Troposphere library, taking command-line options and emitting the constructed CFN stack to standard output. It can take the following options:
 
  * **--dev**: Constructs a stack in developer mode, which will make the following concessions.
-  * Delete, instead of snapshot, as many resources as possible when the stack is deleted.
-  * Create a world-visible bastion instance you can ssh (and key forward) into, to enable easy instant access to stack internals without requiring OpenVPN. Be warned: This will **breach HIPAA** if used with live patient data, and should be reserved for testing purposes only. Preventing unthinking misuse of this feature is why a developer version of the stack is not provided in the codebase by default. See "DeveloperKeyhole" in the stack outputs for the public IP of this instance.
+   * Delete, instead of snapshot, as many resources as possible when the stack is deleted.
+   * Create a world-visible bastion instance you can ssh (and key forward) into, to enable easy instant access to stack internals without requiring OpenVPN. Be warned: This will **breach HIPAA** if used with live patient data, and should be reserved for testing purposes only. Preventing unthinking misuse of this feature is why a developer version of the stack is not provided in the codebase by default. See "DeveloperKeyhole" in the stack outputs for the public IP of this instance.
  * **--force-bastion**: Constructs the developer bastion (as above) without changing the rest of the stack's construction.
  * **--dual-AZ**: Builds a stack capable of running in two AWS Availability Zones, and continuing to function even if one AZ is down. [Still in progress.]
  * **--recovery**: Builds a recovery OpenEMR stack that can accept snapshots and backups and restore the entire, configured application from backups.
@@ -32,11 +32,11 @@ Making backups is important, but an untested backup is no backup at all. Schedul
 
   1. Run ``stack.py --recovery > OpenEMR-Recovery.json``.
   2. Start this stack in CloudFormation. You'll have four questions you aren't familiar with.
-    * **RecoveryCouchDBSnapshot**: The EC2 volume snapshot of the EC2 volume from the Patient Documents. (example: ``snap-0ebb4f155ff27040c``)
-    * **RecoveryKMSKey**: The ARN of the KMS key created by the original stack, which protects all the resources you're restoring. (example: ``arn:aws:kms:us-east-1:757972223103:key/6fc10c90-d550-4fd5-bb5c-c2416e31839a``)
-    * **RecoveryRDSSnapshotARN**: The ARN of the RDS database from the original stack. (example: ``arn:aws:rds:us-east-1:757972223103:snapshot:openemr063-backup``)
-    * **RecoveryS3Bucket**: The name of the bucket created by the original stack. (example: ``openemr-c49525c0-82e5-11e7-bcf4-50faeaa96461``)
-    * (Questions like database password and volume size are going to be deduced from the recovered resources. **TimeZone** isn't sticky yet, though.)
+     * **RecoveryCouchDBSnapshot**: The EC2 volume snapshot of the EC2 volume from the Patient Documents. (example: ``snap-0ebb4f155ff27040c``)
+     * **RecoveryKMSKey**: The ARN of the KMS key created by the original stack, which protects all the resources you're restoring. (example: ``arn:aws:kms:us-east-1:757972223103:key/6fc10c90-d550-4fd5-bb5c-c2416e31839a``)
+     * **RecoveryRDSSnapshotARN**: The ARN of the RDS database from the original stack. (example: ``arn:aws:rds:us-east-1:757972223103:snapshot:openemr063-backup``)
+     * **RecoveryS3Bucket**: The name of the bucket created by the original stack. (example: ``openemr-c49525c0-82e5-11e7-bcf4-50faeaa96461``)
+     * (Questions like database password and volume size are going to be deduced from the recovered resources. **TimeZone** isn't sticky yet, though.)
   3. Reassign front-end SSL, per chapter 3. Reassigning DNS is optional if you're only testing your backup.
 
 ### Reconfigure your stack
@@ -44,4 +44,3 @@ Making backups is important, but an untested backup is no backup at all. Schedul
   1. You can now log in with your administration credentials, and verify the data and records have been successfully reloaded and that prior configuration settings have been retained.
   2. Reconfigure your VPN per chapter 4, if this is a full, long-term recovery stack.
   3. Avoid doing anything that would send email or alerts to patients, if you're testing with live patient data. If any OpenEMR plugins can be switched into a test mode, consider doing so.
-  
