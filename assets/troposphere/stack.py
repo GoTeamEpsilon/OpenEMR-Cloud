@@ -32,12 +32,12 @@ def setInputs(t, args):
     if (args.recovery):
         t.add_parameter(Parameter(
             'RecoveryKMSKey',
-            Description = 'The KMS key ARN for the previous stack (expressed as ''arn:aws:kms...'')',
+            Description = 'The KMS key ARN for the previous stack (''arn:aws:kms...'')',
             Type = 'String'
         ))
         t.add_parameter(Parameter(
             'RecoveryRDSSnapshotARN',
-            Description = 'The database snapshot ARN for the previous stack',
+            Description = 'The database snapshot ARN for the previous stack (''arn:aws:rds...'')',
             Type = 'String'
         ))
         t.add_parameter(Parameter(
@@ -1105,7 +1105,7 @@ def buildNFSBackup(t, args):
             UserData = Base64(Join('', bootstrapScript)),
             CreationPolicy = {
               "ResourceSignal" : {
-                "Timeout" : "PT5M"
+                "Timeout" : "PT15M" if args.recovery else "PT5M"
               }
             }
         )
@@ -1723,7 +1723,7 @@ def setOutputs(t, args):
 parser = argparse.ArgumentParser(description="OpenEMR stack builder")
 parser.add_argument("--dev", help="build [security breaching!] development resources", action="store_true")
 parser.add_argument("--force-bastion", help="force developer bastion outside of development", action="store_true")
-parser.add_argument("--dualAZ", help="build AZ-hardened stack", action="store_true")
+parser.add_argument("--dualAZ", help="build AZ-hardened stack [in progress!]", action="store_true")
 parser.add_argument("--recovery", help="load OpenEMR stack from backups", action="store_true")
 args = parser.parse_args()
 
@@ -1760,6 +1760,7 @@ buildRedis(t, args.dualAZ)
 buildMySQL(t, args)
 buildCertWriter(t, args.dev)
 buildNFSBackup(t, args)
+# TODO: document store does not yet support multi-node cross-AZ replication
 buildDocumentStore(t, args)
 buildDocumentBackups(t)
 buildApplication(t)
