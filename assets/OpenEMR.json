@@ -1,7 +1,7 @@
 {
   "AWSTemplateFormatVersion" : "2010-09-09",
 
-  "Description" : "Automated OpenEMR 5.0.0 Configuration",
+  "Description" : "Automated OpenEMR 5.0.0.4 Configuration",
 
   "Parameters" : {
     "EC2KeyPair" : {
@@ -1212,7 +1212,9 @@
             "  if (event['RequestType'] == 'Delete'):",
             "    sendResponse(event, context, 'SUCCESS', None)",
             "    return",
-            "  sendResponse(event, context, 'SUCCESS', urllib2.urlopen(event['ResourceProperties']['Url']).read()[28:-27])",
+            "  print('key: ', event['ResourceProperties']['Url'])",
+            "  publicKey=urllib2.urlopen(event['ResourceProperties']['Url']).read()[28:-27]",
+            "  sendResponse(event, context, 'SUCCESS', publicKey)",
             "def sendResponse(event, context, responseStatus, responseData):",
             "  opener = urllib2.build_opener(urllib2.HTTPHandler)",
             "  o = {}",
@@ -1241,7 +1243,11 @@
       "DependsOn": "CertWriterInstance",
       "Properties": {
         "ServiceToken": { "Fn::GetAtt" : ["CertGrabberFunction", "Arn"] },
+<<<<<<< HEAD
+          "Url" : { "Fn::Join" : ["", ["https://", {"Ref" : "S3Bucket"}, ".s3.amazonaws.com/CA/certs/beanstalk.crt" ] ] }
+=======
         "Url" : { "Fn::Join" : ["", ["https://", {"Ref" : "S3Bucket"}, ".s3.amazonaws.com/CA/certs/beanstalk.crt" ] ] }
+>>>>>>> master
       }
     },
 
@@ -1361,7 +1367,7 @@
      "Properties" : {
        "ApplicationName" : { "Ref" : "EBApplication" },
         "Description" :  "OpenEMR v5.0.0 cloud deployment",
-        "SolutionStackName" : "64bit Amazon Linux 2017.03 v2.4.2 running PHP 7.0",
+        "SolutionStackName" : "64bit Amazon Linux 2017.03 v2.4.3 running PHP 7.0",
         "VersionLabel" : { "Ref" : "EBApplicationVersion" },
         "OptionSettings" : [
           {"Namespace" : "aws:autoscaling:launchconfiguration", "OptionName" : "SecurityGroups", "Value" : { "Ref" : "ApplicationSecurityGroup" }},
