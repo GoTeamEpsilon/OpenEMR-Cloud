@@ -1702,7 +1702,7 @@ def buildApplication(t):
             DependsOn = ["DNSEFS", "DNSRedis", "DNSCouchDB", "DNSMySQL"],
             ApplicationName = Ref('EBApplication'),
             Description = 'OpenEMR v5.0.0 cloud deployment',
-            SolutionStackName = '64bit Amazon Linux 2017.03 v2.4.2 running PHP 7.0',
+            SolutionStackName = '64bit Amazon Linux 2017.03 v2.4.3 running PHP 7.0',
             VersionLabel = Ref('EBApplicationVersion'),
             OptionSettings = options
         )
