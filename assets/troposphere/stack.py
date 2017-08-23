@@ -878,6 +878,16 @@ def buildNFSBackup(t, args):
         )
     )
 
+    if (args.dev or args.force_bastion):
+        t.add_resource(
+            ec2.SecurityGroupIngress(
+                'NFSBackupSGIngress',
+                GroupId = Ref('NFSBackupSecurityGroup'),
+                IpProtocol = '-1',
+                SourceSecurityGroupId = Ref('SSHSecurityGroup')
+            )
+        )
+
     rolePolicyStatements = [
         {
           "Sid": "Stmt1500699052003",
@@ -1352,6 +1362,7 @@ def buildDocumentStore(t, args):
         )
     )
 
+    # it honestly should take <5, but I had it take almost 20 once in testing
     t.add_resource(
         ec2.Instance(
             'CouchDBInstance',
@@ -1372,7 +1383,7 @@ def buildDocumentStore(t, args):
             UserData = Base64(Join('', bootstrapScript)),
             CreationPolicy = {
               "ResourceSignal" : {
-                "Timeout" : "PT5M"
+                "Timeout" : "PT25M"
               }
             }
         )

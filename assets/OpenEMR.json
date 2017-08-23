@@ -586,7 +586,7 @@
         "CouchDBInstance": {
             "CreationPolicy": {
                 "ResourceSignal": {
-                    "Timeout": "PT5M"
+                    "Timeout": "PT25M"
                 }
             },
             "DependsOn": [
