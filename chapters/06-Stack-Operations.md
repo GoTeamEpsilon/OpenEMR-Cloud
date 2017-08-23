@@ -15,7 +15,7 @@ The CloudFormation template is constructed from ``/cloud/assets/troposphere/stac
  * **--dual-AZ**: Builds a stack capable of running in two AWS Availability Zones, and continuing to function even if one AZ is down. [Still in progress.]
  * **--recovery**: Builds a recovery OpenEMR stack that can accept snapshots and backups and restore the entire, configured application from backups.
 
- The CloudFormation template is a difficult read, but ``stack.py`` is significantly better-organized, which is good because you may find it necessary to modify it for your own specific tastes or environment. One problem that immediately springs to mind is that the stack builder is hardcoded to use a stock OpenEMR 5.0.0 beanstalk archive &mdash; if your environment has custom code changes you wish to reserve, you will need to host your revised beanstalk code on an S3 bucket (in the same region!) and then modify the hardcoded mappings to refer to your software instead of the stock master. Make the change, re-run ``stack.py``, and you can now manually create a new stack in the CloudFormation manager, uploading your just-produced stack on request.
+ The CloudFormation template is a difficult read, but ``stack.py`` is significantly better-organized, which is good because you may find it necessary to modify it for your own specific tastes or environment. One problem that immediately springs to mind is that the stack builder is hardcoded to use a stock OpenEMR 5.0.0 beanstalk archive &mdash; if your environment has custom code changes you wish to preserve, you will need to host your revised beanstalk code on an S3 bucket (in the same region!) and then modify the hardcoded mappings to refer to your software instead of the stock master. Make the change, re-run ``stack.py``, and you can now manually create a new stack in the CloudFormation manager, uploading your just-produced stack on request.
 
 ## Using the recovery stack
 
@@ -33,8 +33,8 @@ Making backups is important, but an untested backup is no backup at all. Schedul
   1. Run ``stack.py --recovery > OpenEMR-Recovery.json``.
   2. Start this stack in CloudFormation. You'll have four questions you aren't familiar with.
      * **RecoveryCouchDBSnapshot**: The EC2 volume snapshot of the EC2 volume from the Patient Documents. (example: ``snap-0ebb4f155ff27040c``)
-     * **RecoveryKMSKey**: The ARN of the KMS key created by the original stack, which protects all the resources you're restoring. (example: ``arn:aws:kms:us-east-1:757972223103:key/6fc10c90-d550-4fd5-bb5c-c2416e31839a``)
-     * **RecoveryRDSSnapshotARN**: The ARN of the RDS database from the original stack. (example: ``arn:aws:rds:us-east-1:757972223103:snapshot:openemr063-backup``)
+     * **RecoveryKMSKey**: The ARN of the KMS key created by the original stack, which protects all the resources you're restoring. (example: ``arn:aws:kms:us-east-1:7...3:key/6fc10c90-d550-4fd5-bb5c-c2416e31839a``)
+     * **RecoveryRDSSnapshotARN**: The ARN of the RDS database from the original stack. (example: ``arn:aws:rds:us-east-1:7...3:snapshot:openemr063-backup``)
      * **RecoveryS3Bucket**: The name of the bucket created by the original stack. (example: ``openemr-c49525c0-82e5-11e7-bcf4-50faeaa96461``)
      * (Questions like database password and volume size are going to be deduced from the recovered resources. **TimeZone** isn't sticky yet, though.)
   3. Reassign front-end SSL, per chapter 3. Reassigning DNS is optional if you're only testing your backup.
