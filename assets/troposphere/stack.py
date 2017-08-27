@@ -23,14 +23,6 @@ def setInputs(t, args):
         Type = 'AWS::EC2::KeyPair::KeyName'
     ))
 
-    t.add_parameter(Parameter(
-        'TimeZone',
-        Description = 'The timezone OpenEMR will run in',
-        Default = 'America/Chicago',
-        Type = 'String',
-        MaxLength = '41'
-    ))
-
     if (args.recovery):
         t.add_parameter(Parameter(
             'RecoveryKMSKey',
@@ -53,6 +45,14 @@ def setInputs(t, args):
             Type = 'String'
         ))
     else:
+        t.add_parameter(Parameter(
+            'TimeZone',
+            Description = 'The timezone OpenEMR will run in',
+            Default = 'America/Chicago',
+            Type = 'String',
+            MaxLength = '41'
+        ))
+
         t.add_parameter(Parameter(
             'RDSPassword',
             NoEcho = True,
@@ -1829,12 +1829,7 @@ def buildApplication(t, args):
             Namespace='aws:elasticbeanstalk:application',
             OptionName='Application Healthcheck URL',
             Value='HTTPS:443/openemr/version.php'
-        ),
-        elasticbeanstalk.OptionSettings(
-            Namespace='aws:elasticbeanstalk:application:environment',
-            OptionName='TIMEZONE',
-            Value=Ref('TimeZone')
-        ),
+        ),        
         elasticbeanstalk.OptionSettings(
             Namespace='aws:elasticbeanstalk:application:environment',
             OptionName='REDIS_IP',
@@ -1875,8 +1870,14 @@ def buildApplication(t, args):
             Namespace='aws:elasticbeanstalk:application:environment',
             OptionName='COUCHDBZONE',
             Value=Join("", couchDBZoneFile)
-        )
-    )
+        ))
+
+    if (not args.recovery):
+        options.append(elasticbeanstalk.OptionSettings(
+            Namespace='aws:elasticbeanstalk:application:environment',
+            OptionName='TIMEZONE',
+            Value=Ref('TimeZone')
+        ))
 
     t.add_resource(
         elasticbeanstalk.Environment(
