@@ -1,7 +1,8 @@
 #!/usr/bin/python
 # -*- coding: utf-8 -*-
 
-# https://github.com/cloudtools/troposphere
+# TODO: fix timezone -- where is it?! [ready, rezip and repush]
+# TODO: force two-way replication of views (or do I /need/ them?)
 
 from troposphere import Base64, FindInMap, GetAtt, GetAZs, Join, Select, Split, Output
 from troposphere import Parameter, Ref, Tags, Template
@@ -14,6 +15,8 @@ ref_region = Ref('AWS::Region')
 ref_stack_name = Ref('AWS::StackName')
 ref_account = Ref('AWS::AccountId')
 
+currentBeanstalkKey = 'beanstalk/openemr-5.0.0-007.zip'
+
 def setInputs(t, args):
     t.add_parameter(Parameter(
         'EC2KeyPair',
@@ -21,23 +24,15 @@ def setInputs(t, args):
         Type = 'AWS::EC2::KeyPair::KeyName'
     ))
 
-    t.add_parameter(Parameter(
-        'TimeZone',
-        Description = 'The timezone OpenEMR will run in',
-        Default = 'America/Chicago',
-        Type = 'String',
-        MaxLength = '41'
-    ))
-
     if (args.recovery):
         t.add_parameter(Parameter(
             'RecoveryKMSKey',
-            Description = 'The KMS key ARN for the previous stack (expressed as ''arn:aws:kms...'')',
+            Description = 'The KMS key ARN for the previous stack (''arn:aws:kms...'')',
             Type = 'String'
         ))
         t.add_parameter(Parameter(
             'RecoveryRDSSnapshotARN',
-            Description = 'The database snapshot ARN for the previous stack',
+            Description = 'The database snapshot ARN for the previous stack (''arn:aws:rds...'')',
             Type = 'String'
         ))
         t.add_parameter(Parameter(
@@ -51,6 +46,14 @@ def setInputs(t, args):
             Type = 'String'
         ))
     else:
+        t.add_parameter(Parameter(
+            'TimeZone',
+            Description = 'The timezone OpenEMR will run in',
+            Default = 'America/Chicago',
+            Type = 'String',
+            MaxLength = '41'
+        ))
+
         t.add_parameter(Parameter(
             'RDSPassword',
             NoEcho = True,
@@ -77,32 +80,32 @@ def setInputs(t, args):
         ))
     return t
 
-def setMappings(t):
+def setMappings(t, args):
     t.add_mapping('RegionData', {
         "us-east-1" : {
             "RegionBucket": "openemr-useast1",
-            "ApplicationSource": "beanstalk/openemr-5.0.0-006.zip",
+            "ApplicationSource": args.beanstalk_key,
             "MySQLVersion": "5.6.27",
             "AmazonAMI": "ami-a4c7edb2",
             "UbuntuAMI": "ami-d15a75c7"
         },
         "us-west-2" : {
             "RegionBucket": "openemr-uswest2",
-            "ApplicationSource": "beanstalk/openemr-5.0.0-006.zip",
+            "ApplicationSource": args.beanstalk_key,
             "MySQLVersion": "5.6.27",
             "AmazonAMI": "ami-6df1e514",
             "UbuntuAMI": "ami-835b4efa"
         },
         "eu-west-1" : {
             "RegionBucket": "openemr-euwest1",
-            "ApplicationSource": "beanstalk/openemr-5.0.0-006.zip",
+            "ApplicationSource": args.beanstalk_key,
             "MySQLVersion": "5.6.27",
             "AmazonAMI": "ami-d7b9a2b1",
             "UbuntuAMI": "ami-6d48500b"
         },
         "ap-southeast-2" : {
             "RegionBucket": "openemr-apsoutheast2",
-            "ApplicationSource": "beanstalk/openemr-5.0.0-006.zip",
+            "ApplicationSource": args.beanstalk_key,
             "MySQLVersion": "5.6.27",
             "AmazonAMI": "ami-10918173",
             "UbuntuAMI": "ami-e94e5e8a"
@@ -110,7 +113,7 @@ def setMappings(t):
     })
     return t
 
-def buildVPC(t, dualAZ):
+def buildVPC(t, dual_az):
     t.add_resource(
         ec2.VPC(
             'VPC',
@@ -203,7 +206,7 @@ def buildVPC(t, dualAZ):
         )
     )
 
-    if (dualAZ):
+    if (dual_az):
         t.add_resource(
             ec2.RouteTable(
                 'rtTablePrivate1',
@@ -544,7 +547,7 @@ def buildEFS(t, dev):
 
     return t
 
-def buildRedis(t, dualAZ):
+def buildRedis(t, dual_az):
     t.add_resource(
         ec2.SecurityGroup(
             'RedisSecurityGroup',
@@ -571,32 +574,54 @@ def buildRedis(t, dualAZ):
         )
     )
 
-    t.add_resource(
-        elasticache.CacheCluster(
-            'RedisCluster',
-            CacheNodeType = 'cache.t2.small',
-            VpcSecurityGroupIds = [GetAtt('RedisSecurityGroup', 'GroupId')],
-            CacheSubnetGroupName = Ref('RedisSubnets'),
-            Engine = 'redis',
-            NumCacheNodes = '2' if dualAZ else '1'
+    if (dual_az):
+        t.add_resource(
+            elasticache.ReplicationGroup(
+                'RedisCluster',
+                AutomaticFailoverEnabled = True,
+                ReplicationGroupDescription = 'Beanstalk Sessions',
+                NumCacheClusters = 2,
+                Engine = 'redis',
+                CacheNodeType = 'cache.m3.medium',
+                CacheSubnetGroupName = Ref('RedisSubnets'),
+                SecurityGroupIds = [GetAtt('RedisSecurityGroup', 'GroupId')],
+            )
         )
-    )
-
-    t.add_resource(
-        route53.RecordSetType(
-            'DNSRedis',
-            HostedZoneId = Ref('DNS'),
-            Name = 'redis.openemr.local',
-            Type = 'CNAME',
-            TTL = '900',
-            ResourceRecords = [GetAtt('RedisCluster', 'RedisEndpoint.Address')]
+        t.add_resource(
+            route53.RecordSetType(
+                'DNSRedis',
+                HostedZoneId = Ref('DNS'),
+                Name = 'redis.openemr.local',
+                Type = 'CNAME',
+                TTL = '900',
+                ResourceRecords = [GetAtt('RedisCluster', 'PrimaryEndPoint.Address')]
+            )
         )
-    )
+    else:
+        t.add_resource(
+            elasticache.CacheCluster(
+                'RedisCluster',
+                CacheNodeType = 'cache.t2.small',
+                VpcSecurityGroupIds = [GetAtt('RedisSecurityGroup', 'GroupId')],
+                CacheSubnetGroupName = Ref('RedisSubnets'),
+                Engine = 'redis',
+                NumCacheNodes = 1
+            )
+        )
+        t.add_resource(
+            route53.RecordSetType(
+                'DNSRedis',
+                HostedZoneId = Ref('DNS'),
+                Name = 'redis.openemr.local',
+                Type = 'CNAME',
+                TTL = '900',
+                ResourceRecords = [GetAtt('RedisCluster', 'RedisEndpoint.Address')]
+            )
+        )
 
     return t
 
 def buildMySQL(t, args):
-    # TODO: verify dual-AZ
     t.add_resource(
         ec2.SecurityGroup(
             'DBSecurityGroup',
@@ -624,7 +649,6 @@ def buildMySQL(t, args):
     )
 
     if (args.recovery):
-        #TODO: this comes up with the old key, not the new one! wrong, needs migration
         t.add_resource(
             rds.DBInstance(
                 'RDSInstance',
@@ -634,7 +658,7 @@ def buildMySQL(t, args):
                 PubliclyAccessible = False,
                 DBSubnetGroupName = Ref('RDSSubnetGroup'),
                 VPCSecurityGroups = [Ref('DBSecurityGroup')],
-                MultiAZ = args.dualAZ,
+                MultiAZ = args.dual_az,
                 Tags = Tags(Name='Patient Records')
             )
         )
@@ -655,7 +679,7 @@ def buildMySQL(t, args):
                 VPCSecurityGroups = [Ref('DBSecurityGroup')],
                 KmsKeyId = OpenEMRKeyID,
                 StorageEncrypted = True,
-                MultiAZ = args.dualAZ,
+                MultiAZ = args.dual_az,
                 Tags = Tags(Name='Patient Records')
             )
         )
@@ -878,6 +902,16 @@ def buildNFSBackup(t, args):
         )
     )
 
+    if (args.dev or args.force_bastion):
+        t.add_resource(
+            ec2.SecurityGroupIngress(
+                'NFSBackupSGIngress',
+                GroupId = Ref('NFSBackupSecurityGroup'),
+                IpProtocol = '-1',
+                SourceSecurityGroupId = Ref('SSHSecurityGroup')
+            )
+        )
+
     rolePolicyStatements = [
         {
           "Sid": "Stmt1500699052003",
@@ -963,7 +997,7 @@ def buildNFSBackup(t, args):
     )
 
     bootstrapScript = [
-        "#!/bin/bash -xe\n",
+        "#!/bin/bash -x\n",
         "exec > /tmp/part-001.log 2>&1\n",
         "apt-get -y update\n",
         "apt-get -y install python-pip\n",
@@ -973,7 +1007,7 @@ def buildNFSBackup(t, args):
         "         --resource NFSBackupInstance ",
         "         --configsets Setup ",
         "         --region ", ref_region, "\n",
-        "cfn-signal -e 0 ",
+        "cfn-signal -e $? ",
         "         --stack ", ref_stack_name,
         "         --resource NFSBackupInstance ",
         "         --region ", ref_region, "\n"
@@ -1105,7 +1139,7 @@ def buildNFSBackup(t, args):
             UserData = Base64(Join('', bootstrapScript)),
             CreationPolicy = {
               "ResourceSignal" : {
-                "Timeout" : "PT5M"
+                "Timeout" : "PT15M" if args.recovery else "PT5M"
               }
             }
         )
@@ -1226,7 +1260,7 @@ def buildDocumentStore(t, args):
     )
 
     bootstrapScript = [
-        "#!/bin/bash -xe\n",
+        "#!/bin/bash -x\n",
         "exec > /tmp/part-001.log 2>&1\n",
         "apt-get -y update\n",
         "apt-get -y install python-pip\n",
@@ -1236,7 +1270,7 @@ def buildDocumentStore(t, args):
         "         --resource CouchDBInstance ",
         "         --configsets Setup ",
         "         --region ", ref_region, "\n",
-        "cfn-signal -e 0 ",
+        "cfn-signal -e $? ",
         "         --stack ", ref_stack_name,
         "         --resource CouchDBInstance ",
         "         --region ", ref_region, "\n"
@@ -1255,6 +1289,12 @@ def buildDocumentStore(t, args):
         "key_file = /etc/couchdb/couch.key\n",
         "cert_file = /etc/couchdb/couch.crt\n",
         "cacert_file = /etc/couchdb/ca.crt\n"
+    ]
+
+    replicatorIniFile = [
+        "[replicator]\n",
+        "ssl_trusted_certificates_file = /etc/couchdb/ca.crt\n",
+        "verify_ssl_certificates = true\n"
     ]
 
     fstabFile = [
@@ -1280,8 +1320,8 @@ def buildDocumentStore(t, args):
             "chown couchdb:couchdb /etc/couchdb/*.crt /etc/couchdb/*.key\n",
             "rm -rf /var/lib/couchdb\n",
             "ln -s /mnt/db/couchdb /var/lib/couchdb\n",
-            "cp /root/ip.ini /root/ssl.ini /etc/couchdb/local.d\n",
-            "chown couchdb:couchdb /etc/couchdb/local.d/ip.ini /etc/couchdb/local.d/ssl.ini\n",
+            "cp /root/ip.ini /root/ssl.ini /root/replicator.ini /etc/couchdb/local.d\n",
+            "chown couchdb:couchdb /etc/couchdb/local.d/ip.ini /etc/couchdb/local.d/replicator.ini /etc/couchdb/local.d/ssl.ini\n",
             "service couchdb start\n"
         ]
     else:
@@ -1304,9 +1344,11 @@ def buildDocumentStore(t, args):
             "chown couchdb:couchdb /etc/couchdb/*.crt /etc/couchdb/*.key\n",
             "mv /var/lib/couchdb /mnt/db/couchdb\n",
             "ln -s /mnt/db/couchdb /var/lib/couchdb\n",
-            "cp /root/ip.ini /root/ssl.ini /etc/couchdb/local.d\n",
-            "chown couchdb:couchdb /etc/couchdb/local.d/ip.ini /etc/couchdb/local.d/ssl.ini\n",
+            "cp /root/ip.ini /root/ssl.ini /root/replicator.ini /etc/couchdb/local.d\n",
+            "chown couchdb:couchdb /etc/couchdb/local.d/ip.ini /etc/couchdb/local.d/replicator.ini /etc/couchdb/local.d/ssl.ini\n",
             "service couchdb start\n"
+            "sleep 5\n"
+            "curl -k -X PUT https://127.0.0.1:6984/couchdb\n"
         ]
 
     bootstrapInstall = cloudformation.InitConfig(
@@ -1329,6 +1371,12 @@ def buildDocumentStore(t, args):
                 "owner" : "root",
                 "group" : "root"
             },
+            "/root/replicator.ini" : {
+                "content" : Join("", replicatorIniFile),
+                "mode"  : "000400",
+                "owner" : "root",
+                "group" : "root"
+            },
             "/root/fstab.append" : {
                 "content" : Join("", fstabFile),
                 "mode"  : "000400",
@@ -1343,6 +1391,34 @@ def buildDocumentStore(t, args):
         }
     )
 
+    # this is incomplete -- design documents will not replicate between systems, since ''"user_ctx" = {"roles": ["_admin"]}' is not specified on local targets.
+    # Is this acceptable or is this broken? I don't think there's a document /search/ feature...
+    # Fix will involve either:
+    # * A: moving the replicate script to both servers to properly connect user_ctx to local target
+    # * B: configuring and employing admin user for replication
+    replicateScript = [
+        "#!/bin/bash -xe\n",
+        "exec > /tmp/part-003.log 2>&1\n",
+        'curl -k -X POST https://127.0.0.1:6984/_replicator -d \'{"source":"https://couchdb-az1.openemr.local:6984/couchdb", "target":"couchdb", "continuous":true}\' -H "Content-Type: application/json"\n',
+        'curl -k -X POST https://127.0.0.1:6984/_replicator -d \'{"source":"couchdb", "target":"https://couchdb-az1.openemr.local:6984/couchdb", "continuous":true}\' -H "Content-Type: application/json"\n'
+    ]
+
+    bootstrapReplicate = cloudformation.InitConfig(
+        files = {
+            "/root/couchdb.replicate.sh" : {
+                "content" : Join("", replicateScript),
+                "mode"  : "000500",
+                "owner" : "root",
+                "group" : "root"
+            }
+        },
+        commands = {
+            "01_setup" : {
+              "command" : "/root/couchdb.replicate.sh"
+            }
+        }
+    )
+
     bootstrapMetadata = cloudformation.Metadata(
         cloudformation.Init(
             cloudformation.InitConfigSets(
@@ -1352,6 +1428,7 @@ def buildDocumentStore(t, args):
         )
     )
 
+    # it honestly should take <5, but I had it take almost 20 once in testing
     t.add_resource(
         ec2.Instance(
             'CouchDBInstance',
@@ -1372,11 +1449,122 @@ def buildDocumentStore(t, args):
             UserData = Base64(Join('', bootstrapScript)),
             CreationPolicy = {
               "ResourceSignal" : {
-                "Timeout" : "PT5M"
+                "Timeout" : "PT25M"
               }
             }
         )
     )
+
+
+    if (args.dual_az):
+        t.add_resource(
+            ec2.SecurityGroupIngress(
+                'CouchDBSGIngress2',
+                GroupId = Ref('CouchDBSecurityGroup'),
+                IpProtocol = '-1',
+                SourceSecurityGroupId = Ref('CouchDBSecurityGroup')
+            )
+        )
+
+        if (args.recovery):
+            t.add_resource(
+                ec2.Volume(
+                    'RCouchDBVolume',
+                    DeletionPolicy = 'Delete',
+                    AvailabilityZone = Select("1", GetAZs("")),
+                    VolumeType = 'sc1',
+                    SnapshotId = Ref('RecoveryCouchDBSnapshot'),
+                    Tags=Tags(Name="Patient Documents")
+                )
+            )
+        else:
+            t.add_resource(
+                ec2.Volume(
+                    'RCouchDBVolume',
+                    DeletionPolicy = 'Delete',
+                    Size=Ref('DocumentStorage'),
+                    AvailabilityZone = Select("1", GetAZs("")),
+                    VolumeType = 'sc1',
+                    Encrypted = True,
+                    KmsKeyId = OpenEMRKeyID,
+                    Tags=Tags(Name="Patient Documents")
+                )
+            )
+
+        bootstrapReplicatedMetadata = cloudformation.Metadata(
+            cloudformation.Init(
+                cloudformation.InitConfigSets(
+                    Setup = ['Install', 'StartReplication']
+                ),
+                Install=bootstrapInstall,
+                StartReplication=bootstrapReplicate
+            )
+        )
+
+        bootstrapReplicatorScript = [
+            "#!/bin/bash -x\n",
+            "exec > /tmp/part-001.log 2>&1\n",
+            "apt-get -y update\n",
+            "apt-get -y install python-pip\n",
+            "pip install https://s3.amazonaws.com/cloudformation-examples/aws-cfn-bootstrap-latest.tar.gz\n",
+            "cfn-init -v ",
+            "         --stack ", ref_stack_name,
+            "         --resource CouchReplicatedDBInstance ",
+            "         --configsets Setup ",
+            "         --region ", ref_region, "\n",
+            "cfn-signal -e $? ",
+            "         --stack ", ref_stack_name,
+            "         --resource CouchReplicatedDBInstance ",
+            "         --region ", ref_region, "\n"
+        ]
+
+        t.add_resource(
+            ec2.Instance(
+                'CouchReplicatedDBInstance',
+                DependsOn = ['CertWriterInstance', 'CouchDBInstance'],
+                Metadata = bootstrapReplicatedMetadata,
+                ImageId = FindInMap('RegionData', ref_region, 'UbuntuAMI'),
+                InstanceType = 't2.micro',
+                SubnetId = Ref('PrivateSubnet2'),
+                KeyName = Ref('EC2KeyPair'),
+                SecurityGroupIds = [Ref('CouchDBSecurityGroup')],
+                IamInstanceProfile = Ref('CouchDBInstanceProfile'),
+                Volumes = [{
+                    "Device" : "/dev/sdd",
+                    "VolumeId" : Ref('RCouchDBVolume')
+                }],
+                Tags = Tags(Name='Patient Document Store'),
+                InstanceInitiatedShutdownBehavior = 'stop',
+                UserData = Base64(Join('', bootstrapReplicatorScript)),
+                CreationPolicy = {
+                  "ResourceSignal" : {
+                    "Timeout" : "PT25M"
+                  }
+                }
+            )
+        )
+
+        t.add_resource(
+            route53.RecordSetType(
+                'DNSCouchDBAZ1',
+                HostedZoneId = Ref('DNS'),
+                Name = 'couchdb-az1.openemr.local',
+                Type = 'CNAME',
+                TTL = '900',
+                ResourceRecords = [GetAtt('CouchDBInstance', 'PrivateDnsName')]
+            )
+        )
+
+        t.add_resource(
+            route53.RecordSetType(
+                'DNSCouchDBAZ2',
+                HostedZoneId = Ref('DNS'),
+                Name = 'couchdb-az2.openemr.local',
+                Type = 'CNAME',
+                TTL = '900',
+                ResourceRecords = [GetAtt('CouchReplicatedDBInstance', 'PrivateDnsName')]
+            )
+        )
 
     t.add_resource(
         route53.RecordSetType(
@@ -1488,7 +1676,7 @@ def buildDocumentBackups(t):
     )
     return t
 
-def buildApplication(t):
+def buildApplication(t, args):
 
     t.add_resource(
         iam.Role(
@@ -1630,6 +1818,11 @@ def buildApplication(t):
             Value='3600'
         ),
         elasticbeanstalk.OptionSettings(
+            Namespace='aws:elb:policies',
+            OptionName='Stickiness Policy',
+            Value='true'
+        ),
+        elasticbeanstalk.OptionSettings(
             Namespace='aws:elb:policies:backendencryption',
             OptionName='PublicKeyPolicyNames',
             Value='backendkey'
@@ -1666,11 +1859,6 @@ def buildApplication(t):
         ),
         elasticbeanstalk.OptionSettings(
             Namespace='aws:elasticbeanstalk:application:environment',
-            OptionName='TIMEZONE',
-            Value=Ref('TimeZone')
-        ),
-        elasticbeanstalk.OptionSettings(
-            Namespace='aws:elasticbeanstalk:application:environment',
             OptionName='REDIS_IP',
             Value='redis.openemr.local'
         ),
@@ -1695,6 +1883,34 @@ def buildApplication(t):
             Value=OpenEMRKeyID
         )
     ]
+
+    if (args.dual_az):
+        couchDBZoneFile = [
+            '{ "segment24": {',
+            '"10.0.1": "couchdb-az1.openemr.local",',
+            '"10.0.2": "couchdb-az1.openemr.local",',
+            '"10.0.3": "couchdb-az2.openemr.local",',
+            '"10.0.4": "couchdb-az2.openemr.local",',
+            '} }'
+        ]
+        options.extend([
+            elasticbeanstalk.OptionSettings(
+                Namespace='aws:elasticbeanstalk:application:environment',
+                OptionName='COUCHDBZONE',
+                Value=Join("", couchDBZoneFile)
+            ), elasticbeanstalk.OptionSettings(
+                Namespace='aws:autoscaling:asg',
+                OptionName='MinSize',
+                Value='2'
+            )
+        ])
+
+    if (not args.recovery):
+        options.append(elasticbeanstalk.OptionSettings(
+            Namespace='aws:elasticbeanstalk:application:environment',
+            OptionName='TIMEZONE',
+            Value=Ref('TimeZone')
+        ))
 
     t.add_resource(
         elasticbeanstalk.Environment(
@@ -1721,10 +1937,11 @@ def setOutputs(t, args):
     return t
 
 parser = argparse.ArgumentParser(description="OpenEMR stack builder")
+parser.add_argument("--beanstalk-key", help="select compressed OpenEMR beanstalk", default=currentBeanstalkKey)
+parser.add_argument("--dual-az", help="build AZ-hardened stack [in progress!]", action="store_true")
+parser.add_argument("--recovery", help="load OpenEMR stack from backups", action="store_true")
 parser.add_argument("--dev", help="build [security breaching!] development resources", action="store_true")
 parser.add_argument("--force-bastion", help="force developer bastion outside of development", action="store_true")
-parser.add_argument("--dualAZ", help="build AZ-hardened stack", action="store_true")
-parser.add_argument("--recovery", help="load OpenEMR stack from backups", action="store_true")
 args = parser.parse_args()
 
 t = Template()
@@ -1735,10 +1952,12 @@ if (args.dev):
     descString+=' [developer]'
 if (args.force_bastion):
     descString+=' [keyhole]'
-if (args.dualAZ):
+if (args.dual_az):
     descString+=' [dual-AZ]'
 if (args.recovery):
     descString+=' [recovery]'
+if (not args.beanstalk_key == currentBeanstalkKey):
+    descString+=' [eb: ' + args.beanstalk_key + ']'
 t.add_description(descString)
 
 # reduce to consistent names
@@ -1750,19 +1969,19 @@ else:
     OpenEMRKeyARN = GetAtt('OpenEMRKey', 'Arn')
 
 setInputs(t,args)
-setMappings(t)
-buildVPC(t, args.dualAZ)
+setMappings(t,args)
+buildVPC(t, args.dual_az)
 buildFoundation(t, args)
 if (args.dev or args.force_bastion):
     buildDeveloperBastion(t)
 buildEFS(t, args.dev)
-buildRedis(t, args.dualAZ)
+buildRedis(t, args.dual_az)
 buildMySQL(t, args)
 buildCertWriter(t, args.dev)
 buildNFSBackup(t, args)
 buildDocumentStore(t, args)
 buildDocumentBackups(t)
-buildApplication(t)
+buildApplication(t, args)
 setOutputs(t, args)
 
 print(t.to_json())
