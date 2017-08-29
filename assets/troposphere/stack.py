@@ -1,7 +1,8 @@
 #!/usr/bin/python
 # -*- coding: utf-8 -*-
 
-# https://github.com/cloudtools/troposphere
+# TODO: fix timezone -- where is it?! [ready, rezip and repush]
+# TODO: force two-way replication of views (or do I /need/ them?)
 
 from troposphere import Base64, FindInMap, GetAtt, GetAZs, Join, Select, Split, Output
 from troposphere import Parameter, Ref, Tags, Template
@@ -14,7 +15,7 @@ ref_region = Ref('AWS::Region')
 ref_stack_name = Ref('AWS::StackName')
 ref_account = Ref('AWS::AccountId')
 
-currentBeanstalkKey = 'beanstalk/openemr-5.0.0-006.zip'
+currentBeanstalkKey = 'beanstalk/openemr-5.0.0-007.zip'
 
 def setInputs(t, args):
     t.add_parameter(Parameter(
@@ -573,32 +574,54 @@ def buildRedis(t, dual_az):
         )
     )
 
-    t.add_resource(
-        elasticache.CacheCluster(
-            'RedisCluster',
-            CacheNodeType = 'cache.t2.small',
-            VpcSecurityGroupIds = [GetAtt('RedisSecurityGroup', 'GroupId')],
-            CacheSubnetGroupName = Ref('RedisSubnets'),
-            Engine = 'redis',
-            NumCacheNodes = '2' if dual_az else '1'
+    if (dual_az):
+        t.add_resource(
+            elasticache.ReplicationGroup(
+                'RedisCluster',
+                AutomaticFailoverEnabled = True,
+                ReplicationGroupDescription = 'Beanstalk Sessions',
+                NumCacheClusters = 2,
+                Engine = 'redis',
+                CacheNodeType = 'cache.m3.medium',
+                CacheSubnetGroupName = Ref('RedisSubnets'),
+                SecurityGroupIds = [GetAtt('RedisSecurityGroup', 'GroupId')],
+            )
         )
-    )
-
-    t.add_resource(
-        route53.RecordSetType(
-            'DNSRedis',
-            HostedZoneId = Ref('DNS'),
-            Name = 'redis.openemr.local',
-            Type = 'CNAME',
-            TTL = '900',
-            ResourceRecords = [GetAtt('RedisCluster', 'RedisEndpoint.Address')]
+        t.add_resource(
+            route53.RecordSetType(
+                'DNSRedis',
+                HostedZoneId = Ref('DNS'),
+                Name = 'redis.openemr.local',
+                Type = 'CNAME',
+                TTL = '900',
+                ResourceRecords = [GetAtt('RedisCluster', 'PrimaryEndPoint.Address')]
+            )
         )
-    )
+    else:
+        t.add_resource(
+            elasticache.CacheCluster(
+                'RedisCluster',
+                CacheNodeType = 'cache.t2.small',
+                VpcSecurityGroupIds = [GetAtt('RedisSecurityGroup', 'GroupId')],
+                CacheSubnetGroupName = Ref('RedisSubnets'),
+                Engine = 'redis',
+                NumCacheNodes = 1
+            )
+        )
+        t.add_resource(
+            route53.RecordSetType(
+                'DNSRedis',
+                HostedZoneId = Ref('DNS'),
+                Name = 'redis.openemr.local',
+                Type = 'CNAME',
+                TTL = '900',
+                ResourceRecords = [GetAtt('RedisCluster', 'RedisEndpoint.Address')]
+            )
+        )
 
     return t
 
 def buildMySQL(t, args):
-    # TODO: verify dual-AZ
     t.add_resource(
         ec2.SecurityGroup(
             'DBSecurityGroup',
@@ -626,7 +649,6 @@ def buildMySQL(t, args):
     )
 
     if (args.recovery):
-        #TODO: this comes up with the old key, not the new one! wrong, needs migration
         t.add_resource(
             rds.DBInstance(
                 'RDSInstance',
@@ -975,7 +997,7 @@ def buildNFSBackup(t, args):
     )
 
     bootstrapScript = [
-        "#!/bin/bash -xe\n",
+        "#!/bin/bash -x\n",
         "exec > /tmp/part-001.log 2>&1\n",
         "apt-get -y update\n",
         "apt-get -y install python-pip\n",
@@ -985,7 +1007,7 @@ def buildNFSBackup(t, args):
         "         --resource NFSBackupInstance ",
         "         --configsets Setup ",
         "         --region ", ref_region, "\n",
-        "cfn-signal -e 0 ",
+        "cfn-signal -e $? ",
         "         --stack ", ref_stack_name,
         "         --resource NFSBackupInstance ",
         "         --region ", ref_region, "\n"
@@ -1238,7 +1260,7 @@ def buildDocumentStore(t, args):
     )
 
     bootstrapScript = [
-        "#!/bin/bash -xe\n",
+        "#!/bin/bash -x\n",
         "exec > /tmp/part-001.log 2>&1\n",
         "apt-get -y update\n",
         "apt-get -y install python-pip\n",
@@ -1248,7 +1270,7 @@ def buildDocumentStore(t, args):
         "         --resource CouchDBInstance ",
         "         --configsets Setup ",
         "         --region ", ref_region, "\n",
-        "cfn-signal -e 0 ",
+        "cfn-signal -e $? ",
         "         --stack ", ref_stack_name,
         "         --resource CouchDBInstance ",
         "         --region ", ref_region, "\n"
@@ -1299,7 +1321,7 @@ def buildDocumentStore(t, args):
             "rm -rf /var/lib/couchdb\n",
             "ln -s /mnt/db/couchdb /var/lib/couchdb\n",
             "cp /root/ip.ini /root/ssl.ini /root/replicator.ini /etc/couchdb/local.d\n",
-            "chown couchdb:couchdb /etc/couchdb/local.d/ip.ini /etc/couchdb/replicator.ini /etc/couchdb/local.d/ssl.ini\n",
+            "chown couchdb:couchdb /etc/couchdb/local.d/ip.ini /etc/couchdb/local.d/replicator.ini /etc/couchdb/local.d/ssl.ini\n",
             "service couchdb start\n"
         ]
     else:
@@ -1323,7 +1345,7 @@ def buildDocumentStore(t, args):
             "mv /var/lib/couchdb /mnt/db/couchdb\n",
             "ln -s /mnt/db/couchdb /var/lib/couchdb\n",
             "cp /root/ip.ini /root/ssl.ini /root/replicator.ini /etc/couchdb/local.d\n",
-            "chown couchdb:couchdb /etc/couchdb/local.d/ip.ini /etc/couchdb/replicator.ini /etc/couchdb/local.d/ssl.ini\n",
+            "chown couchdb:couchdb /etc/couchdb/local.d/ip.ini /etc/couchdb/local.d/replicator.ini /etc/couchdb/local.d/ssl.ini\n",
             "service couchdb start\n"
             "sleep 5\n"
             "curl -k -X PUT https://127.0.0.1:6984/couchdb\n"
@@ -1369,6 +1391,11 @@ def buildDocumentStore(t, args):
         }
     )
 
+    # this is incomplete -- design documents will not replicate between systems, since ''"user_ctx" = {"roles": ["_admin"]}' is not specified on local targets.
+    # Is this acceptable or is this broken? I don't think there's a document /search/ feature...
+    # Fix will involve either:
+    # * A: moving the replicate script to both servers to properly connect user_ctx to local target
+    # * B: configuring and employing admin user for replication
     replicateScript = [
         "#!/bin/bash -xe\n",
         "exec > /tmp/part-003.log 2>&1\n",
@@ -1475,7 +1502,7 @@ def buildDocumentStore(t, args):
         )
 
         bootstrapReplicatorScript = [
-            "#!/bin/bash -xe\n",
+            "#!/bin/bash -x\n",
             "exec > /tmp/part-001.log 2>&1\n",
             "apt-get -y update\n",
             "apt-get -y install python-pip\n",
@@ -1485,7 +1512,7 @@ def buildDocumentStore(t, args):
             "         --resource CouchReplicatedDBInstance ",
             "         --configsets Setup ",
             "         --region ", ref_region, "\n",
-            "cfn-signal -e 0 ",
+            "cfn-signal -e $? ",
             "         --stack ", ref_stack_name,
             "         --resource CouchReplicatedDBInstance ",
             "         --region ", ref_region, "\n"
@@ -1829,7 +1856,7 @@ def buildApplication(t, args):
             Namespace='aws:elasticbeanstalk:application',
             OptionName='Application Healthcheck URL',
             Value='HTTPS:443/openemr/version.php'
-        ),        
+        ),
         elasticbeanstalk.OptionSettings(
             Namespace='aws:elasticbeanstalk:application:environment',
             OptionName='REDIS_IP',
@@ -1866,11 +1893,17 @@ def buildApplication(t, args):
             '"10.0.4": "couchdb-az2.openemr.local",',
             '} }'
         ]
-        options.append(elasticbeanstalk.OptionSettings(
-            Namespace='aws:elasticbeanstalk:application:environment',
-            OptionName='COUCHDBZONE',
-            Value=Join("", couchDBZoneFile)
-        ))
+        options.extend([
+            elasticbeanstalk.OptionSettings(
+                Namespace='aws:elasticbeanstalk:application:environment',
+                OptionName='COUCHDBZONE',
+                Value=Join("", couchDBZoneFile)
+            ), elasticbeanstalk.OptionSettings(
+                Namespace='aws:autoscaling:asg',
+                OptionName='MinSize',
+                Value='2'
+            )
+        ])
 
     if (not args.recovery):
         options.append(elasticbeanstalk.OptionSettings(

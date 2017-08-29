@@ -5,28 +5,28 @@
         "RegionData": {
             "ap-southeast-2": {
                 "AmazonAMI": "ami-10918173",
-                "ApplicationSource": "beanstalk/openemr-5.0.0-006.zip",
+                "ApplicationSource": "beanstalk/openemr-5.0.0-007.zip",
                 "MySQLVersion": "5.6.27",
                 "RegionBucket": "openemr-apsoutheast2",
                 "UbuntuAMI": "ami-e94e5e8a"
             },
             "eu-west-1": {
                 "AmazonAMI": "ami-d7b9a2b1",
-                "ApplicationSource": "beanstalk/openemr-5.0.0-006.zip",
+                "ApplicationSource": "beanstalk/openemr-5.0.0-007.zip",
                 "MySQLVersion": "5.6.27",
                 "RegionBucket": "openemr-euwest1",
                 "UbuntuAMI": "ami-6d48500b"
             },
             "us-east-1": {
                 "AmazonAMI": "ami-a4c7edb2",
-                "ApplicationSource": "beanstalk/openemr-5.0.0-006.zip",
+                "ApplicationSource": "beanstalk/openemr-5.0.0-007.zip",
                 "MySQLVersion": "5.6.27",
                 "RegionBucket": "openemr-useast1",
                 "UbuntuAMI": "ami-d15a75c7"
             },
             "us-west-2": {
                 "AmazonAMI": "ami-6df1e514",
-                "ApplicationSource": "beanstalk/openemr-5.0.0-006.zip",
+                "ApplicationSource": "beanstalk/openemr-5.0.0-007.zip",
                 "MySQLVersion": "5.6.27",
                 "RegionBucket": "openemr-uswest2",
                 "UbuntuAMI": "ami-835b4efa"
@@ -640,9 +640,9 @@
                                             "chown couchdb:couchdb /etc/couchdb/*.crt /etc/couchdb/*.key\n",
                                             "mv /var/lib/couchdb /mnt/db/couchdb\n",
                                             "ln -s /mnt/db/couchdb /var/lib/couchdb\n",
-                                            "cp /root/ip.ini /root/ssl.ini /etc/couchdb/local.d\n",
-                                            "chown couchdb:couchdb /etc/couchdb/local.d/ip.ini /etc/couchdb/local.d/ssl.ini\n",
-                                            "service couchdb start\n"
+                                            "cp /root/ip.ini /root/ssl.ini /root/replicator.ini /etc/couchdb/local.d\n",
+                                            "chown couchdb:couchdb /etc/couchdb/local.d/ip.ini /etc/couchdb/local.d/replicator.ini /etc/couchdb/local.d/ssl.ini\n",
+                                            "service couchdb start\nsleep 5\ncurl -k -X PUT https://127.0.0.1:6984/couchdb\n"
                                         ]
                                     ]
                                 },
@@ -670,6 +670,21 @@
                                         [
                                             "[httpd]\n",
                                             "bind_address = 0.0.0.0\n"
+                                        ]
+                                    ]
+                                },
+                                "group": "root",
+                                "mode": "000400",
+                                "owner": "root"
+                            },
+                            "/root/replicator.ini": {
+                                "content": {
+                                    "Fn::Join": [
+                                        "",
+                                        [
+                                            "[replicator]\n",
+                                            "ssl_trusted_certificates_file = /etc/couchdb/ca.crt\n",
+                                            "verify_ssl_certificates = true\n"
                                         ]
                                     ]
                                 },
@@ -742,7 +757,7 @@
                         "Fn::Join": [
                             "",
                             [
-                                "#!/bin/bash -xe\n",
+                                "#!/bin/bash -x\n",
                                 "exec > /tmp/part-001.log 2>&1\n",
                                 "apt-get -y update\n",
                                 "apt-get -y install python-pip\n",
@@ -759,7 +774,7 @@
                                     "Ref": "AWS::Region"
                                 },
                                 "\n",
-                                "cfn-signal -e 0 ",
+                                "cfn-signal -e $? ",
                                 "         --stack ",
                                 {
                                     "Ref": "AWS::StackName"
@@ -1339,6 +1354,11 @@
                         "Value": "3600"
                     },
                     {
+                        "Namespace": "aws:elb:policies",
+                        "OptionName": "Stickiness Policy",
+                        "Value": "true"
+                    },
+                    {
                         "Namespace": "aws:elb:policies:backendencryption",
                         "OptionName": "PublicKeyPolicyNames",
                         "Value": "backendkey"
@@ -1406,13 +1426,6 @@
                     },
                     {
                         "Namespace": "aws:elasticbeanstalk:application:environment",
-                        "OptionName": "TIMEZONE",
-                        "Value": {
-                            "Ref": "TimeZone"
-                        }
-                    },
-                    {
-                        "Namespace": "aws:elasticbeanstalk:application:environment",
                         "OptionName": "REDIS_IP",
                         "Value": "redis.openemr.local"
                     },
@@ -1440,6 +1453,13 @@
                         "OptionName": "KMSKEY",
                         "Value": {
                             "Ref": "OpenEMRKey"
+                        }
+                    },
+                    {
+                        "Namespace": "aws:elasticbeanstalk:application:environment",
+                        "OptionName": "TIMEZONE",
+                        "Value": {
+                            "Ref": "TimeZone"
                         }
                     }
                 ],
@@ -1673,7 +1693,7 @@
                         "Fn::Join": [
                             "",
                             [
-                                "#!/bin/bash -xe\n",
+                                "#!/bin/bash -x\n",
                                 "exec > /tmp/part-001.log 2>&1\n",
                                 "apt-get -y update\n",
                                 "apt-get -y install python-pip\n",
@@ -1690,7 +1710,7 @@
                                     "Ref": "AWS::Region"
                                 },
                                 "\n",
-                                "cfn-signal -e 0 ",
+                                "cfn-signal -e $? ",
                                 "         --stack ",
                                 {
                                     "Ref": "AWS::StackName"
@@ -2012,7 +2032,7 @@
                     "Ref": "RedisSubnets"
                 },
                 "Engine": "redis",
-                "NumCacheNodes": "1",
+                "NumCacheNodes": 1,
                 "VpcSecurityGroupIds": [
                     {
                         "Fn::GetAtt": [
