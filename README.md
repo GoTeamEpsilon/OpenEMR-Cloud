@@ -1,3 +1,5 @@
+# THIS PROJECT IS NOW MAINTAINED OVER AT https://github.com/openemr/openemr-devops/tree/master/stacks/AWS-full-stack)
+
 # OpenEMR Cloud
 
 A production grade solution for facilities and hospitals to run their OpenEMR v5 installation in the Amazon cloud. This solution is provided by [TeamEpsilon](https://github.com/GoTeamEpsilon/purpose).
